@@ -338,6 +338,8 @@ export function ProblematicOrdersClient() {
           <EscalationsSection
             escalations={data.escalations}
             onResolveClick={setResolveTarget}
+            cellPad={cellPad}
+            isCompact={isCompact}
           />
 
           {/* ── Day rows ─────────────────────────────────────── */}
@@ -425,59 +427,93 @@ export function ProblematicOrdersClient() {
 function EscalationsSection({
   escalations,
   onResolveClick,
+  cellPad,
+  isCompact,
 }: {
   escalations: EscalationRow[];
   onResolveClick: (e: EscalationRow) => void;
+  cellPad: string;
+  isCompact: boolean;
 }) {
   if (escalations.length === 0) return null;
   return (
-    <div className="rounded-2xl border-2 border-rose-300 bg-rose-50 shadow-sm">
-      <div className="border-b border-rose-200 px-4 py-3">
-        <h2 className="text-base font-semibold text-rose-900">
-          Eskalované na team leadera ({escalations.length})
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
+        <h2 className="text-base font-semibold text-gray-900">
+          Eskalované na team leadera{' '}
+          <span className="text-gray-500">({escalations.length})</span>
         </h2>
-        <p className="mt-0.5 text-xs text-rose-800">
-          Otevřené eskalace bez ohledu na den. Retence a office se jich
-          nedotýkají, dokud je nezavřete.
+        <p className="text-xs text-gray-500">
+          Otevřené eskalace bez ohledu na den — dokud je neuzavřete.
         </p>
       </div>
-      <ul className="divide-y divide-rose-200">
-        {escalations.map((e) => (
-          <li key={e.id} className="flex flex-wrap items-start gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900">
-                Zakázka #{e.order_id}
-                <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600 ring-1 ring-gray-200">
-                  {roleLabel(e.escalated_by_role)}
-                </span>
-              </p>
-              <p className="mt-1 text-xs text-gray-600">
-                Eskaloval/a {e.escalated_by} —{' '}
-                {formatDateTimeCs(e.escalated_at)}
-              </p>
-              <p className="mt-1 whitespace-pre-line text-sm text-gray-800">
-                {e.escalation_note}
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-1.5">
-              <Link
-                href={officePortalOrderDeepLink(e.order_id)}
-                target="_blank"
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <tr>
+              <th className={cellPad}>Zdroj</th>
+              <th className={cellPad}>Zakázka</th>
+              <th className={cellPad}>Poznámka</th>
+              <th className={cellPad}>Kdo &amp; kdy</th>
+              <th className={`${cellPad} text-right`}>Akce</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {escalations.map((e) => (
+              <tr
+                key={e.id}
+                className="border-l-4 border-l-rose-500 align-top"
               >
-                Portál →
-              </Link>
-              <button
-                type="button"
-                onClick={() => onResolveClick(e)}
-                className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
-              >
-                Uzavřít eskalaci
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+                <td className={cellPad}>
+                  <span className="inline-block w-fit rounded-md border border-rose-500 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-900">
+                    {roleLabel(e.escalated_by_role)}
+                  </span>
+                </td>
+                <td className={`${cellPad} whitespace-nowrap`}>
+                  <div className="font-semibold text-gray-900">
+                    #{e.order_id}
+                  </div>
+                </td>
+                <td className={cellPad}>
+                  <p
+                    className={`whitespace-pre-line text-gray-800 ${
+                      isCompact ? 'line-clamp-2' : ''
+                    }`}
+                    title={isCompact ? e.escalation_note : undefined}
+                  >
+                    {e.escalation_note}
+                  </p>
+                </td>
+                <td className={`${cellPad} whitespace-nowrap text-gray-600`}>
+                  <div className="truncate">{e.escalated_by}</div>
+                  <div className="text-xs text-gray-400">
+                    {formatDateTimeCs(e.escalated_at)}
+                  </div>
+                </td>
+                <td className={`${cellPad} text-right`}>
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    <a
+                      href={officePortalOrderDeepLink(e.order_id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Portál
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => onResolveClick(e)}
+                      className="rounded-md border border-emerald-600 bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                    >
+                      Uzavřít
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
