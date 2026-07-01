@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { erpOrderDeepLink } from '@/lib/erpUrls';
 import { officePortalOrderDeepLink } from '@/lib/officePortalUrls';
 import { raynetEventDeepLink } from '@/lib/raynetUrls';
@@ -223,6 +224,63 @@ function todayYmd(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Search / filter / sort
+// ---------------------------------------------------------------------------
+
+/** Sortable column keys. `default` = severity-based order from `REASON_SEVERITY`. */
+type SortKey = 'default' | 'customer' | 'owner' | 'value' | 'termin';
+type SortDir = 'asc' | 'desc';
+
+interface ReasonChip {
+  kind: ReasonKind;
+  label: string;
+}
+
+const REASON_CHIPS: ReasonChip[] = [
+  { kind: 'nedopadla_recent', label: 'Nedopadla' },
+  { kind: 'admf_not_exported', label: 'Neexportováno' },
+  { kind: 'no_admf', label: 'Bez ADMF' },
+  { kind: 'raynet_only', label: 'Bez zakázky' },
+];
+
+/** Severity index (lower = more urgent) for the default sort. Order matches
+ *  `REASON_SEVERITY` in the row view (nedopadla_recent = 0, …). */
+const REASON_SEVERITY_INDEX: Record<ReasonKind, number> = {
+  nedopadla_recent: 0,
+  admf_not_exported: 1,
+  no_admf: 2,
+  raynet_only: 3,
+};
+
+function rowSeverity(row: ProblematicRow): number {
+  let best = 99;
+  for (const r of row.reasons) {
+    const i = REASON_SEVERITY_INDEX[r.kind] ?? 99;
+    if (i < best) best = i;
+  }
+  return best;
+}
+
+function parseSortParam(raw: string | null): {
+  key: SortKey;
+  dir: SortDir;
+} {
+  if (!raw) return { key: 'default', dir: 'desc' };
+  const [k, d] = raw.split('_');
+  const key: SortKey =
+    k === 'customer' || k === 'owner' || k === 'value' || k === 'termin'
+      ? k
+      : 'default';
+  const dir: SortDir = d === 'asc' ? 'asc' : 'desc';
+  return { key, dir };
+}
+
+function formatSortParam(key: SortKey, dir: SortDir): string | null {
+  if (key === 'default') return null;
+  return `${key}_${dir}`;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -246,6 +304,82 @@ export function ProblematicOrdersClient() {
     note: string | null;
     items: BatchConfirmItem[];
   } | null>(null);
+
+  // ── URL-backed search / filter / sort ──────────────────────────
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const q = searchParams.get('q') ?? '';
+  const reasonsParam = searchParams.get('reasons');
+  const reasonsFilter = useMemo<Set<ReasonKind>>(() => {
+    const out = new Set<ReasonKind>();
+    if (!reasonsParam) return out;
+    for (const raw of reasonsParam.split(',')) {
+      const t = raw.trim();
+      if (
+        t === 'raynet_only' ||
+        t === 'no_admf' ||
+        t === 'admf_not_exported' ||
+        t === 'nedopadla_recent'
+      ) {
+        out.add(t);
+      }
+    }
+    return out;
+  }, [reasonsParam]);
+  const escalatedOnly = searchParams.get('escalated') === '1';
+  const { key: sortKey, dir: sortDir } = parseSortParam(searchParams.get('sort'));
+
+  const updateSearchParam = useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v == null || v === '') next.delete(k);
+        else next.set(k, v);
+      }
+      const qs = next.toString();
+      router.replace(qs.length > 0 ? `${pathname}?${qs}` : pathname, {
+        scroll: false,
+      });
+    },
+    [router, pathname, searchParams]
+  );
+
+  const setQ = useCallback(
+    (value: string) => updateSearchParam({ q: value.length > 0 ? value : null }),
+    [updateSearchParam]
+  );
+  const toggleReason = useCallback(
+    (kind: ReasonKind) => {
+      const next = new Set(reasonsFilter);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      const joined = [...next].join(',');
+      updateSearchParam({ reasons: joined.length > 0 ? joined : null });
+    },
+    [reasonsFilter, updateSearchParam]
+  );
+  const setEscalatedOnly = useCallback(
+    (value: boolean) => updateSearchParam({ escalated: value ? '1' : null }),
+    [updateSearchParam]
+  );
+  const handleSortClick = useCallback(
+    (key: Exclude<SortKey, 'default'>) => {
+      // Cycle: current column asc → desc → default; different column → asc.
+      if (sortKey === key) {
+        if (sortDir === 'asc') {
+          updateSearchParam({ sort: formatSortParam(key, 'desc') });
+        } else {
+          // desc → clear
+          updateSearchParam({ sort: null });
+        }
+      } else {
+        updateSearchParam({ sort: formatSortParam(key, 'asc') });
+      }
+    },
+    [sortKey, sortDir, updateSearchParam]
+  );
 
   const load = useCallback(async (targetDay: string) => {
     setLoading(true);
@@ -314,17 +448,117 @@ export function ProblematicOrdersClient() {
 
   const filteredRows = useMemo(() => {
     const rows = data?.rows ?? [];
-    if (!teamFilter) return rows;
-    const emails = new Set(teamFilter.memberEmails.map((e) => e.toLowerCase()));
-    const raynetIds = new Set(teamFilter.memberRaynetIds);
-    return rows.filter((r) => {
+
+    // ── Team filter (existing behavior) ─────────────────────────
+    const teamEmails = teamFilter
+      ? new Set(teamFilter.memberEmails.map((e) => e.toLowerCase()))
+      : null;
+    const teamRaynetIds = teamFilter
+      ? new Set(teamFilter.memberRaynetIds)
+      : null;
+
+    // ── Search (case-insensitive substring across customer / OVT / IDs) ──
+    const needle = q.trim().toLowerCase();
+    const matchesSearch = (r: ProblematicRow): boolean => {
+      if (needle.length === 0) return true;
+      const parts: Array<string | null | undefined> = [
+        r.order?.customerName,
+        r.title,
+        r.owner.name,
+        r.owner.email,
+        r.owner.raynetId,
+        r.order?.id != null ? `#${r.order.id}` : null,
+        r.order?.id != null ? String(r.order.id) : null,
+        r.order?.source_erp_order_id != null
+          ? String(r.order.source_erp_order_id)
+          : null,
+      ];
+      for (const p of parts) {
+        if (p && p.toLowerCase().includes(needle)) return true;
+      }
+      return false;
+    };
+
+    // ── Reason chips (AND across chips: row matches iff it has at least
+    //    one reason of ANY selected kind — i.e. multi-select OR within
+    //    reasons, but the whole filter is applied conjunctively with the
+    //    other filters). Empty selection = no restriction. ──
+    const matchesReason = (r: ProblematicRow): boolean => {
+      if (reasonsFilter.size === 0) return true;
+      for (const rr of r.reasons) {
+        if (reasonsFilter.has(rr.kind)) return true;
+      }
+      return false;
+    };
+
+    // ── Escalated-only toggle ───────────────────────────────────
+    const matchesEscalated = (r: ProblematicRow): boolean =>
+      !escalatedOnly || r.openEscalation != null;
+
+    // ── Team filter (existing) ──────────────────────────────────
+    const matchesTeam = (r: ProblematicRow): boolean => {
+      if (!teamEmails || !teamRaynetIds) return true;
       const email = r.owner.email?.toLowerCase();
       return (
-        (email != null && emails.has(email)) ||
-        (r.owner.raynetId != null && raynetIds.has(r.owner.raynetId))
+        (email != null && teamEmails.has(email)) ||
+        (r.owner.raynetId != null && teamRaynetIds.has(r.owner.raynetId))
       );
-    });
-  }, [data, teamFilter]);
+    };
+
+    const filtered = rows.filter(
+      (r) =>
+        matchesTeam(r) && matchesSearch(r) && matchesReason(r) && matchesEscalated(r)
+    );
+
+    // ── Sort ────────────────────────────────────────────────────
+    const sorted = [...filtered];
+    if (sortKey === 'default') {
+      // Severity first (nedopadla → raynet-only), then termín DESC as
+      // a stable secondary. Preserves the useful "worst-first" ordering
+      // when the user hasn't explicitly picked a sort.
+      sorted.sort((a, b) => {
+        const sa = rowSeverity(a);
+        const sb = rowSeverity(b);
+        if (sa !== sb) return sa - sb;
+        const ta = a.scheduledFrom ? Date.parse(a.scheduledFrom) : 0;
+        const tb = b.scheduledFrom ? Date.parse(b.scheduledFrom) : 0;
+        return tb - ta;
+      });
+    } else {
+      const dirMul = sortDir === 'asc' ? 1 : -1;
+      const key = sortKey;
+      const cmp = (a: ProblematicRow, b: ProblematicRow): number => {
+        switch (key) {
+          case 'customer': {
+            const av = (a.order?.customerName || a.title || '').toLocaleLowerCase(
+              'cs'
+            );
+            const bv = (b.order?.customerName || b.title || '').toLocaleLowerCase(
+              'cs'
+            );
+            return av.localeCompare(bv, 'cs');
+          }
+          case 'owner': {
+            const av = (a.owner.name || a.owner.email || '').toLocaleLowerCase('cs');
+            const bv = (b.owner.name || b.owner.email || '').toLocaleLowerCase('cs');
+            return av.localeCompare(bv, 'cs');
+          }
+          case 'value': {
+            const av = a.orderValue?.local?.value ?? -1;
+            const bv = b.orderValue?.local?.value ?? -1;
+            return av - bv;
+          }
+          case 'termin': {
+            const av = a.scheduledFrom ? Date.parse(a.scheduledFrom) : 0;
+            const bv = b.scheduledFrom ? Date.parse(b.scheduledFrom) : 0;
+            return av - bv;
+          }
+        }
+      };
+      sorted.sort((a, b) => dirMul * cmp(a, b));
+    }
+    return sorted;
+  }, [data, teamFilter, q, reasonsFilter, escalatedOnly, sortKey, sortDir]);
 
   const isCompact = density === 'compact';
   const cellPad = isCompact ? 'px-2 py-1' : 'px-3 py-2.5';
@@ -363,6 +597,72 @@ export function ProblematicOrdersClient() {
           >
             {loading ? 'Načítání…' : 'Obnovit'}
           </button>
+        </div>
+      </div>
+
+      {/* ── Search + reason chips + escalated toggle ───────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Hledat: zákazník, OVT, ID objednávky…"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 pr-8 text-sm placeholder:text-gray-400 focus:border-[#1E8449] focus:outline-none focus:ring-1 focus:ring-[#1E8449]"
+          />
+          {q.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQ('')}
+              aria-label="Vymazat hledání"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {REASON_CHIPS.map((c) => {
+            const active = reasonsFilter.has(c.kind);
+            return (
+              <button
+                key={c.kind}
+                type="button"
+                onClick={() => toggleReason(c.kind)}
+                aria-pressed={active}
+                className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                  active
+                    ? reasonBadgeClass(c.kind)
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setEscalatedOnly(!escalatedOnly)}
+            aria-pressed={escalatedOnly}
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+              escalatedOnly
+                ? 'border-rose-500 bg-rose-100 text-rose-900'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Jen s eskalací
+          </button>
+          {(reasonsFilter.size > 0 || escalatedOnly || q.length > 0) && (
+            <button
+              type="button"
+              onClick={() =>
+                updateSearchParam({ q: null, reasons: null, escalated: null })
+              }
+              className="rounded-full border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Vyčistit filtry
+            </button>
+          )}
         </div>
       </div>
 
@@ -473,10 +773,39 @@ export function ProblematicOrdersClient() {
                           <span className="sr-only">Vybrat</span>
                         </th>
                         <th className={cellPad}>Proč</th>
-                        <th className={cellPad}>Zákazník</th>
-                        <th className={cellPad}>OVT</th>
-                        <th className={`${cellPad} text-right`}>Hodnota</th>
-                        <th className={cellPad}>Termín</th>
+                        <SortableTh
+                          cellPad={cellPad}
+                          label="Zákazník"
+                          columnKey="customer"
+                          activeKey={sortKey}
+                          activeDir={sortDir}
+                          onClick={handleSortClick}
+                        />
+                        <SortableTh
+                          cellPad={cellPad}
+                          label="OVT"
+                          columnKey="owner"
+                          activeKey={sortKey}
+                          activeDir={sortDir}
+                          onClick={handleSortClick}
+                        />
+                        <SortableTh
+                          cellPad={cellPad}
+                          label="Hodnota"
+                          columnKey="value"
+                          activeKey={sortKey}
+                          activeDir={sortDir}
+                          onClick={handleSortClick}
+                          align="right"
+                        />
+                        <SortableTh
+                          cellPad={cellPad}
+                          label="Termín"
+                          columnKey="termin"
+                          activeKey={sortKey}
+                          activeDir={sortDir}
+                          onClick={handleSortClick}
+                        />
                         <th className={`${cellPad} text-right`}>Akce</th>
                       </tr>
                     </thead>
@@ -655,6 +984,52 @@ function EscalationsSection({
         </table>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sortable table header
+// ---------------------------------------------------------------------------
+
+function SortableTh({
+  cellPad,
+  label,
+  columnKey,
+  activeKey,
+  activeDir,
+  onClick,
+  align,
+}: {
+  cellPad: string;
+  label: string;
+  columnKey: Exclude<SortKey, 'default'>;
+  activeKey: SortKey;
+  activeDir: SortDir;
+  onClick: (key: Exclude<SortKey, 'default'>) => void;
+  align?: 'left' | 'right';
+}) {
+  const isActive = activeKey === columnKey;
+  const marker = isActive ? (activeDir === 'asc' ? '↑' : '↓') : '↕';
+  return (
+    <th
+      className={`${cellPad} ${align === 'right' ? 'text-right' : 'text-left'}`}
+    >
+      <button
+        type="button"
+        onClick={() => onClick(columnKey)}
+        className={`inline-flex items-center gap-1 ${
+          isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'
+        }`}
+      >
+        {label}
+        <span
+          aria-hidden
+          className={`${isActive ? 'text-gray-900' : 'text-gray-300'} text-[10px]`}
+        >
+          {marker}
+        </span>
+      </button>
+    </th>
   );
 }
 
