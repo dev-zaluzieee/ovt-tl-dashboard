@@ -119,6 +119,17 @@ export function Navigation() {
               Problematické zakázky
             </Link>
             <Link
+              href="/skryte-zakazky"
+              className={`hover:opacity-80 transition-opacity ${
+                pathname === '/skryte-zakazky' ||
+                pathname.startsWith('/skryte-zakazky/')
+                  ? 'font-semibold underline'
+                  : ''
+              }`}
+            >
+              Skryté zakázky
+            </Link>
+            <Link
               href="/vysledky"
               className={`hover:opacity-80 transition-opacity ${
                 pathname === '/vysledky' || pathname.startsWith('/vysledky/')

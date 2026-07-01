@@ -26,6 +26,12 @@ import {
   OrderValuePill,
   type OrderValueSyncBlock,
 } from '@/app/components/retention/OrderValuePill';
+import {
+  TlBatchConfirmWizardModal,
+  type BatchConfirmItem,
+  type TlConfirmDecision,
+} from './TlBatchConfirmWizardModal';
+import { TlBatchConfirmSetupModal } from './TlBatchConfirmSetupModal';
 
 // ---------------------------------------------------------------------------
 // Payload types — kept in sync with backend
@@ -230,6 +236,16 @@ export function ProblematicOrdersClient() {
   const [resolveTarget, setResolveTarget] = useState<EscalationRow | null>(
     null
   );
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(
+    () => new Set()
+  );
+  const [batchSetup, setBatchSetup] = useState<TlConfirmDecision | null>(null);
+  const [batchWizardPayload, setBatchWizardPayload] = useState<{
+    decision: TlConfirmDecision;
+    reason: string;
+    note: string | null;
+    items: BatchConfirmItem[];
+  } | null>(null);
 
   const load = useCallback(async (targetDay: string) => {
     setLoading(true);
@@ -259,7 +275,42 @@ export function ProblematicOrdersClient() {
 
   useEffect(() => {
     void load(day);
+    setSelectedOrderIds(new Set());
   }, [load, day]);
+
+  // Selectable rows = those with a local order id (Raynet-only rows can't be
+  // confirmed because the underlying services need source_raynet_event_id via
+  // an orders row).
+  const selectableOrderIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const r of data?.rows ?? []) {
+      if (r.order?.id != null) ids.add(r.order.id);
+    }
+    return ids;
+  }, [data]);
+
+  const toggleOrderSelected = useCallback((orderId: number) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  }, []);
+
+  const selectedItems: BatchConfirmItem[] = useMemo(() => {
+    const rows = data?.rows ?? [];
+    const out: BatchConfirmItem[] = [];
+    for (const r of rows) {
+      if (r.order?.id == null) continue;
+      if (!selectedOrderIds.has(r.order.id)) continue;
+      out.push({
+        order_id: r.order.id,
+        customer_name: r.order.customerName ?? r.title ?? null,
+      });
+    }
+    return out;
+  }, [data, selectedOrderIds]);
 
   const filteredRows = useMemo(() => {
     const rows = data?.rows ?? [];
@@ -378,29 +429,85 @@ export function ProblematicOrdersClient() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    <tr>
-                      <th className={cellPad}>Proč</th>
-                      <th className={cellPad}>Zákazník</th>
-                      <th className={`${cellPad} text-right`}>Hodnota</th>
-                      <th className={cellPad}>Termín</th>
-                      <th className={`${cellPad} text-right`}>Akce</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredRows.map((row) => (
-                      <ProblematicRowView
-                        key={row.key}
-                        row={row}
-                        cellPad={cellPad}
-                        isCompact={isCompact}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {selectedItems.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-[#F8FAFC] px-4 py-3">
+                    <p className="text-xs font-medium text-gray-700">
+                      Vybráno {selectedItems.length}{' '}
+                      {selectedItems.length === 1
+                        ? 'zakázka'
+                        : selectedItems.length < 5
+                          ? 'zakázky'
+                          : 'zakázek'}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOrderIds(new Set())}
+                        className="rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Zrušit výběr
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBatchSetup('nedopadlo')}
+                        className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
+                      >
+                        Označit jako nedopadlo ({selectedItems.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBatchSetup('retence')}
+                        className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                      >
+                        Poslat do retence ({selectedItems.length})
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <tr>
+                        <th className={`${cellPad} w-8`}>
+                          <span className="sr-only">Vybrat</span>
+                        </th>
+                        <th className={cellPad}>Proč</th>
+                        <th className={cellPad}>Zákazník</th>
+                        <th className={`${cellPad} text-right`}>Hodnota</th>
+                        <th className={cellPad}>Termín</th>
+                        <th className={`${cellPad} text-right`}>Akce</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredRows.map((row) => {
+                        const localOrderId = row.order?.id ?? null;
+                        const selectable =
+                          localOrderId != null &&
+                          selectableOrderIds.has(localOrderId);
+                        return (
+                          <ProblematicRowView
+                            key={row.key}
+                            row={row}
+                            cellPad={cellPad}
+                            isCompact={isCompact}
+                            selectable={selectable}
+                            selected={
+                              selectable && selectedOrderIds.has(localOrderId!)
+                            }
+                            onToggleSelect={
+                              selectable
+                                ? () => toggleOrderSelected(localOrderId!)
+                                : undefined
+                            }
+                          />
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+
             )}
           </div>
         </>
@@ -412,6 +519,38 @@ export function ProblematicOrdersClient() {
           onClose={() => setResolveTarget(null)}
           onResolved={() => {
             setResolveTarget(null);
+            void load(day);
+          }}
+        />
+      )}
+
+      {batchSetup && selectedItems.length > 0 && (
+        <TlBatchConfirmSetupModal
+          decision={batchSetup}
+          items={selectedItems}
+          onCancel={() => setBatchSetup(null)}
+          onSubmit={({ reason, note }) => {
+            setBatchWizardPayload({
+              decision: batchSetup,
+              reason,
+              note,
+              items: selectedItems,
+            });
+            setBatchSetup(null);
+          }}
+        />
+      )}
+
+      {batchWizardPayload && (
+        <TlBatchConfirmWizardModal
+          items={batchWizardPayload.items}
+          decision={batchWizardPayload.decision}
+          reason={batchWizardPayload.reason}
+          note={batchWizardPayload.note}
+          onClose={() => setBatchWizardPayload(null)}
+          onDone={() => {
+            setBatchWizardPayload(null);
+            setSelectedOrderIds(new Set());
             void load(day);
           }}
         />
@@ -526,10 +665,16 @@ function ProblematicRowView({
   row,
   cellPad,
   isCompact,
+  selectable,
+  selected,
+  onToggleSelect,
 }: {
   row: ProblematicRow;
   cellPad: string;
   isCompact: boolean;
+  selectable: boolean;
+  selected: boolean;
+  onToggleSelect?: () => void;
 }) {
   const compactTooltip = isCompact
     ? [
@@ -543,6 +688,19 @@ function ProblematicRowView({
     : undefined;
   return (
     <tr className={`align-top ${stripeClass(row.reasons)}`} title={compactTooltip}>
+      <td className={`${cellPad} w-8`}>
+        {selectable ? (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label={`Vybrat zakázku ${row.order?.id ?? row.title}`}
+            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+          />
+        ) : (
+          <span className="inline-block h-4 w-4" aria-hidden />
+        )}
+      </td>
       <td className={cellPad}>
         <div className="flex flex-col gap-1">
           {row.reasons.map((r, i) => (
