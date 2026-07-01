@@ -13,7 +13,7 @@ export default function ProblematickeZakazkyPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-[#1E8449]">Problematické zakázky</h1>
           <p className="mt-2 text-gray-600">
-            Nevyřízené zakázky za posledních 14 dní (s 2denním odkladem): chybí v systému,
+            Nevyřízené zakázky v posledních 2 dnech: chybí v systému,
             nemají exportovaný ADMF, nebo jsou označené „Nezastižen / přeložit“.
           </p>
         </div>

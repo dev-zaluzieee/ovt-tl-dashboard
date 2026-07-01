@@ -25,7 +25,7 @@ const SECTIONS: Section[] = [
         href: '/problematicke-zakazky',
         title: 'Problematické zakázky',
         description:
-          'Nevyřízené zakázky za posledních 14 dní: chybí v systému, bez exportu ADMF, nebo „Nezastižen“.',
+          'Nevyřízené zakázky v posledních 2 dnech: chybí v systému, bez exportu ADMF, nebo „Nezastižen“.',
       },
       {
         href: '/vysledky',
