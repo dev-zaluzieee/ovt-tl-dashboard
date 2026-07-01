@@ -211,13 +211,6 @@ export function ScoreboardClient() {
         </p>
       )}
 
-      {data && !data.zameraniReliable && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-950" role="status">
-          Počet zaměření se nepodařilo spolehlivě přiřadit k OVT (Raynet neposkytl vlastníka událostí) — hodnoty ve
-          sloupci Zaměření a Konverze mohou chybět.
-        </div>
-      )}
-
       {loading ? (
         <div className="h-40 animate-pulse rounded-xl bg-gray-100" aria-busy="true" />
       ) : error ? (
