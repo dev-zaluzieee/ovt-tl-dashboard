@@ -66,7 +66,7 @@ export function OrderValuePill({ sync, size = 'sm' }: Props) {
   return (
     <span
       title={titleParts.join('\n')}
-      className={`inline-flex items-center gap-1 rounded-md border font-semibold tabular-nums ${sizeClass} ${colorClass}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md border font-semibold tabular-nums ${sizeClass} ${colorClass}`}
     >
       {outOfSync && (
         <span aria-hidden className="leading-none">

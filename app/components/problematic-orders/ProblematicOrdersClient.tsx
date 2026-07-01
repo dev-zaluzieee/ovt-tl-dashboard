@@ -474,6 +474,7 @@ export function ProblematicOrdersClient() {
                         </th>
                         <th className={cellPad}>Proč</th>
                         <th className={cellPad}>Zákazník</th>
+                        <th className={cellPad}>OVT</th>
                         <th className={`${cellPad} text-right`}>Hodnota</th>
                         <th className={cellPad}>Termín</th>
                         <th className={`${cellPad} text-right`}>Akce</th>
@@ -629,20 +630,20 @@ function EscalationsSection({
                     {formatDateTimeCs(e.escalated_at)}
                   </div>
                 </td>
-                <td className={`${cellPad} text-right`}>
-                  <div className="flex flex-wrap justify-end gap-1.5">
+                <td className={`${cellPad} whitespace-nowrap text-right`}>
+                  <div className="flex flex-nowrap justify-end gap-1.5">
                     <a
                       href={officePortalOrderDeepLink(e.order_id)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      className="shrink-0 rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                     >
                       Portál
                     </a>
                     <button
                       type="button"
                       onClick={() => onResolveClick(e)}
-                      className="rounded-md border border-emerald-600 bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                      className="shrink-0 rounded-md border border-emerald-600 bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
                     >
                       Uzavřít
                     </button>
@@ -707,7 +708,7 @@ function ProblematicRowView({
             <span
               key={`${r.kind}-${i}`}
               title={tooltipForReason(r)}
-              className={`inline-block w-fit rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${reasonBadgeClass(
+              className={`inline-block w-fit whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${reasonBadgeClass(
                 r.kind
               )}`}
             >
@@ -716,7 +717,7 @@ function ProblematicRowView({
           ))}
           {row.openEscalation && (
             <span
-              className="inline-block w-fit rounded-md border border-rose-500 bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-900"
+              className="inline-block w-fit whitespace-nowrap rounded-md border border-rose-500 bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-900"
               title={`Eskalováno: ${row.openEscalation.escalation_note}`}
             >
               Eskalováno na TL
@@ -728,20 +729,21 @@ function ProblematicRowView({
         <div className="font-medium text-gray-900">
           {row.order?.customerName?.trim() || row.title}
         </div>
-        {!isCompact && (
-          <>
-            {row.owner.name && (
-              <div className="text-xs text-gray-500">OVT: {row.owner.name}</div>
-            )}
-            {row.order && (
-              <div className="text-xs text-gray-400">
-                Zakázka #{row.order.id} · vytvořeno {formatDateCs(row.order.createdAt)}
-              </div>
-            )}
-          </>
+        {!isCompact && row.order && (
+          <div className="text-xs text-gray-400">
+            Zakázka #{row.order.id} · vytvořeno {formatDateCs(row.order.createdAt)}
+          </div>
         )}
       </td>
-      <td className={`${cellPad} text-right`}>
+      <td
+        className={`${cellPad} whitespace-nowrap text-gray-700`}
+        title={row.owner.email ?? undefined}
+      >
+        {row.owner.name ?? (
+          <span className="text-gray-300">—</span>
+        )}
+      </td>
+      <td className={`${cellPad} whitespace-nowrap text-right`}>
         {row.orderValue ? (
           <OrderValuePill sync={row.orderValue} />
         ) : (
@@ -754,14 +756,14 @@ function ProblematicRowView({
           <div className="text-xs text-gray-400">{row.categoryLabel}</div>
         )}
       </td>
-      <td className={`${cellPad} text-right`}>
-        <div className="flex flex-wrap justify-end gap-1.5">
+      <td className={`${cellPad} whitespace-nowrap text-right`}>
+        <div className="flex flex-nowrap justify-end gap-1.5">
           {row.raynetEventId != null && (
             <a
               href={raynetEventDeepLink(row.raynetEventId)}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md border border-[#1E8449] px-2 py-1 text-xs font-medium text-[#1E8449] hover:bg-[#F1F8F4]"
+              className="shrink-0 rounded-md border border-[#1E8449] px-2 py-1 text-xs font-medium text-[#1E8449] hover:bg-[#F1F8F4]"
             >
               Raynet
             </a>
@@ -769,7 +771,7 @@ function ProblematicRowView({
           {row.raynetCompanyId != null && (
             <Link
               href={`/klient/${row.raynetCompanyId}`}
-              className="rounded-md border border-purple-300 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50"
+              className="shrink-0 rounded-md border border-purple-300 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50"
             >
               Karta
             </Link>
@@ -779,7 +781,7 @@ function ProblematicRowView({
               href={officePortalOrderDeepLink(row.order.id)}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              className="shrink-0 rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               Portál
             </a>
@@ -789,7 +791,7 @@ function ProblematicRowView({
               href={erpOrderDeepLink(row.order.source_erp_order_id)}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md border border-[#1565C0] px-2 py-1 text-xs font-medium text-[#1565C0] hover:bg-[#E3F2FD]"
+              className="shrink-0 rounded-md border border-[#1565C0] px-2 py-1 text-xs font-medium text-[#1565C0] hover:bg-[#E3F2FD]"
             >
               ERP
             </a>

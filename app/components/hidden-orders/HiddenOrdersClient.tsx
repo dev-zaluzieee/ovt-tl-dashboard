@@ -253,6 +253,11 @@ export function HiddenOrdersClient() {
                         <div className="font-medium text-gray-900">
                           {r.order_customer_name ?? `Zakázka #${r.order_id}`}
                         </div>
+                        {r.order_user_id && (
+                          <div className="text-xs text-gray-500">
+                            OVT: {r.order_user_id}
+                          </div>
+                        )}
                         {!isCompact && (
                           <div className="text-xs text-gray-400">
                             #{r.order_id}
@@ -278,12 +283,12 @@ export function HiddenOrdersClient() {
                           {formatDateTimeCs(r.confirmed_at)}
                         </div>
                       </td>
-                      <td className={`${cellPad} text-right`}>
-                        <div className="flex flex-wrap justify-end gap-1.5">
+                      <td className={`${cellPad} whitespace-nowrap text-right`}>
+                        <div className="flex flex-nowrap justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => setRetenceTarget(r)}
-                            className="rounded-md border border-emerald-600 bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                            className="shrink-0 rounded-md border border-emerald-600 bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
                           >
                             → Do retence
                           </button>
@@ -291,7 +296,7 @@ export function HiddenOrdersClient() {
                             href={officePortalOrderDeepLink(r.order_id)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-md border border-[#1565C0] bg-[#1565C0] px-2 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c]"
+                            className="shrink-0 rounded-md border border-[#1565C0] bg-[#1565C0] px-2 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c]"
                           >
                             → Happy path
                           </a>
@@ -302,7 +307,7 @@ export function HiddenOrdersClient() {
                               )}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded-md border border-[#1E8449] px-2 py-1 text-xs font-medium text-[#1E8449] hover:bg-[#F1F8F4]"
+                              className="shrink-0 rounded-md border border-[#1E8449] px-2 py-1 text-xs font-medium text-[#1E8449] hover:bg-[#F1F8F4]"
                             >
                               Raynet
                             </a>
@@ -314,7 +319,7 @@ export function HiddenOrdersClient() {
                               )}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded-md border border-[#1565C0] px-2 py-1 text-xs font-medium text-[#1565C0] hover:bg-[#E3F2FD]"
+                              className="shrink-0 rounded-md border border-[#1565C0] px-2 py-1 text-xs font-medium text-[#1565C0] hover:bg-[#E3F2FD]"
                             >
                               ERP
                             </a>
