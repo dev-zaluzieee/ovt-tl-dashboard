@@ -1151,6 +1151,15 @@ function ProblematicRowView({
               Karta
             </Link>
           )}
+          {row.raynetCompanyId != null && (
+            <Link
+              href={`/klient/${row.raynetCompanyId}/hovory`}
+              className="shrink-0 rounded-md border border-[#1565C0] px-2 py-1 text-xs font-medium text-[#1565C0] hover:bg-[#E3F2FD]"
+              title="Hovory z Daktely"
+            >
+              Hovory
+            </Link>
+          )}
           {row.order && (
             <a
               href={officePortalOrderDeepLink(row.order.id)}
