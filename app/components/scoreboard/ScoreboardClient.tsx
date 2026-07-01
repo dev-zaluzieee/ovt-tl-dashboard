@@ -13,6 +13,10 @@ interface Row {
   conversionPct: number | null;
   orderValue: number;
   problematicCount: number;
+  escalationsTotal: number;
+  escalationsChybaOvt: number;
+  escalationsJinaChyba: number;
+  escalationsOpen: number;
 }
 
 interface Payload {
@@ -25,6 +29,10 @@ interface Payload {
     conversionPct: number | null;
     orderValue: number;
     problematicCount: number;
+    escalationsTotal: number;
+    escalationsChybaOvt: number;
+    escalationsJinaChyba: number;
+    escalationsOpen: number;
   };
   zameraniReliable: boolean;
   truncated: boolean;
@@ -68,7 +76,14 @@ function formatKc(n: number): string {
   return `${new Intl.NumberFormat('cs-CZ').format(Math.round(n))} Kč`;
 }
 
-type SortKey = 'orderValue' | 'ordersCount' | 'zameraniCount' | 'conversionPct' | 'problematicCount';
+type SortKey =
+  | 'orderValue'
+  | 'ordersCount'
+  | 'zameraniCount'
+  | 'conversionPct'
+  | 'problematicCount'
+  | 'escalationsTotal'
+  | 'escalationsChybaOvt';
 
 export function ScoreboardClient() {
   const [preset, setPreset] = useState<PresetId>('today');
@@ -135,9 +150,22 @@ export function ScoreboardClient() {
         acc.ordersCount += r.ordersCount;
         acc.orderValue += r.orderValue;
         acc.problematicCount += r.problematicCount;
+        acc.escalationsTotal += r.escalationsTotal;
+        acc.escalationsChybaOvt += r.escalationsChybaOvt;
+        acc.escalationsJinaChyba += r.escalationsJinaChyba;
+        acc.escalationsOpen += r.escalationsOpen;
         return acc;
       },
-      { zameraniCount: 0, ordersCount: 0, orderValue: 0, problematicCount: 0 }
+      {
+        zameraniCount: 0,
+        ordersCount: 0,
+        orderValue: 0,
+        problematicCount: 0,
+        escalationsTotal: 0,
+        escalationsChybaOvt: 0,
+        escalationsJinaChyba: 0,
+        escalationsOpen: 0,
+      }
     );
     return {
       ...t,
@@ -211,6 +239,13 @@ export function ScoreboardClient() {
                 {sortableTh('conversionPct', 'Konverze')}
                 {sortableTh('orderValue', 'Hodnota')}
                 {sortableTh('problematicCount', 'Problémy')}
+                {sortableTh('escalationsTotal', 'Eskalace')}
+                <th
+                  className="px-3 py-2 text-right"
+                  title="Rozbití poslední eskalace: chyba OVT / jiná chyba / otevřené"
+                >
+                  Rozbití
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -232,6 +267,47 @@ export function ScoreboardClient() {
                       <span className="text-gray-300">0</span>
                     )}
                   </td>
+                  <td className="px-3 py-2 text-right">
+                    {r.escalationsTotal > 0 ? (
+                      <span className="rounded-md border border-rose-400 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-900">
+                        {r.escalationsTotal}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">0</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs">
+                    {r.escalationsTotal === 0 ? (
+                      <span className="text-gray-300">—</span>
+                    ) : (
+                      <span className="inline-flex flex-wrap justify-end gap-1">
+                        {r.escalationsChybaOvt > 0 && (
+                          <span
+                            className="rounded-full bg-rose-600 px-1.5 py-0.5 font-semibold text-white"
+                            title="Chyba OVT"
+                          >
+                            {r.escalationsChybaOvt} chyba
+                          </span>
+                        )}
+                        {r.escalationsJinaChyba > 0 && (
+                          <span
+                            className="rounded-full bg-slate-500 px-1.5 py-0.5 font-semibold text-white"
+                            title="Jiná chyba"
+                          >
+                            {r.escalationsJinaChyba} jiná
+                          </span>
+                        )}
+                        {r.escalationsOpen > 0 && (
+                          <span
+                            className="rounded-full border border-amber-500 bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-900"
+                            title="Otevřené eskalace"
+                          >
+                            {r.escalationsOpen} otevř.
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -246,6 +322,12 @@ export function ScoreboardClient() {
                   </td>
                   <td className="px-3 py-2 text-right">{formatKc(totals.orderValue)}</td>
                   <td className="px-3 py-2 text-right">{totals.problematicCount}</td>
+                  <td className="px-3 py-2 text-right">{totals.escalationsTotal}</td>
+                  <td className="px-3 py-2 text-right text-xs">
+                    {totals.escalationsChybaOvt} / {totals.escalationsJinaChyba}
+                    {' / '}
+                    <span className="text-amber-900">{totals.escalationsOpen}</span>
+                  </td>
                 </tr>
               </tfoot>
             )}
