@@ -33,6 +33,7 @@ import {
   type TlConfirmDecision,
 } from './TlBatchConfirmWizardModal';
 import { TlBatchConfirmSetupModal } from './TlBatchConfirmSetupModal';
+import { B2BBadge } from '@/app/components/shared/B2BBadge';
 
 // ---------------------------------------------------------------------------
 // Payload types — kept in sync with backend
@@ -85,6 +86,7 @@ interface ProblematicRow {
     createdAt: string;
   } | null;
   raynetCompanyId: number | null;
+  b2b: boolean;
   orderValue: OrderValueSyncBlock | null;
   owner: { email: string | null; raynetId: string | null; name: string | null };
   reasons: Reason[];
@@ -1101,8 +1103,11 @@ function ProblematicRowView({
         </div>
       </td>
       <td className={cellPad}>
-        <div className="font-medium text-gray-900">
-          {row.order?.customerName?.trim() || row.title}
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-gray-900">
+            {row.order?.customerName?.trim() || row.title}
+          </span>
+          <B2BBadge b2b={row.b2b} size="xs" />
         </div>
         {!isCompact && row.order && (
           <div className="text-xs text-gray-400">

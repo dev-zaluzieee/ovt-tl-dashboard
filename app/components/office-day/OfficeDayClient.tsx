@@ -11,6 +11,7 @@ import {
 } from '@/lib/officeDayEventTier';
 import { raynetEventDeepLink } from '@/lib/raynetUrls';
 import { OfficeDayCalendarGrid, type CalendarEventRow } from './OfficeDayCalendarGrid';
+import { OfficeDaySeznam } from './OfficeDaySeznam';
 import { RetentionBadge } from '@/app/components/retention/RetentionBadge';
 import { TeamFilter, type TeamSelection } from '@/app/components/teams/TeamFilter';
 import {
@@ -468,99 +469,12 @@ export function OfficeDayClient() {
             />
           )}
 
-          {filteredEvents.length > 0 && viewMode === 'list' && (
-            <ul className="space-y-3">
-              {filteredEvents.map((ev) => {
-                const listTier = getOfficeDayEventTier(ev.order, data.orderLinkingAvailable);
-                return (
-                <li
-                  key={ev.raynetEventId}
-                  className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-md bg-[#E8F5E9] px-2.5 py-1 text-xs font-semibold text-[#1E8449]">
-                          {formatTimeRangeCs(ev)}
-                        </span>
-                        {ev.categoryLabel && (
-                          <span className="rounded-md bg-gray-100 px-2.5 py-1 text-xs text-gray-700">
-                            {ev.categoryLabel}
-                          </span>
-                        )}
-                        <span
-                          className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${officeDayEventTierBadgeClass(
-                            listTier
-                          )}`}
-                        >
-                          {officeDayEventTierShortLabelCs(listTier)}
-                        </span>
-                        {ev.order && (
-                          <span className="rounded-md border border-[#1565C0]/35 bg-[#E3F2FD]/70 px-2 py-1 text-[11px] font-semibold text-[#1565C0]">
-                            Zakázka #{ev.order.id}
-                          </span>
-                        )}
-                        <RetentionBadge
-                          inRetention={ev.inRetention}
-                          inRetentionRequested={ev.inRetentionRequested}
-                        />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900">{ev.title}</h3>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-gray-700">Obchodník / účet: </span>
-                        {ownerSummary(ev.owners)}
-                      </p>
-                      {ev.order?.customerName && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium text-gray-700">Zákazník v objednávce: </span>
-                          {ev.order.customerName}
-                        </p>
-                      )}
-                      {ev.openRequest && (
-                        <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                          <span className="font-semibold">Poznámka OVT</span>
-                          {` (${ev.openRequest.user_id}): `}
-                          <span className="whitespace-pre-wrap">{ev.openRequest.reason}</span>
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col lg:items-stretch">
-                      <a
-                        href={raynetEventDeepLink(ev.raynetEventId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center rounded-lg border border-[#1E8449] px-4 py-2 text-sm font-semibold text-[#1E8449] hover:bg-[#F1F8F4]"
-                      >
-                        Otevřít v Raynetu
-                      </a>
-                      {ev.order && (
-                        <>
-                          <a
-                            href={officePortalOrderDeepLink(ev.order.id)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center rounded-lg bg-[#1E8449] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#166d3b]"
-                          >
-                            Zakázka v kancelářském portálu
-                          </a>
-                          {ev.order.source_erp_order_id != null && (
-                            <a
-                              href={erpOrderDeepLink(ev.order.source_erp_order_id)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center rounded-lg border-2 border-[#1565C0] bg-white px-4 py-2 text-sm font-semibold text-[#1565C0] hover:bg-[#E3F2FD]"
-                            >
-                              Otevřít zakázku v ERP
-                            </a>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </li>
-                );
-              })}
-            </ul>
+          {viewMode === 'list' && (
+            <OfficeDaySeznam
+              dayEvents={filteredEvents}
+              ymd={selectedYmd}
+              dayLoading={loading}
+            />
           )}
         </>
       )}

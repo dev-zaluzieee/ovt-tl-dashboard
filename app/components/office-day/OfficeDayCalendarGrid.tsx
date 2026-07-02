@@ -22,6 +22,7 @@ import {
 } from '@/lib/officeDayEventTier';
 import { raynetEventDeepLink } from '@/lib/raynetUrls';
 import { RetentionBadge } from '@/app/components/retention/RetentionBadge';
+import { B2BBadge } from '@/app/components/shared/B2BBadge';
 import type { PairedPersonOption } from './PersonFilterCombobox';
 
 type PairedOwner = {
@@ -38,6 +39,8 @@ export type CalendarEventRow = {
   categoryLabel: string | null;
   /** Free-form Raynet tags (case as the user typed them). Empty for legacy events. */
   tags: string[];
+  /** B2B flag from Raynet event customField `B2B_28453`. Toggled by TL only. */
+  b2b: boolean;
   /** State B: Raynet event has CN tag. */
   inRetention: boolean;
   /** State A: open OVT_REQUEST in our DB. */
@@ -500,6 +503,7 @@ function OpenEventModalBody({
                 inRetention={openEvent.inRetention}
                 inRetentionRequested={openEvent.inRetentionRequested}
               />
+              <B2BBadge b2b={openEvent.b2b} />
             </div>
 
             <p className="mt-3 text-sm text-gray-600">
