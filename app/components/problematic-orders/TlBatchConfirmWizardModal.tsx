@@ -9,7 +9,7 @@
  * Two decisions supported (chosen up-front by the user):
  *   nedopadlo → shared state via OfficeOrderTriageService lane='nedopadlo';
  *               TL selects one of vysoka_cena | nema_zajem | nemozna_realizace.
- *   retence   → shared state via RetentionService.send;
+ *   retence   → open OVT_REQUEST row (fronta retencí; 2026-07-16 change);
  *               TL enters a free-form reason.
  *
  * Every successful row also writes a TL confirmation row that hides it from

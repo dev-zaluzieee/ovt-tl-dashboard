@@ -56,7 +56,7 @@ export function TlBatchConfirmSetupModal({
   const description =
     decision === 'nedopadlo'
       ? 'Zapíše ERP status + Raynet tagy stejně jako TRIÁŽ nedopadlo. Zakázky se skryjí z fronty problematických (TL-only).'
-      : 'Zapíše retence stav (ERP status = cenova-nabidka, Raynet tag CN) přes RetentionService.send, stejně jako TRIÁŽ. Zakázky se skryjí z fronty problematických (TL-only).';
+      : 'Zařadí zakázky do fronty retencí (žádost „Posláno team leaderem OVT“) — retenční tým si je převezme z fronty. Zakázky se skryjí z fronty problematických.';
 
   return (
     <div

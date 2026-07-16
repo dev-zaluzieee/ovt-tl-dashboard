@@ -432,9 +432,8 @@ function SendToRetenceModal({
           Přesunout do retence
         </h3>
         <p className="mt-1 text-xs text-gray-600">
-          Přepíše ERP status (→ cenova-nabidka), přidá Raynet CN tagy, zapíše
-          retention log. Odstraní TL potvrzení pro tuto zakázku — pokud pak
-          znovu Rule A/B zabere, objeví se ve frontě problematických.
+          Zařadí zakázku do fronty retencí (jako žádost „Posláno team
+          leaderem OVT") — retenční tým si ji z fronty převezme.
         </p>
 
         <div className="mt-4 rounded-md bg-gray-50 px-3 py-2">
