@@ -60,6 +60,22 @@ function isPlayable(c: CallRow): boolean {
   return c.hasS3Recording && c.canPlay;
 }
 
+// PoC pro AI analýzu (přepis/summary/sentiment) zatím pokrývá jen fronty
+// "Příjem zakázek" — viz backend CallsService.getCallForAnalysis.
+function isAnalysisEligible(c: CallRow): boolean {
+  return Boolean(c.queue?.trim().startsWith('Příjem zakázek')) && c.hasS3Recording;
+}
+
+interface CallAnalysis {
+  status: 'pending' | 'processing' | 'done' | 'error';
+  transcript: string | null;
+  summary: string | null;
+  sentiment: 'positive' | 'neutral' | 'negative' | null;
+  sentimentReason: string | null;
+  errorMessage: string | null;
+  completedAt: string | null;
+}
+
 export function CustomerCallsClient({
   raynetCompanyId,
 }: {
@@ -84,6 +100,10 @@ export function CustomerCallsClient({
   } | null>(null);
   const [loadingPlayId, setLoadingPlayId] = useState<string | null>(null);
   const [playError, setPlayError] = useState<string | null>(null);
+
+  const [analysisCall, setAnalysisCall] = useState<{ id: string; label: string } | null>(
+    null
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -355,21 +375,40 @@ export function CustomerCallsClient({
                       <RecordingStatus call={c} />
                     </td>
                     <td className={`${cellPad} whitespace-nowrap text-right`}>
-                      <button
-                        type="button"
-                        onClick={() => void handlePlay(c)}
-                        disabled={!isPlayable(c) || loadingPlayId === c.id}
-                        className="rounded-md bg-[#1565C0] px-3 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c] disabled:cursor-not-allowed disabled:opacity-40"
-                        title={
-                          !c.hasS3Recording
-                            ? 'Nahrávka zatím není v S3 (běží sync).'
-                            : !c.canPlay
-                              ? 'Nemáte oprávnění přehrávat.'
-                              : 'Přehrát'
-                        }
-                      >
-                        {loadingPlayId === c.id ? 'Načítám…' : 'Přehrát'}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handlePlay(c)}
+                          disabled={!isPlayable(c) || loadingPlayId === c.id}
+                          className="rounded-md bg-[#1565C0] px-3 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c] disabled:cursor-not-allowed disabled:opacity-40"
+                          title={
+                            !c.hasS3Recording
+                              ? 'Nahrávka zatím není v S3 (běží sync).'
+                              : !c.canPlay
+                                ? 'Nemáte oprávnění přehrávat.'
+                                : 'Přehrát'
+                          }
+                        >
+                          {loadingPlayId === c.id ? 'Načítám…' : 'Přehrát'}
+                        </button>
+                        {isAnalysisEligible(c) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAnalysisCall({
+                                id: c.id,
+                                label: `${formatDateTimeCs(c.callTime)} · ${c.agent ?? 'agent?'}${
+                                  c.customerName ? ` · ${c.customerName}` : ''
+                                }`,
+                              })
+                            }
+                            className="rounded-md border border-[#1E8449] px-3 py-1 text-xs font-semibold text-[#1E8449] hover:bg-[#1E8449]/10"
+                            title="Přepis, shrnutí a sentiment hovoru (AI, PoC)"
+                          >
+                            Analýza
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -384,6 +423,14 @@ export function CustomerCallsClient({
           url={playing.url}
           label={playing.label}
           onClose={() => setPlaying(null)}
+        />
+      )}
+
+      {analysisCall && (
+        <AnalysisModal
+          callId={analysisCall.id}
+          label={analysisCall.label}
+          onClose={() => setAnalysisCall(null)}
         />
       )}
     </div>
@@ -461,6 +508,191 @@ function PlaybackModal({
         <p className="mt-2 text-[10px] text-gray-400">
           Odkaz je krátkodobý (S3 presigned). Po zavření znovu klikni Přehrát.
         </p>
+      </div>
+    </div>
+  );
+}
+
+const SENTIMENT_LABEL = {
+  positive: 'Pozitivní',
+  neutral: 'Neutrální',
+  negative: 'Negativní',
+} as const;
+
+const SENTIMENT_CLASSES = {
+  positive: 'border-emerald-500 bg-emerald-50 text-emerald-900',
+  neutral: 'border-gray-300 bg-gray-50 text-gray-700',
+  negative: 'border-rose-400 bg-rose-50 text-rose-900',
+} as const;
+
+async function readAnalysisResponse(res: Response): Promise<CallAnalysis> {
+  const body = (await res.json()) as {
+    success?: boolean;
+    message?: string;
+    data?: CallAnalysis;
+  };
+  if (!res.ok || !body.success || !body.data) {
+    throw new Error(body.message || `Chyba analýzy (${res.status})`);
+  }
+  return body.data;
+}
+
+function AnalysisModal({
+  callId,
+  label,
+  onClose,
+}: {
+  callId: string;
+  label: string;
+  onClose: () => void;
+}) {
+  const [analysis, setAnalysis] = useState<CallAnalysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const base = `/api/customer-calls/analysis/${encodeURIComponent(callId)}`;
+
+    async function poll() {
+      try {
+        const res = await fetch(base);
+        const data = await readAnalysisResponse(res);
+        if (cancelled) return;
+        setAnalysis(data);
+        if (data.status === 'processing' || data.status === 'pending') {
+          timer = setTimeout(() => void poll(), 2000);
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Chyba spojení.');
+      }
+    }
+
+    async function start() {
+      setError(null);
+      try {
+        const qs = attempt > 0 ? '?force=true' : '';
+        const res = await fetch(`${base}${qs}`, { method: 'POST' });
+        const data = await readAnalysisResponse(res);
+        if (cancelled) return;
+        setAnalysis(data);
+        if (data.status === 'processing' || data.status === 'pending') {
+          timer = setTimeout(() => void poll(), 2000);
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Chyba spojení.');
+      }
+    }
+
+    void start();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [callId, attempt]);
+
+  const isBusy = !error && (!analysis || analysis.status === 'processing' || analysis.status === 'pending');
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-gray-900">
+            Analýza hovoru <span className="font-normal text-gray-500">(PoC)</span>
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+          >
+            Zavřít
+          </button>
+        </div>
+        <p className="mb-4 text-sm text-gray-700">{label}</p>
+
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <p className="mb-2">{error}</p>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="rounded-md border border-red-300 bg-white px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-50"
+            >
+              Zkusit znovu
+            </button>
+          </div>
+        )}
+
+        {!error && analysis?.status === 'error' && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <p className="mb-2">{analysis.errorMessage || 'Zpracování selhalo.'}</p>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="rounded-md border border-red-300 bg-white px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-50"
+            >
+              Zkusit znovu
+            </button>
+          </div>
+        )}
+
+        {!error && isBusy && (
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-700">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#1E8449]" />
+            Zpracovávám (přepis → shrnutí)… může trvat desítky sekund.
+          </div>
+        )}
+
+        {!error && analysis?.status === 'done' && (
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Sentiment
+              </p>
+              {analysis.sentiment && (
+                <span
+                  className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SENTIMENT_CLASSES[analysis.sentiment]}`}
+                >
+                  {SENTIMENT_LABEL[analysis.sentiment]}
+                </span>
+              )}
+              {analysis.sentimentReason && (
+                <p className="mt-1 text-sm text-gray-600">{analysis.sentimentReason}</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Shrnutí
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-gray-800">{analysis.summary}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Přepis
+              </p>
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <p className="whitespace-pre-wrap text-sm text-gray-700">{analysis.transcript}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="text-xs font-medium text-gray-500 underline hover:text-gray-700"
+            >
+              Přegenerovat
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

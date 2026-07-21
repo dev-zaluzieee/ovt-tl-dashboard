@@ -146,6 +146,53 @@ export async function fetchCallPlayUrl(callId: string): Promise<string> {
   return body.url;
 }
 
+export interface CallAnalysis {
+  status: 'pending' | 'processing' | 'done' | 'error';
+  transcript: string | null;
+  summary: string | null;
+  sentiment: 'positive' | 'neutral' | 'negative' | null;
+  sentimentReason: string | null;
+  errorMessage: string | null;
+  completedAt: string | null;
+}
+
+/** Read current transcription/summary/sentiment status for a call. */
+export async function fetchCallAnalysis(callId: string): Promise<CallAnalysis> {
+  const res = await authedFetch(
+    `/api/calls/${encodeURIComponent(callId)}/analysis`,
+    { method: 'GET' }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(
+      `player-backend /calls/:id/analysis (GET) failed (${res.status}): ${text || 'no body'}`
+    );
+  }
+  return (await res.json()) as CallAnalysis;
+}
+
+/** Kick off (or re-check) STT + summary + sentiment processing for a call.
+ *  Idempotent — if already processing/done, the backend just returns the
+ *  current state instead of re-running the pipeline, unless `force` is set
+ *  (used by the PoC's "Přegenerovat" action to re-run after a prompt tweak). */
+export async function triggerCallAnalysis(
+  callId: string,
+  force = false
+): Promise<CallAnalysis> {
+  const qs = force ? '?force=true' : '';
+  const res = await authedFetch(
+    `/api/calls/${encodeURIComponent(callId)}/analysis${qs}`,
+    { method: 'POST' }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(
+      `player-backend /calls/:id/analysis (POST) failed (${res.status}): ${text || 'no body'}`
+    );
+  }
+  return (await res.json()) as CallAnalysis;
+}
+
 // ---------------------------------------------------------------------------
 // Phone match key — must produce the same output as the ceniky-2 backend
 // helper. Loose match: last 9 digits (Czech phone length), ignoring country
