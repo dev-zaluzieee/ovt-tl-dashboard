@@ -1,20 +1,27 @@
 'use client';
 
 /**
- * Problematic orders — day-scoped view for the OVT TL dashboard.
+ * Problematic orders — for the OVT TL dashboard.
  *
  * Two sections stacked:
- *   1. Eskalované na TL (all open OVT-TL escalations, not day-scoped).
+ *   1. Eskalované na TL (all open OVT-TL escalations, not day/range-scoped).
  *      TLs can resolve here via a modal that captures reason + note.
- *   2. Problematic orders for the selected day, from two rules:
+ *   2. Problematic orders for the active view, from two rules:
  *        - Rule A: aged ≥ 2 working days AND not through the OVT pipeline
  *          (three flavors: raynet-only / no ADMF / ADMF not exported)
- *        - Rule B: OVT marked "Zakázka nedopadla" within [D-2wd, D]
+ *        - Rule B: OVT marked "Zakázka nedopadla" inside the active window
+ *
+ * Two view modes (toolbar, URL-backed via `view`/`from`/`to`):
+ *   - "current" (default): server-computed trailing 2-working-day window
+ *     ending today (`?current=1` on the backend) — what needs attention now.
+ *   - "range": an explicit historical [from, to] the TL picks, e.g. to
+ *     catch up on last month's problematic orders. Capped server-side at
+ *     62 days (`GET /api/admin/problematic-orders` on ceniky-2).
  *
  * Each row explains WHY it appeared (reasons array).
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { erpOrderDeepLink } from '@/lib/erpUrls';
@@ -95,6 +102,8 @@ interface ProblematicRow {
 
 interface Payload {
   day: string;
+  from: string;
+  to: string;
   rows: ProblematicRow[];
   escalations: EscalationRow[];
   truncated: boolean;
@@ -225,6 +234,21 @@ function todayYmd(): string {
   }).format(new Date());
 }
 
+/** Calendar-day (not working-day) offset — used only to seed a friendly
+ *  default for the "Od" range input. The actual query bounds always come
+ *  from whatever the user picks (or the server-computed trailing window
+ *  for "current" mode). */
+function daysAgoYmd(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Prague',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
 // ---------------------------------------------------------------------------
 // Search / filter / sort
 // ---------------------------------------------------------------------------
@@ -286,8 +310,9 @@ function formatSortParam(key: SortKey, dir: SortDir): string | null {
 // Component
 // ---------------------------------------------------------------------------
 
+type ViewMode = 'current' | 'range';
+
 export function ProblematicOrdersClient() {
-  const [day, setDay] = useState<string>(() => todayYmd());
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -333,6 +358,13 @@ export function ProblematicOrdersClient() {
   const escalatedOnly = searchParams.get('escalated') === '1';
   const { key: sortKey, dir: sortDir } = parseSortParam(searchParams.get('sort'));
 
+  // ── View mode: "Současné" (server-computed trailing 2-wd window) vs. an
+  //    explicit historical date range. Defaults to "current" so a bare
+  //    /problematicke-zakazky link behaves like before this change. ──────
+  const viewMode: ViewMode = searchParams.get('view') === 'range' ? 'range' : 'current';
+  const rangeFrom = searchParams.get('from') || daysAgoYmd(30);
+  const rangeTo = searchParams.get('to') || todayYmd();
+
   const updateSearchParam = useCallback(
     (patch: Record<string, string | null>) => {
       const next = new URLSearchParams(searchParams.toString());
@@ -366,6 +398,18 @@ export function ProblematicOrdersClient() {
     (value: boolean) => updateSearchParam({ escalated: value ? '1' : null }),
     [updateSearchParam]
   );
+  const setCurrentMode = useCallback(
+    () => updateSearchParam({ view: null }),
+    [updateSearchParam]
+  );
+  const setRangeFrom = useCallback(
+    (value: string) => updateSearchParam({ view: 'range', from: value || null }),
+    [updateSearchParam]
+  );
+  const setRangeTo = useCallback(
+    (value: string) => updateSearchParam({ view: 'range', to: value || null }),
+    [updateSearchParam]
+  );
   const handleSortClick = useCallback(
     (key: Exclude<SortKey, 'default'>) => {
       // Cycle: current column asc → desc → default; different column → asc.
@@ -383,19 +427,30 @@ export function ProblematicOrdersClient() {
     [sortKey, sortDir, updateSearchParam]
   );
 
-  const load = useCallback(async (targetDay: string) => {
+  // Guards against out-of-order responses: a historical range fetch can take
+  // noticeably longer than the "current" shorthand, so if the TL switches
+  // view again before it lands, the stale response must not clobber the
+  // newer one.
+  const loadSeq = useRef(0);
+
+  const load = useCallback(async (mode: ViewMode, from: string, to: string) => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/problematic-orders?day=${encodeURIComponent(targetDay)}`,
-        { headers: { Accept: 'application/json' } }
-      );
+      const qs =
+        mode === 'current'
+          ? 'current=1'
+          : `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+      const res = await fetch(`/api/problematic-orders?${qs}`, {
+        headers: { Accept: 'application/json' },
+      });
       const body = (await res.json()) as {
         success?: boolean;
         message?: string;
         data?: Payload;
       };
+      if (seq !== loadSeq.current) return;
       if (!res.ok || !body.success || !body.data) {
         setError(body.message || `Chyba při načítání (${res.status})`);
         setData(null);
@@ -403,16 +458,28 @@ export function ProblematicOrdersClient() {
       }
       setData(body.data);
     } catch {
+      if (seq !== loadSeq.current) return;
       setError('Nepodařilo se spojit se serverem. Zkuste to znovu.');
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, []);
 
+  const reload = useCallback(() => {
+    void load(viewMode, rangeFrom, rangeTo);
+  }, [load, viewMode, rangeFrom, rangeTo]);
+
   useEffect(() => {
-    void load(day);
+    if (viewMode === 'range' && rangeFrom > rangeTo) {
+      // Lexicographic compare is valid for YYYY-MM-DD. Backend also
+      // rejects this — this just avoids a round-trip for the common typo.
+      setError('Datum „od" musí být před datem „do" (nebo stejné).');
+      setData(null);
+      return;
+    }
+    void load(viewMode, rangeFrom, rangeTo);
     setSelectedOrderIds(new Set());
-  }, [load, day]);
+  }, [load, viewMode, rangeFrom, rangeTo]);
 
   // Selectable rows = those with a local order id (Raynet-only rows can't be
   // confirmed because the underlying services need source_raynet_event_id via
@@ -562,6 +629,45 @@ export function ProblematicOrdersClient() {
     return sorted;
   }, [data, teamFilter, q, reasonsFilter, escalatedOnly, sortKey, sortDir]);
 
+  // "Select all" scope is deliberately the currently-*filtered* rows, not
+  // every row ever fetched — otherwise toggling it on a narrowed search
+  // would silently drag in orders the TL can't currently see.
+  const selectableFilteredIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const r of filteredRows) {
+      if (r.order?.id != null && selectableOrderIds.has(r.order.id)) {
+        ids.push(r.order.id);
+      }
+    }
+    return ids;
+  }, [filteredRows, selectableOrderIds]);
+
+  const allFilteredSelected =
+    selectableFilteredIds.length > 0 &&
+    selectableFilteredIds.every((id) => selectedOrderIds.has(id));
+  const someFilteredSelected = selectableFilteredIds.some((id) =>
+    selectedOrderIds.has(id)
+  );
+
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someFilteredSelected && !allFilteredSelected;
+    }
+  }, [someFilteredSelected, allFilteredSelected]);
+
+  const toggleSelectAllFiltered = useCallback(() => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        for (const id of selectableFilteredIds) next.delete(id);
+      } else {
+        for (const id of selectableFilteredIds) next.add(id);
+      }
+      return next;
+    });
+  }, [allFilteredSelected, selectableFilteredIds]);
+
   const isCompact = density === 'compact';
   const cellPad = isCompact ? 'px-2 py-1' : 'px-3 py-2.5';
 
@@ -569,31 +675,58 @@ export function ProblematicOrdersClient() {
     <div className="space-y-6">
       {/* ── Toolbar ────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700" htmlFor="day-picker">
-            Den:
-          </label>
-          <input
-            id="day-picker"
-            type="date"
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-          />
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setDay(todayYmd())}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            onClick={setCurrentMode}
+            aria-pressed={viewMode === 'current'}
+            className={`rounded-md border px-3 py-1.5 text-sm font-semibold transition ${
+              viewMode === 'current'
+                ? 'border-[#1E8449] bg-[#1E8449] text-white'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+            }`}
           >
-            Dnes
+            Současné problematické zakázky
           </button>
+
+          <div
+            className={`flex items-center gap-1.5 rounded-md border bg-white px-2 py-1 transition ${
+              viewMode === 'range'
+                ? 'border-[#1E8449] ring-1 ring-[#1E8449]'
+                : 'border-gray-300'
+            }`}
+          >
+            <label className="text-xs font-medium text-gray-600" htmlFor="range-from">
+              Od
+            </label>
+            <input
+              id="range-from"
+              type="date"
+              value={rangeFrom}
+              max={rangeTo}
+              onChange={(e) => setRangeFrom(e.target.value)}
+              className="rounded border-0 p-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1E8449]"
+            />
+            <label className="text-xs font-medium text-gray-600" htmlFor="range-to">
+              Do
+            </label>
+            <input
+              id="range-to"
+              type="date"
+              value={rangeTo}
+              min={rangeFrom}
+              max={todayYmd()}
+              onChange={(e) => setRangeTo(e.target.value)}
+              className="rounded border-0 p-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1E8449]"
+            />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <TeamFilter value={teamFilter?.id ?? null} onChange={setTeamFilter} />
           <DensityToggle density={density} onChange={setDensity} />
           <button
             type="button"
-            onClick={() => void load(day)}
+            onClick={reload}
             disabled={loading}
             className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
@@ -685,8 +818,30 @@ export function ProblematicOrdersClient() {
         </div>
       )}
 
+      {/* Reload of an already-loaded view (switching mode/range, batch
+          actions, "Obnovit"). Keep the previous rows visible for context,
+          but dim + freeze interaction so nobody acts on stale data while
+          a historical range (which can take a few seconds) is in flight. */}
+      {loading && data && (
+        <div
+          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600"
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"
+            aria-hidden
+          />
+          Načítání…
+        </div>
+      )}
+
       {data && (
-        <>
+        <div
+          className={loading ? 'space-y-6 opacity-60 transition-opacity' : 'space-y-6'}
+          aria-busy={loading}
+          inert={loading || undefined}
+        >
           {/* ── Escalations section ──────────────────────────── */}
           <EscalationsSection
             escalations={data.escalations}
@@ -695,11 +850,22 @@ export function ProblematicOrdersClient() {
             isCompact={isCompact}
           />
 
-          {/* ── Day rows ─────────────────────────────────────── */}
+          {/* ── Day/range rows ───────────────────────────────── */}
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
               <h2 className="text-base font-semibold text-gray-900">
-                Zakázky pro den {formatDateCs(data.day)}
+                {viewMode === 'current' ? (
+                  <>
+                    Současné problematické zakázky{' '}
+                    <span className="text-xs font-normal text-gray-500">
+                      ({formatDateCs(data.from)} – {formatDateCs(data.to)})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Zakázky {formatDateCs(data.from)} – {formatDateCs(data.to)}
+                  </>
+                )}
               </h2>
               <p className="text-xs text-gray-600">
                 Nevyřízených:{' '}
@@ -726,8 +892,8 @@ export function ProblematicOrdersClient() {
                 <p className="font-medium text-gray-900">Nic k řešení</p>
                 <p className="mt-2 text-sm">
                   {teamFilter
-                    ? `Pro tým „${teamFilter.name}“ nejsou pro tento den žádné problematické zakázky.`
-                    : 'Pro tento den nejsou žádné problematické zakázky.'}
+                    ? `Pro tým „${teamFilter.name}“ nejsou pro vybrané období žádné problematické zakázky.`
+                    : 'Pro vybrané období nejsou žádné problematické zakázky.'}
                 </p>
               </div>
             ) : (
@@ -772,7 +938,18 @@ export function ProblematicOrdersClient() {
                     <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                       <tr>
                         <th className={`${cellPad} w-8`}>
-                          <span className="sr-only">Vybrat</span>
+                          {selectableFilteredIds.length > 0 ? (
+                            <input
+                              ref={selectAllRef}
+                              type="checkbox"
+                              checked={allFilteredSelected}
+                              onChange={toggleSelectAllFiltered}
+                              aria-label="Vybrat vše"
+                              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                          ) : (
+                            <span className="sr-only">Vybrat</span>
+                          )}
                         </th>
                         <th className={cellPad}>Proč</th>
                         <SortableTh
@@ -842,7 +1019,7 @@ export function ProblematicOrdersClient() {
 
             )}
           </div>
-        </>
+        </div>
       )}
 
       {resolveTarget && (
@@ -851,7 +1028,7 @@ export function ProblematicOrdersClient() {
           onClose={() => setResolveTarget(null)}
           onResolved={() => {
             setResolveTarget(null);
-            void load(day);
+            reload();
           }}
         />
       )}
@@ -883,7 +1060,7 @@ export function ProblematicOrdersClient() {
           onDone={() => {
             setBatchWizardPayload(null);
             setSelectedOrderIds(new Set());
-            void load(day);
+            reload();
           }}
         />
       )}

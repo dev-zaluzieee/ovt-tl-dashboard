@@ -1,13 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backendFetch';
 
 /**
- * Proxies the TL "problematic orders" list (raynet-only / no-ADMF / nezastižen)
- * over the [today-16, today-2] window. Read-only; no params.
+ * Proxies the TL "problematic orders" list (raynet-only / no-ADMF / nezastižen).
+ * Forwards `day` (single-day mode) or `from`/`to` (range mode) straight
+ * through to the backend — see app/api/admin/problematic-orders on the
+ * ceniky-2 backend for the query contract. Read-only.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    return await fetchBackend('/api/admin/problematic-orders', {
+    const qs = request.nextUrl.search;
+    return await fetchBackend(`/api/admin/problematic-orders${qs}`, {
       method: 'GET',
     });
   } catch (error: unknown) {
