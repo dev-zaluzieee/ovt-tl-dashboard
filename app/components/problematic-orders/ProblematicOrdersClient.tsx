@@ -114,6 +114,18 @@ interface Payload {
 // row is here. Feeds both the badge and the aria/title.
 // ---------------------------------------------------------------------------
 
+/** Czech labels for the OVT-selected nedopadlo reason enum. */
+const NEDOPADLO_REASON_LABEL: Record<string, string> = {
+  vysoka_cena: 'vysoká cena',
+  nema_zajem: 'nemá zájem',
+  nemozna_realizace: 'nemožná realizace',
+};
+
+function nedopadloReasonLabel(reason: string | null): string | null {
+  if (!reason) return null;
+  return NEDOPADLO_REASON_LABEL[reason] ?? reason;
+}
+
 function labelForReason(r: Reason): string {
   switch (r.kind) {
     case 'raynet_only':
@@ -122,8 +134,12 @@ function labelForReason(r: Reason): string {
       return 'Bez ADMF';
     case 'admf_not_exported':
       return 'ADMF neexportován';
-    case 'nedopadla_recent':
-      return 'Zakázka nedopadla';
+    case 'nedopadla_recent': {
+      // The WHY belongs on the badge itself, not buried in a tooltip —
+      // TL triages by reason (požadavek 2026-07-29).
+      const reason = nedopadloReasonLabel(r.nedopadloReason);
+      return reason ? `Nedopadla — ${reason}` : 'Zakázka nedopadla';
+    }
   }
 }
 
@@ -138,7 +154,9 @@ function tooltipForReason(r: Reason): string {
     case 'nedopadla_recent':
       return (
         `OVT označil zakázku jako "Zakázka nedopadla"${
-          r.nedopadloReason ? ` (${r.nedopadloReason})` : ''
+          nedopadloReasonLabel(r.nedopadloReason)
+            ? ` (důvod: ${nedopadloReasonLabel(r.nedopadloReason)})`
+            : ''
         } před ${r.markedAgoWorkingDays} prac. dny. ` +
         `TL může ověřit, proč to nešlo na retenční oddělení.`
       );
@@ -355,6 +373,18 @@ export function ProblematicOrdersClient() {
     }
     return out;
   }, [reasonsParam]);
+  // Sub-filter of the "Nedopadla" chip: restrict to specific OVT reasons
+  // (vysoka_cena / nema_zajem / nemozna_realizace). URL param `duvod` (CSV).
+  const duvodParam = searchParams.get('duvod');
+  const nedopadloDuvodFilter = useMemo<Set<string>>(() => {
+    const out = new Set<string>();
+    if (!duvodParam) return out;
+    for (const raw of duvodParam.split(',')) {
+      const t = raw.trim();
+      if (t in NEDOPADLO_REASON_LABEL) out.add(t);
+    }
+    return out;
+  }, [duvodParam]);
   const escalatedOnly = searchParams.get('escalated') === '1';
   const { key: sortKey, dir: sortDir } = parseSortParam(searchParams.get('sort'));
 
@@ -390,9 +420,26 @@ export function ProblematicOrdersClient() {
       if (next.has(kind)) next.delete(kind);
       else next.add(kind);
       const joined = [...next].join(',');
-      updateSearchParam({ reasons: joined.length > 0 ? joined : null });
+      updateSearchParam({
+        reasons: joined.length > 0 ? joined : null,
+        // Turning the Nedopadla chip OFF must also clear its sub-filter,
+        // otherwise an invisible `duvod` restriction would keep filtering.
+        ...(kind === 'nedopadla_recent' && next.has(kind) === false
+          ? { duvod: null }
+          : {}),
+      });
     },
     [reasonsFilter, updateSearchParam]
+  );
+  const toggleNedopadloDuvod = useCallback(
+    (duvod: string) => {
+      const next = new Set(nedopadloDuvodFilter);
+      if (next.has(duvod)) next.delete(duvod);
+      else next.add(duvod);
+      const joined = [...next].join(',');
+      updateSearchParam({ duvod: joined.length > 0 ? joined : null });
+    },
+    [nedopadloDuvodFilter, updateSearchParam]
   );
   const setEscalatedOnly = useCallback(
     (value: boolean) => updateSearchParam({ escalated: value ? '1' : null }),
@@ -555,7 +602,16 @@ export function ProblematicOrdersClient() {
     const matchesReason = (r: ProblematicRow): boolean => {
       if (reasonsFilter.size === 0) return true;
       for (const rr of r.reasons) {
-        if (reasonsFilter.has(rr.kind)) return true;
+        if (!reasonsFilter.has(rr.kind)) continue;
+        // Nedopadla sub-filter: when specific důvody are selected, the
+        // nedopadla reason must carry one of them.
+        if (rr.kind === 'nedopadla_recent' && nedopadloDuvodFilter.size > 0) {
+          if (rr.nedopadloReason && nedopadloDuvodFilter.has(rr.nedopadloReason)) {
+            return true;
+          }
+          continue;
+        }
+        return true;
       }
       return false;
     };
@@ -627,7 +683,7 @@ export function ProblematicOrdersClient() {
       sorted.sort((a, b) => dirMul * cmp(a, b));
     }
     return sorted;
-  }, [data, teamFilter, q, reasonsFilter, escalatedOnly, sortKey, sortDir]);
+  }, [data, teamFilter, q, reasonsFilter, nedopadloDuvodFilter, escalatedOnly, sortKey, sortDir]);
 
   // "Select all" scope is deliberately the currently-*filtered* rows, not
   // every row ever fetched — otherwise toggling it on a narrowed search
@@ -775,6 +831,30 @@ export function ProblematicOrdersClient() {
               </button>
             );
           })}
+          {/* Sub-filter dle důvodu nedopadnutí — shows only when the
+              Nedopadla chip is active (progressive disclosure). */}
+          {reasonsFilter.has('nedopadla_recent') && (
+            <span className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-rose-50/70 px-1.5 py-0.5">
+              {Object.entries(NEDOPADLO_REASON_LABEL).map(([slug, label]) => {
+                const active = nedopadloDuvodFilter.has(slug);
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    onClick={() => toggleNedopadloDuvod(slug)}
+                    aria-pressed={active}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
+                      active
+                        ? 'border-rose-500 bg-rose-100 text-rose-900'
+                        : 'border-rose-200 bg-white text-rose-700 hover:bg-rose-50'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setEscalatedOnly(!escalatedOnly)}
@@ -791,7 +871,7 @@ export function ProblematicOrdersClient() {
             <button
               type="button"
               onClick={() =>
-                updateSearchParam({ q: null, reasons: null, escalated: null })
+                updateSearchParam({ q: null, reasons: null, duvod: null, escalated: null })
               }
               className="rounded-full border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
             >
