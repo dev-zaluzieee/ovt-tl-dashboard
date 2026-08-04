@@ -8,7 +8,7 @@ import { HiddenOrdersClient } from '../components/hidden-orders/HiddenOrdersClie
  *
  * Per-row actions:
  *   → Do retence  — un-hide + RetentionService.send in one atomic call.
- *   → Happy path  — deep-link to ceniky-2 /objednavka/[id]; the TRIÁŽ modal
+ *   Zakázka       — deep-link to ceniky-2 /objednavka/[id]; the TRIÁŽ modal
  *                    there orchestrates happy path. Confirmation is auto-
  *                    cleaned up when happy path succeeds (server-side hook).
  */

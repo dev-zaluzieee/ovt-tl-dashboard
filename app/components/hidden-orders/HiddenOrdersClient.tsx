@@ -6,10 +6,12 @@
  * Two escape hatches per row:
  *   → Do retence   — un-hide + route to retention (atomic; single-row modal
  *                    with a reason field; batch variant loops the wizard).
- *   → Happy path   — deep-link out to ceniky-2 /objednavka/[id]; the office
- *                    portal's TRIÁŽ handles the interactive happy-path flow.
- *                    Server-side hook clears the TL confirmation when happy
- *                    path succeeds (see officeOrderTriage / HappyPathModal).
+ *   Zakázka        — plain deep-link out to ceniky-2 /objednavka/[id] (opens
+ *                    the order in the office portal, where TRIÁŽ runs the
+ *                    interactive happy-path/finalize flow). Styled as a
+ *                    secondary link-out like Raynet/ERP, not an action. A
+ *                    server-side hook clears the TL confirmation when the
+ *                    happy path succeeds (see officeOrderTriage / HappyPathModal).
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -296,9 +298,9 @@ export function HiddenOrdersClient() {
                             href={officePortalOrderDeepLink(r.order_id)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 rounded-md border border-[#1565C0] bg-[#1565C0] px-2 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c]"
+                            className="shrink-0 rounded-md border border-[#1565C0] px-2 py-1 text-xs font-medium text-[#1565C0] hover:bg-[#E3F2FD]"
                           >
-                            → Happy path
+                            Zakázka
                           </a>
                           {r.order_source_raynet_event_id != null && (
                             <a
