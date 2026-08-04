@@ -10,3 +10,11 @@ export function officePortalOrderDeepLink(orderId: string | number): string {
     'https://orders.systeeem.cz';
   return `${base}/objednavka/${encodeURIComponent(String(orderId))}`;
 }
+
+/**
+ * Odkaz na historii/časovou osu zakázky v kancelářském portálu
+ * (`/objednavka/{id}/historie`) — kde je nově vidět i retenční stopa.
+ */
+export function officePortalOrderHistoryDeepLink(orderId: string | number): string {
+  return `${officePortalOrderDeepLink(orderId)}/historie`;
+}

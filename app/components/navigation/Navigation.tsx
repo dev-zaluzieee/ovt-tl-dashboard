@@ -130,6 +130,17 @@ export function Navigation() {
               Skryté zakázky
             </Link>
             <Link
+              href="/poslane-na-retence"
+              className={`hover:opacity-80 transition-opacity ${
+                pathname === '/poslane-na-retence' ||
+                pathname.startsWith('/poslane-na-retence/')
+                  ? 'font-semibold underline'
+                  : ''
+              }`}
+            >
+              Poslané na retence
+            </Link>
+            <Link
               href="/objednavky-s-hovory"
               className={`hover:opacity-80 transition-opacity ${
                 pathname === '/objednavky-s-hovory' ||

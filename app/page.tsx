@@ -28,6 +28,12 @@ const SECTIONS: Section[] = [
           'Nevyřízené zakázky v posledních 2 dnech: chybí v systému, bez exportu ADMF, nebo „Nezastižen“.',
       },
       {
+        href: '/poslane-na-retence',
+        title: 'Poslané na retence',
+        description:
+          'Historická stopa zakázek, které TL poslal do retence — kdo, kdy a zda si je retence už převzala.',
+      },
+      {
         href: '/vysledky',
         title: 'Výsledková tabule',
         description:
