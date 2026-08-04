@@ -20,7 +20,11 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  officePortalOrderDeepLink,
+  officePortalRetentionOpDeepLink,
+} from '@/lib/officePortalUrls';
 
 interface KlientCardCompany {
   raynetCompanyId: number;
@@ -328,6 +332,7 @@ export function KlientCardClient({
 }: {
   raynetCompanyId: number;
 }) {
+  const router = useRouter();
   const [data, setData] = useState<KlientCardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -416,12 +421,17 @@ export function KlientCardClient({
       )}
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Link
-          href="/retencni-portal"
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== 'undefined' && window.history.length > 1)
+              router.back();
+            else router.push('/');
+          }}
           className="text-sm font-medium text-[#1E8449] hover:underline"
         >
-          ← Zpět na retenční portál
-        </Link>
+          ← Zpět
+        </button>
         <button
           type="button"
           onClick={() => void load()}
@@ -920,12 +930,28 @@ function TimelineRow({ item }: { item: KlientTimelineItem }) {
           </div>
           <div className="flex items-center gap-1">
             {item.businessCase?.mirroredOrderId != null && (
-              <Link
-                href={`/retencni-portal/op/${item.businessCase.mirroredOrderId}`}
-                className="rounded-md border border-[#1E8449] px-2 py-0.5 text-[10px] font-semibold text-[#1E8449] hover:bg-[#F1F8F4]"
-              >
-                Otevřít v retenci
-              </Link>
+              <>
+                <a
+                  href={officePortalRetentionOpDeepLink(
+                    item.businessCase.mirroredOrderId
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border border-[#1E8449] px-2 py-0.5 text-[10px] font-semibold text-[#1E8449] hover:bg-[#F1F8F4]"
+                >
+                  Otevřít v retenci ↗
+                </a>
+                <a
+                  href={officePortalOrderDeepLink(
+                    item.businessCase.mirroredOrderId
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border border-[#1565C0] px-2 py-0.5 text-[10px] font-semibold text-[#1565C0] hover:bg-[#E3F2FD]"
+                >
+                  Zakázka ↗
+                </a>
+              </>
             )}
             <a
               href={item.raynetDeepLink}

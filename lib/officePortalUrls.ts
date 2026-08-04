@@ -18,3 +18,16 @@ export function officePortalOrderDeepLink(orderId: string | number): string {
 export function officePortalOrderHistoryDeepLink(orderId: string | number): string {
   return `${officePortalOrderDeepLink(orderId)}/historie`;
 }
+
+/**
+ * Odkaz na retenční OP (obchodní případ) v kancelářském portálu
+ * (`/retencni-portal/op/{orderId}`). TL dashboard nemá vlastní /retencni-portal
+ * route, takže proklik na zakázku musí mířit absolutně do office portálu.
+ */
+export function officePortalRetentionOpDeepLink(orderId: string | number): string {
+  const base =
+    (typeof process !== 'undefined' &&
+      process.env.NEXT_PUBLIC_OFFICE_PORTAL_BASE_URL?.replace(/\/$/, '')) ||
+    'https://orders.systeeem.cz';
+  return `${base}/retencni-portal/op/${encodeURIComponent(String(orderId))}`;
+}
