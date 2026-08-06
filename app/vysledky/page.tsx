@@ -1,22 +1,18 @@
 import { AppLayout } from '../components/layout/AppLayout';
-import { ScoreboardClient } from '../components/scoreboard/ScoreboardClient';
+import { OvtDashboardClient } from '../components/ovt-dashboard/OvtDashboardClient';
 
 /**
- * Výsledková tabule OVT — field funnel (zaměření → objednávky → hodnota) per OVT,
- * pro den (dnes/včera) i měsíc, celkově i po týmech.
+ * Výkon OVT — one table, one period control (2026-08-06, Karel). Every order
+ * classified by what happened to it (TL intervened / retence / neuzavřeno /
+ * success), windowed by zaměření date. Stacked mini-bar per row for
+ * cross-OVT scanning; click a name for a donut + order drill-down, the
+ * "deep insight into one OVT" half of the job a comparison view can't do.
  */
 export default function VysledkyPage() {
   return (
     <AppLayout>
       <main className="container mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#1E8449]">Výsledková tabule</h1>
-          <p className="mt-2 text-gray-600">
-            Výkon OVT: zaměření, objednávky, konverze, hodnota a problematické zakázky. Přepínejte
-            období a filtrujte podle týmu.
-          </p>
-        </div>
-        <ScoreboardClient />
+        <OvtDashboardClient />
       </main>
     </AppLayout>
   );
