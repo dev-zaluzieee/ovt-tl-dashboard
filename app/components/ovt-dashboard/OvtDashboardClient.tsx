@@ -23,8 +23,11 @@ import { erpOrderDeepLink } from '@/lib/erpUrls';
 import { raynetEventDeepLink, raynetCompanyDeepLink } from '@/lib/raynetUrls';
 import { officePortalOrderDeepLink } from '@/lib/officePortalUrls';
 
-type BucketKey = 'nucenResitTl' | 'toRetention' | 'neuzavreno' | 'success';
-const BUCKET_KEYS: BucketKey[] = ['nucenResitTl', 'toRetention', 'neuzavreno', 'success'];
+/** 'unclassified' = matched none of the other four — a real bucket with a
+ *  real order list from the backend, not a client-computed leftover number
+ *  (Karel, 2026-08-06: "why can't I click bez rozhodnutí"). */
+type BucketKey = 'nucenResitTl' | 'toRetention' | 'neuzavreno' | 'success' | 'unclassified';
+const BUCKET_KEYS: BucketKey[] = ['nucenResitTl', 'toRetention', 'neuzavreno', 'success', 'unclassified'];
 
 interface OutcomeOrder {
   orderId: number;
@@ -84,9 +87,8 @@ const BUCKET_META: Record<BucketKey, { label: string; color: string; track: stri
   toRetention: { label: 'Do retence', color: '#eda100', track: '#fdf0d9' }, // warning
   neuzavreno: { label: 'Neuzavřeno', color: '#6b7280', track: '#e5e7eb' }, // negative, neutral
   success: { label: 'Úspěch', color: '#1E8449', track: '#dcefe3' }, // good
+  unclassified: { label: 'Bez rozhodnutí', color: '#a3a3a3', track: '#e5e7eb' }, // no signal yet
 };
-const UNCLASSIFIED_COLOR = '#e5e7eb';
-const UNCLASSIFIED_LABEL = 'Bez rozhodnutí';
 
 function fmt(d: Date): string {
   const y = d.getFullYear();
@@ -154,18 +156,17 @@ function formatDateCs(iso: string): string {
   }
 }
 
-/** Every order in a row belongs to exactly one slice here (pieSlices +
- *  the unclassified remainder) — this is what both the stacked mini-bar
- *  and the donut render, so the two visuals always tell the same story. */
-function slicesOf(row: Row): Array<{ key: BucketKey | 'unclassified'; count: number; color: string; label: string }> {
-  const out: Array<{ key: BucketKey | 'unclassified'; count: number; color: string; label: string }> = [];
+/** Every order in a row belongs to exactly one slice here — `pieSlices`
+ *  (including `unclassified`) comes straight from the backend now, so this
+ *  is what both the stacked mini-bar and the donut render, and both are
+ *  fully clickable/drillable since every slice has a real order list
+ *  behind it (Karel, 2026-08-06). */
+function slicesOf(row: Row): Array<{ key: BucketKey; count: number; color: string; label: string }> {
+  const out: Array<{ key: BucketKey; count: number; color: string; label: string }> = [];
   for (const k of BUCKET_KEYS) {
     const count = row.pieSlices[k];
     if (count > 0) out.push({ key: k, count, color: BUCKET_META[k].color, label: BUCKET_META[k].label });
   }
-  const classified = BUCKET_KEYS.reduce((s, k) => s + row.pieSlices[k], 0);
-  const rest = row.totalOrders - classified;
-  if (rest > 0) out.push({ key: 'unclassified', count: rest, color: UNCLASSIFIED_COLOR, label: UNCLASSIFIED_LABEL });
   return out;
 }
 
@@ -222,8 +223,7 @@ function Donut({
     <div className="flex items-center gap-4">
       <svg viewBox="0 0 100 100" className="h-28 w-28 flex-shrink-0">
         {arcs.map(({ slice: s, len, offset }) => {
-          const clickable = s.key !== 'unclassified';
-          const isActive = clickable && activeBucket === s.key;
+          const isActive = activeBucket === s.key;
           return (
             <circle
               key={s.key}
@@ -236,18 +236,14 @@ function Donut({
               strokeDasharray={`${len} ${circumference - len}`}
               strokeDashoffset={-offset}
               transform={`rotate(-90 ${cx} ${cy})`}
-              className={clickable ? 'cursor-pointer transition-[stroke-width]' : undefined}
-              onClick={clickable ? () => onSliceClick(s.key as BucketKey) : undefined}
-              tabIndex={clickable ? 0 : undefined}
-              role={clickable ? 'button' : undefined}
-              aria-label={clickable ? `${s.label}: ${s.count} zakázek` : undefined}
-              onKeyDown={
-                clickable
-                  ? (e) => {
-                      if (e.key === 'Enter' || e.key === ' ') onSliceClick(s.key as BucketKey);
-                    }
-                  : undefined
-              }
+              className="cursor-pointer transition-[stroke-width]"
+              onClick={() => onSliceClick(s.key)}
+              tabIndex={0}
+              role="button"
+              aria-label={`${s.label}: ${s.count} zakázek`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onSliceClick(s.key);
+              }}
             />
           );
         })}
@@ -263,11 +259,10 @@ function Donut({
           <li key={s.key}>
             <button
               type="button"
-              disabled={s.key === 'unclassified'}
-              onClick={() => s.key !== 'unclassified' && onSliceClick(s.key as BucketKey)}
-              className={`flex items-center gap-1.5 rounded px-1 py-0.5 text-left ${
-                s.key !== 'unclassified' ? 'hover:bg-gray-100' : 'cursor-default'
-              } ${activeBucket === s.key ? 'font-semibold text-gray-900' : 'text-gray-600'}`}
+              onClick={() => onSliceClick(s.key)}
+              className={`flex items-center gap-1.5 rounded px-1 py-0.5 text-left hover:bg-gray-100 ${
+                activeBucket === s.key ? 'font-semibold text-gray-900' : 'text-gray-600'
+              }`}
             >
               <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
               {s.label}
