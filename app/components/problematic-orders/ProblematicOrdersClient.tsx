@@ -1183,7 +1183,7 @@ function EscalationsSection({
             <tr>
               <th className={cellPad}>Zdroj</th>
               <th className={cellPad}>Zakázka</th>
-              <th className={cellPad}>Prodejce</th>
+              <th className={cellPad}>OVT</th>
               <th className={cellPad}>Poznámka</th>
               <th className={cellPad}>Kdo &amp; kdy</th>
               <th className={`${cellPad} text-right`}>Akce</th>
