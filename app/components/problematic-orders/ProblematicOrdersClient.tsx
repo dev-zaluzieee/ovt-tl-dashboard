@@ -77,6 +77,8 @@ interface EscalationRow {
   resolved_by: string | null;
   resolution_reason: string | null;
   resolution_note: string | null;
+  /** OVT owning the order — display name if resolvable, else raw email. */
+  ovt_name?: string | null;
 }
 
 interface ProblematicRow {
@@ -1181,6 +1183,7 @@ function EscalationsSection({
             <tr>
               <th className={cellPad}>Zdroj</th>
               <th className={cellPad}>Zakázka</th>
+              <th className={cellPad}>Prodejce</th>
               <th className={cellPad}>Poznámka</th>
               <th className={cellPad}>Kdo &amp; kdy</th>
               <th className={`${cellPad} text-right`}>Akce</th>
@@ -1201,6 +1204,9 @@ function EscalationsSection({
                   <div className="font-semibold text-gray-900">
                     #{e.order_id}
                   </div>
+                </td>
+                <td className={`${cellPad} whitespace-nowrap text-gray-700`}>
+                  {e.ovt_name ?? '—'}
                 </td>
                 <td className={cellPad}>
                   <p
