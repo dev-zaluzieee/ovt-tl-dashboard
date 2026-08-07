@@ -9,8 +9,14 @@
  * "success" — independent signals under the hood (real data can't guarantee
  * a clean partition), reconciled into one chart via precedence.
  *
+ * No Kč amounts anywhere on this page (Ladislav Chmelík, phone, 2026-08-07 —
+ * take all money figures off the dashboard, counts/categories stay). The
+ * backend still computes `valueSDph` per order/bucket; this component just
+ * never renders it — a pure display change, easy to reverse if that
+ * changes.
+ *
  * Table row: name (default-sorted alphabetically) + a stacked mini-bar of
- * the four outcomes + the success revenue number. Click a name to expand a
+ * the four outcomes + the success order count. Click a name to expand a
  * detail panel: a donut of the same breakdown for that one OVT (the "deep
  * insight into one person" half of the job a cross-OVT bar can't do), plus
  * the order-level list for whichever slice you click — sorted by zaměření
@@ -143,10 +149,6 @@ const PRESETS: { id: PresetId; label: string }[] = [
   { id: 'prev_month', label: 'Minulý měsíc' },
   { id: 'custom', label: 'Vlastní…' },
 ];
-
-function formatKc(n: number): string {
-  return `${new Intl.NumberFormat('cs-CZ').format(Math.round(n))} Kč`;
-}
 
 function formatDateCs(iso: string): string {
   try {
@@ -360,7 +362,7 @@ export function OvtDashboardClient() {
     const dirMul = sortDir === 'asc' ? 1 : -1;
     return [...filtered].sort((a, b) => {
       if (sortKey === 'name') return dirMul * a.displayName.localeCompare(b.displayName, 'cs');
-      if (sortKey === 'success') return dirMul * (a.buckets.success.valueSDph - b.buckets.success.valueSDph);
+      if (sortKey === 'success') return dirMul * (a.buckets.success.count - b.buckets.success.count);
       const probA = a.buckets.nucenResitTl.count + a.buckets.toRetention.count + a.buckets.neuzavreno.count;
       const probB = b.buckets.nucenResitTl.count + b.buckets.toRetention.count + b.buckets.neuzavreno.count;
       return dirMul * (probA - probB);
@@ -384,10 +386,10 @@ export function OvtDashboardClient() {
     return rows.reduce(
       (acc, r) => {
         acc.totalOrders += r.totalOrders;
-        acc.buckets.success.valueSDph += r.buckets.success.valueSDph;
+        acc.buckets.success.count += r.buckets.success.count;
         return acc;
       },
-      { totalOrders: 0, buckets: { success: { valueSDph: 0 } } }
+      { totalOrders: 0, buckets: { success: { count: 0 } } }
     );
   }, [data, rows, teamFilter]);
 
@@ -458,7 +460,7 @@ export function OvtDashboardClient() {
             <span>·</span>
             <span>{totals.totalOrders} zakázek</span>
             <span>·</span>
-            <span>Úspěšná tržba {formatKc(totals.buckets.success.valueSDph)}</span>
+            <span>{totals.buckets.success.count} úspěšných</span>
             {!!data && data.totals.overlapCount > 0 && (
               <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900" title="Zakázky spadající do více kategorií najednou">
                 {data.totals.overlapCount} zakázek ve více kategoriích
@@ -494,7 +496,7 @@ export function OvtDashboardClient() {
                   Rozložení zakázek{sortArrow('problems')}
                 </th>
                 <th className="cursor-pointer px-3 py-2 text-right hover:text-gray-900" onClick={() => setSort('success')}>
-                  Úspěšná tržba{sortArrow('success')}
+                  Úspěšné zakázky{sortArrow('success')}
                 </th>
               </tr>
             </thead>
@@ -520,7 +522,7 @@ export function OvtDashboardClient() {
                         <StackedMiniBar row={r} />
                       </td>
                       <td className="px-3 py-2 text-right font-semibold tabular-nums text-gray-900">
-                        {formatKc(r.buckets.success.valueSDph)}
+                        {r.buckets.success.count}
                       </td>
                     </tr>
                     {isOpen && (
@@ -534,9 +536,6 @@ export function OvtDashboardClient() {
                             <div className="flex items-center justify-between border-b border-gray-100 px-2.5 py-1.5">
                               <span className="text-xs font-semibold text-gray-700">
                                 {BUCKET_META[activeBucket].label} — {r.buckets[activeBucket].count} zakázek
-                                {activeBucket === 'success' && r.buckets.success.count > 0 && (
-                                  <> · {formatKc(r.buckets.success.valueSDph)}</>
-                                )}
                               </span>
                             </div>
                             {r.buckets[activeBucket].orders.length === 0 ? (
@@ -548,7 +547,6 @@ export function OvtDashboardClient() {
                                     <th className="px-2.5 py-1.5 text-left">Zakázka</th>
                                     <th className="px-2.5 py-1.5 text-left">Zákazník</th>
                                     <th className="px-2.5 py-1.5 text-left">Zaměření</th>
-                                    {activeBucket === 'success' && <th className="px-2.5 py-1.5 text-right">Hodnota</th>}
                                     <th className="px-2.5 py-1.5 text-right">Odkazy</th>
                                   </tr>
                                 </thead>
@@ -558,11 +556,6 @@ export function OvtDashboardClient() {
                                       <td className="px-2.5 py-1.5 font-medium text-gray-900">#{o.orderId}</td>
                                       <td className="px-2.5 py-1.5 text-gray-700">{o.customerName ?? '—'}</td>
                                       <td className="px-2.5 py-1.5 text-gray-500">{formatDateCs(o.zamereniAt)}</td>
-                                      {activeBucket === 'success' && (
-                                        <td className="px-2.5 py-1.5 text-right text-gray-900">
-                                          {o.valueSDph != null ? formatKc(o.valueSDph) : '—'}
-                                        </td>
-                                      )}
                                       <td className="px-2.5 py-1.5 text-right">
                                         <OrderDeepLinks o={o} />
                                       </td>
@@ -584,7 +577,7 @@ export function OvtDashboardClient() {
                 <tr>
                   <td className="px-3 py-2">Celkem</td>
                   <td className="px-3 py-2 text-xs text-gray-500">{totals.totalOrders} zakázek</td>
-                  <td className="px-3 py-2 text-right">{formatKc(totals.buckets.success.valueSDph)}</td>
+                  <td className="px-3 py-2 text-right">{totals.buckets.success.count}</td>
                 </tr>
               </tfoot>
             )}
