@@ -119,6 +119,16 @@ export function Navigation() {
               Problematické zakázky
             </Link>
             <Link
+              href="/denni-triaz"
+              className={`hover:opacity-80 transition-opacity ${
+                pathname === '/denni-triaz' || pathname.startsWith('/denni-triaz/')
+                  ? 'font-semibold underline'
+                  : ''
+              }`}
+            >
+              Denní triáž
+            </Link>
+            <Link
               href="/skryte-zakazky"
               className={`hover:opacity-80 transition-opacity ${
                 pathname === '/skryte-zakazky' ||
