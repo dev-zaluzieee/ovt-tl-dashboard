@@ -65,6 +65,9 @@ export function DenniTriazClient() {
   const [onlyOpen, setOnlyOpen] = useState(true);
   const [busy, setBusy] = useState<number | null>(null);
   const [reasonFor, setReasonFor] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchReason, setBatchReason] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,8 +95,11 @@ export function DenniTriazClient() {
     load();
   }, [load]);
 
-  async function act(orderId: number, body: Record<string, unknown>) {
-    setBusy(orderId);
+  /** POST one disposition; returns null on success, an error string otherwise. */
+  async function postDisposition(
+    orderId: number,
+    body: Record<string, unknown>
+  ): Promise<string | null> {
     try {
       const res = await fetch(`/api/tl-triage/${orderId}/disposition`, {
         method: 'POST',
@@ -102,17 +108,55 @@ export function DenniTriazClient() {
         body: JSON.stringify(body),
       });
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.success) {
-        alert(json?.error || json?.message || 'Akce selhala.');
-        return;
-      }
+      if (!res.ok || !json?.success) return json?.error || json?.message || `#${orderId} selhalo`;
+      return null;
+    } catch {
+      return `#${orderId}: chyba spojení`;
+    }
+  }
+
+  async function act(orderId: number, body: Record<string, unknown>) {
+    setBusy(orderId);
+    const err = await postDisposition(orderId, body);
+    if (err) alert(err);
+    else {
       setReasonFor(null);
       await load();
-    } catch {
-      alert('Chyba spojení.');
-    } finally {
-      setBusy(null);
     }
+    setBusy(null);
+  }
+
+  function toggleSelect(id: number) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  async function runBatch(body: Record<string, unknown>) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setBatchBusy(true);
+    const errors: string[] = [];
+    for (const id of ids) {
+      const e = await postDisposition(id, body);
+      if (e) errors.push(e);
+    }
+    setBatchBusy(false);
+    setBatchReason(false);
+    setSelected(new Set());
+    await load();
+    if (errors.length > 0) {
+      alert(`Dokončeno s chybami (${errors.length}):\n` + errors.slice(0, 12).join('\n'));
+    }
+  }
+
+  function batchRetence() {
+    const note = window.prompt(`Důvod pro retenci pro ${selected.size} zakázek:`);
+    if (note == null || note.trim().length === 0) return;
+    runBatch({ disposition: 'retence', note: note.trim() });
   }
 
   async function clearReview(orderId: number) {
@@ -144,6 +188,17 @@ export function DenniTriazClient() {
   const rows = (data?.rows ?? []).filter((r) => (onlyOpen ? !r.done : true));
   const counts = data?.counts;
   const pct = counts && counts.total > 0 ? Math.round((counts.done / counts.total) * 100) : 0;
+
+  // Batch selection targets visible rows without a review stamp yet.
+  const selectableIds = rows.filter((r) => !r.review).map((r) => r.orderId);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
+  const toggleSelectAll = () =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (allSelected) selectableIds.forEach((id) => n.delete(id));
+      else selectableIds.forEach((id) => n.add(id));
+      return n;
+    });
 
   return (
     <div>
@@ -203,11 +258,73 @@ export function DenniTriazClient() {
         </div>
       )}
 
+      {/* Batch action bar */}
+      {selected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#1E8449]/40 bg-green-50 px-3 py-2 text-sm">
+          <span className="font-medium text-[#1E8449]">Vybráno {selected.size}</span>
+          {batchReason ? (
+            <>
+              <span className="text-xs text-gray-500">Důvod:</span>
+              {REASONS.map((rs) => (
+                <button
+                  key={rs.value}
+                  disabled={batchBusy}
+                  onClick={() => runBatch({ disposition: 'nedopadlo', reason: rs.value })}
+                  className="rounded bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                >
+                  {rs.label}
+                </button>
+              ))}
+              <button onClick={() => setBatchReason(false)} className="px-2 py-1 text-xs text-gray-500 hover:text-gray-800">
+                zrušit
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                disabled={batchBusy}
+                onClick={() => setBatchReason(true)}
+                className="rounded border border-rose-300 bg-white px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+              >
+                Nedopadlo…
+              </button>
+              <button
+                disabled={batchBusy}
+                onClick={batchRetence}
+                className="rounded border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+              >
+                Na retenci
+              </button>
+              <button
+                disabled={batchBusy}
+                onClick={() => runBatch({ disposition: 'ponechat' })}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Ponechat / OK
+              </button>
+              <button onClick={() => setSelected(new Set())} className="px-2 py-1 text-xs text-gray-500 hover:text-gray-800">
+                odznačit
+              </button>
+            </>
+          )}
+          {batchBusy && <span className="text-xs text-gray-500">Zpracovávám…</span>}
+        </div>
+      )}
+
       {rows.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
               <tr>
+                <th className="px-3 py-2 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    disabled={selectableIds.length === 0}
+                    title="Vybrat vše (bez razítka)"
+                  />
+                </th>
                 <th className="px-3 py-2 font-medium">Zákazník</th>
                 <th className="px-3 py-2 font-medium">OVT</th>
                 <th className="px-3 py-2 font-medium">Zaměření</th>
@@ -221,6 +338,15 @@ export function DenniTriazClient() {
                 const badge = OUTCOME_BADGE[r.outcome];
                 return (
                   <tr key={r.orderId} className={r.done ? 'bg-gray-50/60' : ''}>
+                    <td className="px-3 py-2 align-top">
+                      {!r.review && (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(r.orderId)}
+                          onChange={() => toggleSelect(r.orderId)}
+                        />
+                      )}
+                    </td>
                     <td className="px-3 py-2">
                       <div className="font-medium text-gray-900">
                         {r.customerName ?? `Zakázka #${r.orderId}`}
