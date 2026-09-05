@@ -119,14 +119,15 @@ export function Navigation() {
               Problematické zakázky
             </Link>
             <Link
-              href="/denni-triaz"
+              href="/kontrola-nemozne-realizace"
               className={`hover:opacity-80 transition-opacity ${
-                pathname === '/denni-triaz' || pathname.startsWith('/denni-triaz/')
+                pathname === '/kontrola-nemozne-realizace' ||
+                pathname.startsWith('/kontrola-nemozne-realizace/')
                   ? 'font-semibold underline'
                   : ''
               }`}
             >
-              Triáž zakázek
+              Nemožná realizace
             </Link>
             <Link
               href="/skryte-zakazky"
