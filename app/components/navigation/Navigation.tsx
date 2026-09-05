@@ -126,7 +126,7 @@ export function Navigation() {
                   : ''
               }`}
             >
-              Denní triáž
+              Triáž zakázek
             </Link>
             <Link
               href="/skryte-zakazky"
