@@ -149,8 +149,8 @@ export function PersonCashClient({ personId }: { personId: number }) {
             <col className="w-[110px]" />
             <col />
             <col className="w-[130px]" />
-            <col className="w-[110px]" />
-            <col className="w-[140px]" />
+            <col className="w-[180px]" />
+            <col className="w-[170px]" />
           </colgroup>
           <thead className="border-b border-gray-200 bg-gray-50 text-left text-[11px] uppercase tracking-wide text-gray-500">
             <tr>
@@ -243,8 +243,8 @@ export function PersonCashClient({ personId }: { personId: number }) {
                       </a>
                     ))}
                   </td>
-                  <td className="px-2 py-1">
-                    <div className="flex gap-2">
+                  <td className="overflow-hidden px-2 py-1">
+                    <div className="flex gap-2 overflow-hidden">
                       {e.source_order_id != null && (
                         <a className="text-blue-600 hover:underline" target="_blank" rel="noreferrer"
                           href={officePortalOrderDeepLink(e.source_order_id)}>#{e.source_order_id}</a>
