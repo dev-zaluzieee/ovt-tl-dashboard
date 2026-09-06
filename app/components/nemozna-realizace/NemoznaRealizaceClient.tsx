@@ -131,12 +131,9 @@ function daysAgoYmd(n: number): string {
   d.setDate(d.getDate() - n);
   return PRAGUE_YMD.format(d);
 }
-/** Hover text for the Poznámka OVT cell: both sources in full when present. */
+/** Hover text for the Poznámka OVT cell: the displayed text in full. */
 function ovtNoteTitle(r: TriageRow): string | undefined {
-  const parts: string[] = [];
-  if (r.nedopadloNote) parts.push(`Důvod (OVT): ${r.nedopadloNote}`);
-  if (r.orderNotes) parts.push(`Poznámky k zakázce (Raynet): ${r.orderNotes}`);
-  return parts.length > 0 ? parts.join('\n\n') : undefined;
+  return r.nedopadloNote ?? r.orderNotes ?? undefined;
 }
 
 /** Compact zaměření stamp, e.g. "st 3. 9. 14:30" (Prague). */
@@ -480,11 +477,21 @@ export function NemoznaRealizaceClient() {
       )}
 
       {sortedRows.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="min-w-full whitespace-nowrap text-xs">
+        <div className="rounded-lg border border-gray-200 bg-white">
+          <table className="w-full table-fixed whitespace-nowrap text-xs">
+            <colgroup>
+              <col className="w-8" />
+              <col className="w-[230px]" />
+              <col className="w-[140px]" />
+              <col className="w-[120px]" />
+              <col className="w-[100px]" />
+              <col />
+              <col className="w-[90px]" />
+              <col className="w-[290px]" />
+            </colgroup>
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-[11px] uppercase tracking-wide text-gray-500">
               <tr>
-                <th className="px-2 py-1 w-8 font-medium">
+                <th className="px-2 py-1 font-medium">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -523,20 +530,25 @@ export function NemoznaRealizaceClient() {
                         />
                       )}
                     </td>
-                    <td className="px-2 py-1 max-w-[260px] truncate">
+                    <td className="truncate px-2 py-1" title={r.customerName ?? undefined}>
                       <span className={inQueue ? 'font-medium text-gray-900' : ''}>
-                        {r.customerName ?? `Zakázka #${r.orderId}`}
+                        {r.customerName ?? 'Zakázka'}
                       </span>
-                      <span className="ml-1.5 text-gray-400">#{r.orderId}</span>
+                      <a
+                        className="ml-1.5 text-blue-600 hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={officePortalOrderDeepLink(r.orderId)}
+                        title="Otevřít objednávku v portálu"
+                      >
+                        #{r.orderId}
+                      </a>
                     </td>
-                    <td className="px-2 py-1 max-w-[160px] truncate text-gray-700">{r.ovt.name}</td>
+                    <td className="truncate px-2 py-1 text-gray-700" title={r.ovt.name}>{r.ovt.name}</td>
                     <td className="px-2 py-1 text-gray-600">{fmtZamereni(r.zamereniAt)}</td>
                     <td className="px-2 py-1">
                       <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${badge.cls}`}>
                         {badge.label}
-                      </span>
-                      <span className="ml-1.5 text-gray-400">
-                        {r.nedopadloReasonBy === 'tl' ? 'zadal TL' : 'zadal OVT'}
                       </span>
                       {r.review && (
                         <span className="ml-1.5 text-gray-500">
@@ -547,7 +559,7 @@ export function NemoznaRealizaceClient() {
                         </span>
                       )}
                     </td>
-                    <td className="max-w-[360px] truncate px-2 py-1" title={ovtNoteTitle(r)}>
+                    <td className="truncate px-2 py-1" title={ovtNoteTitle(r)}>
                       {r.nedopadloNote ? (
                         <span className="text-gray-800">{r.nedopadloNote}</span>
                       ) : r.orderNotes ? (
@@ -573,8 +585,6 @@ export function NemoznaRealizaceClient() {
                         ) : (
                           <span className="text-gray-300">ERP</span>
                         )}
-                        <a className="text-blue-600 hover:underline" target="_blank" rel="noreferrer"
-                          href={officePortalOrderDeepLink(r.orderId)}>Objednávka</a>
                       </div>
                     </td>
                     <td className="px-2 py-1">
