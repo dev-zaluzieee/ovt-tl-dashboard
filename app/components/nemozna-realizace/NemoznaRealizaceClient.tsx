@@ -98,6 +98,25 @@ function isReviewedByTl(r: TriageRow): boolean {
   return r.review != null || r.nedopadloReasonBy === 'tl';
 }
 
+/**
+ * Queue membership (Karel, 2026-09-06): only plain "Nedopadlo" rows nobody
+ * else owns. Excluded: TL-reviewed rows, rows the OVT also sent to retention
+ * (retention owns the decision) and rows a TL touched elsewhere (Problematické
+ * confirmation / escalation → outcome 'resi_tl'). "Zobrazit i vyřízené"
+ * reveals them all.
+ */
+function needsDecision(r: TriageRow): boolean {
+  return !isReviewedByTl(r) && r.outcome === 'nedopadlo';
+}
+
+/** Why a visible row is NOT in the queue (shown in the action cell when revealed). */
+function outsideQueueLabel(r: TriageRow): string {
+  if (isReviewedByTl(r)) return 'rozhodnuto TL mimo tuto frontu';
+  if (r.outcome === 'retence') return 'v řešení retenčního týmu (poslal OVT)';
+  if (r.outcome === 'resi_tl') return 'řeší TL jinde (Problematické / eskalace)';
+  return 'mimo frontu';
+}
+
 const PRAGUE_YMD = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Europe/Prague',
   year: 'numeric',
@@ -138,7 +157,7 @@ export function NemoznaRealizaceClient() {
   const [data, setData] = useState<TriageQueueResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showReviewed, setShowReviewed] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [busy, setBusy] = useState<number | null>(null);
   const [changeReasonFor, setChangeReasonFor] = useState<number | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -285,15 +304,13 @@ export function NemoznaRealizaceClient() {
     [allRows]
   );
   const rows = useMemo(
-    () => (showReviewed ? reasonRows : reasonRows.filter((r) => !isReviewedByTl(r))),
-    [reasonRows, showReviewed]
+    () => (showAll ? reasonRows : reasonRows.filter(needsDecision)),
+    [reasonRows, showAll]
   );
-  const reviewedCount = useMemo(
-    () => reasonRows.filter(isReviewedByTl).length,
-    [reasonRows]
-  );
+  const queueCount = useMemo(() => reasonRows.filter(needsDecision).length, [reasonRows]);
   const total = reasonRows.length;
-  const pct = total > 0 ? Math.round((reviewedCount / total) * 100) : 0;
+  const settledCount = total - queueCount;
+  const pct = total > 0 ? Math.round((settledCount / total) * 100) : 0;
 
   // Flat list, oldest zaměření first.
   const sortedRows = useMemo(
@@ -302,7 +319,7 @@ export function NemoznaRealizaceClient() {
   );
 
   // Batch selection targets visible rows not yet reviewed.
-  const selectableIds = rows.filter((r) => !isReviewedByTl(r)).map((r) => r.orderId);
+  const selectableIds = rows.filter(needsDecision).map((r) => r.orderId);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
   const toggleSelectAll = () =>
     setSelected((s) => {
@@ -358,14 +375,14 @@ export function NemoznaRealizaceClient() {
         </button>
         <label
           className="ml-auto flex items-center gap-2 text-sm text-gray-700"
-          title="Zobrazí i zakázky, které už TL prověřil (mají razítko, nebo důvod zadal TL)"
+          title="Zobrazí i zakázky mimo frontu: prověřené TL, poslané OVT na retenci a řešené TL jinde"
         >
           <input
             type="checkbox"
-            checked={showReviewed}
-            onChange={(e) => setShowReviewed(e.target.checked)}
+            checked={showAll}
+            onChange={(e) => setShowAll(e.target.checked)}
           />
-          Zobrazit i prověřené
+          Zobrazit i vyřízené
         </label>
       </div>
 
@@ -374,10 +391,10 @@ export function NemoznaRealizaceClient() {
         <div className="mb-4">
           <div className="mb-1 flex justify-between text-sm text-gray-600">
             <span>
-              Prověřeno {reviewedCount} / {total} zakázek „{REVIEWED_REASON_LABEL}“ za období
-              {total - reviewedCount > 0 && (
+              Vyřízeno {settledCount} / {total} zakázek „{REVIEWED_REASON_LABEL}“ za období
+              {queueCount > 0 && (
                 <span className="ml-2 font-medium text-red-700">
-                  ({total - reviewedCount} k prověření)
+                  ({queueCount} k prověření)
                 </span>
               )}
             </span>
@@ -400,7 +417,7 @@ export function NemoznaRealizaceClient() {
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
           {total === 0
             ? `Za toto období není žádná zakázka s důvodem „${REVIEWED_REASON_LABEL}“.`
-            : 'Vše prověřeno. Fronta je prázdná.'}
+            : 'Vše vyřízeno. Fronta je prázdná.'}
         </div>
       )}
 
@@ -487,18 +504,18 @@ export function NemoznaRealizaceClient() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {sortedRows.map((r) => {
-                const reviewed = isReviewedByTl(r);
+                const inQueue = needsDecision(r);
                 const badge = OUTCOME_BADGE[r.outcome];
                 const isBusy = busy === r.orderId;
                 return (
                   <tr
                     key={r.orderId}
-                    className={`${reviewed ? 'bg-gray-50/60 text-gray-500' : 'hover:bg-gray-50'} ${
+                    className={`${inQueue ? 'hover:bg-gray-50' : 'bg-gray-50/60 text-gray-500'} ${
                       selected.has(r.orderId) ? 'bg-green-50' : ''
                     }`}
                   >
                     <td className="px-2 py-1">
-                      {!reviewed && (
+                      {inQueue && (
                         <input
                           type="checkbox"
                           checked={selected.has(r.orderId)}
@@ -507,7 +524,7 @@ export function NemoznaRealizaceClient() {
                       )}
                     </td>
                     <td className="px-2 py-1 max-w-[260px] truncate">
-                      <span className={reviewed ? '' : 'font-medium text-gray-900'}>
+                      <span className={inQueue ? 'font-medium text-gray-900' : ''}>
                         {r.customerName ?? `Zakázka #${r.orderId}`}
                       </span>
                       <span className="ml-1.5 text-gray-400">#{r.orderId}</span>
@@ -569,8 +586,8 @@ export function NemoznaRealizaceClient() {
                         >
                           Zrušit rozhodnutí
                         </button>
-                      ) : reviewed ? (
-                        <span className="text-[11px] text-gray-400">rozhodnuto TL mimo tuto frontu</span>
+                      ) : !inQueue ? (
+                        <span className="text-[11px] text-gray-400">{outsideQueueLabel(r)}</span>
                       ) : changeReasonFor === r.orderId ? (
                         <div className="flex items-center gap-1">
                           <span className="text-[11px] text-gray-500">Nový důvod:</span>
