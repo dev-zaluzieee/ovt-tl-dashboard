@@ -15,7 +15,7 @@ export default function HotovostPage() {
           <h1 className="text-3xl font-bold text-[#1E8449]">Hotovost</h1>
           <p className="mt-2 text-gray-600">
             Kolik hotovosti mají OVT u sebe, co je po termínu (vklad do banky do neděle) a kdo
-            ještě čeká na inventuru od financí. Jen ke čtení — stejná data jako má finance.
+            ještě čeká na inventuru od financí.
           </p>
         </div>
         <CashOverviewClient />
