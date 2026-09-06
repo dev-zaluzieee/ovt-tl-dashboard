@@ -173,6 +173,16 @@ export function Navigation() {
               Výsledková tabule
             </Link>
             <Link
+              href="/hotovost"
+              className={`hover:opacity-80 transition-opacity ${
+                pathname === '/hotovost' || pathname.startsWith('/hotovost/')
+                  ? 'font-semibold underline'
+                  : ''
+              }`}
+            >
+              Hotovost
+            </Link>
+            <Link
               href="/tymy"
               className={`hover:opacity-80 transition-opacity ${
                 pathname === '/tymy' || pathname.startsWith('/tymy/')
