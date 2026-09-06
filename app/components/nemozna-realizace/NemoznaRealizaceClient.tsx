@@ -38,6 +38,10 @@ interface TriageRow {
   outcome: TriageOutcome;
   nedopadloReason: string | null;
   nedopadloReasonBy: 'ovt' | 'tl' | null;
+  /** OVT's why attached to the nedopadlo mark (ADMF note / button Poznámka). */
+  nedopadloNote: string | null;
+  /** OVT's general order notes (Raynet description), plain text. */
+  orderNotes: string | null;
   done: boolean;
   review: TriageReview | null;
 }
@@ -108,6 +112,14 @@ function daysAgoYmd(n: number): string {
   d.setDate(d.getDate() - n);
   return PRAGUE_YMD.format(d);
 }
+/** Hover text for the Poznámka OVT cell: both sources in full when present. */
+function ovtNoteTitle(r: TriageRow): string | undefined {
+  const parts: string[] = [];
+  if (r.nedopadloNote) parts.push(`Důvod (OVT): ${r.nedopadloNote}`);
+  if (r.orderNotes) parts.push(`Poznámky k zakázce (Raynet): ${r.orderNotes}`);
+  return parts.length > 0 ? parts.join('\n\n') : undefined;
+}
+
 /** Compact zaměření stamp, e.g. "st 3. 9. 14:30" (Prague). */
 function fmtZamereni(iso: string): string {
   return new Date(iso).toLocaleString('cs-CZ', {
@@ -468,6 +480,7 @@ export function NemoznaRealizaceClient() {
                 <th className="px-2 py-1 font-medium">OVT</th>
                 <th className="px-2 py-1 font-medium">Zaměření</th>
                 <th className="px-2 py-1 font-medium">Stav</th>
+                <th className="px-2 py-1 font-medium">Poznámka OVT</th>
                 <th className="px-2 py-1 font-medium">Odkazy</th>
                 <th className="px-2 py-1 font-medium">Rozhodnutí TL</th>
               </tr>
@@ -515,6 +528,18 @@ export function NemoznaRealizaceClient() {
                             ? ` → ${REASON_LABEL[r.review.reason] ?? r.review.reason}`
                             : ''}
                         </span>
+                      )}
+                    </td>
+                    <td className="max-w-[360px] truncate px-2 py-1" title={ovtNoteTitle(r)}>
+                      {r.nedopadloNote ? (
+                        <span className="text-gray-800">{r.nedopadloNote}</span>
+                      ) : r.orderNotes ? (
+                        <span className="text-gray-500">
+                          <span className="text-gray-400">Raynet: </span>
+                          {r.orderNotes}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
                       )}
                     </td>
                     <td className="px-2 py-1">
