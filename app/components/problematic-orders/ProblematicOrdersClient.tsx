@@ -95,6 +95,8 @@ interface ProblematicRow {
     createdAt: string;
   } | null;
   raynetCompanyId: number | null;
+  /** Customer phone: orders.phone, else Raynet company contact (backend fallback). */
+  customerPhone: string | null;
   b2b: boolean;
   orderValue: OrderValueSyncBlock | null;
   owner: { email: string | null; raynetId: string | null; name: string | null };
@@ -577,10 +579,21 @@ export function ProblematicOrdersClient() {
 
     // ── Search (case-insensitive substring across customer / OVT / IDs) ──
     const needle = q.trim().toLowerCase();
+    // Phone search ignores spaces/dashes on both sides ("603 438 435" ~ "603438435").
+    const needleDigits = needle.replace(/[\s\-+()]/g, '');
     const matchesSearch = (r: ProblematicRow): boolean => {
       if (needle.length === 0) return true;
+      if (
+        needleDigits.length >= 3 &&
+        /^\d+$/.test(needleDigits) &&
+        r.customerPhone &&
+        r.customerPhone.replace(/[\s\-+()]/g, '').includes(needleDigits)
+      ) {
+        return true;
+      }
       const parts: Array<string | null | undefined> = [
         r.order?.customerName,
+        r.customerPhone,
         r.title,
         r.owner.name,
         r.owner.email,
@@ -1042,6 +1055,7 @@ export function ProblematicOrdersClient() {
                           activeDir={sortDir}
                           onClick={handleSortClick}
                         />
+                        <th className={cellPad}>Telefon</th>
                         <SortableTh
                           cellPad={cellPad}
                           label="OVT"
@@ -1376,6 +1390,19 @@ function ProblematicRowView({
           <div className="text-xs text-gray-400">
             Zakázka #{row.order.id} · vytvořeno {formatDateCs(row.order.createdAt)}
           </div>
+        )}
+      </td>
+      <td className={`${cellPad} whitespace-nowrap text-gray-700`}>
+        {row.customerPhone ? (
+          <a
+            href={`tel:${row.customerPhone.replace(/[\s\-()]/g, '')}`}
+            className="tabular-nums hover:underline"
+            title="Telefon zákazníka (z objednávky, jinak z Raynetu)"
+          >
+            {row.customerPhone}
+          </a>
+        ) : (
+          <span className="text-gray-300">—</span>
         )}
       </td>
       <td
