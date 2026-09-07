@@ -1,93 +1,20 @@
-import Link from 'next/link';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from './components/layout/AppLayout';
+import { useWorkforce } from './components/workforce/WorkforceContext';
 
-interface Tile {
-  href: string;
-  title: string;
-  description: string;
-}
-
-interface Section {
-  label: string;
-  tiles: Tile[];
-}
-
-const SECTIONS: Section[] = [
-  {
-    label: 'Přehled',
-    tiles: [
-      {
-        href: '/prehled-dne',
-        title: 'Přehled dne',
-        description: 'Kalendář a denní seznam Raynet událostí obchodníků (OVT).',
-      },
-      {
-        href: '/problematicke-zakazky',
-        title: 'Problematické zakázky',
-        description:
-          'Nevyřízené zakázky v posledních 2 dnech: chybí v systému, bez exportu ADMF, nebo „Nezastižen“.',
-      },
-      {
-        href: '/poslane-na-retence',
-        title: 'Poslané na retence',
-        description:
-          'Historická stopa zakázek, které TL poslal do retence — kdo, kdy a zda si je retence už převzala.',
-      },
-      {
-        href: '/vysledky',
-        title: 'Výsledková tabule',
-        description:
-          'Výkon OVT (zaměření, objednávky, konverze, hodnota) za den i měsíc, celkově i po týmech.',
-      },
-    ],
-  },
-  {
-    label: 'Nastavení',
-    tiles: [
-      {
-        href: '/tymy',
-        title: 'Týmy',
-        description: 'Správa týmů (vedoucí OVT TL + členové) pro filtrování dashboardu.',
-      },
-    ],
-  },
-];
-
+/** Root just forwards to the remembered workforce's landing page (/ovt or /mvt). */
 export default function Home() {
+  const router = useRouter();
+  const { workforce, ready } = useWorkforce();
+  useEffect(() => {
+    if (ready) router.replace(workforce === 'mvt' ? '/mvt' : '/ovt');
+  }, [ready, workforce, router]);
   return (
     <AppLayout>
-      <main className="container mx-auto max-w-5xl px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-[#1E8449]">
-            Vítejte v portálu vedoucích týmů
-          </h1>
-          <p className="mt-2 text-gray-600">Vyberte sekci.</p>
-        </header>
-
-        <div className="space-y-8">
-          {SECTIONS.map((section) => (
-            <section key={section.label}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-                {section.label}
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {section.tiles.map((tile) => (
-                  <Link
-                    key={tile.href}
-                    href={tile.href}
-                    className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-[#1E8449] hover:shadow-md"
-                  >
-                    <h3 className="text-lg font-semibold text-[#1E8449]">
-                      {tile.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">{tile.description}</p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </main>
+      <main className="container mx-auto max-w-5xl px-4 py-10 text-gray-500">Načítám…</main>
     </AppLayout>
   );
 }

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchBackend } from '@/lib/backendFetch';
 
-/** GET all teams (enriched leader + members). */
-export async function GET() {
+/** GET all teams (enriched leader + members); ?workforce=ovt|mvt narrows. */
+export async function GET(request: NextRequest) {
   try {
-    return await fetchBackend('/api/admin/teams', { method: 'GET' });
+    const search = request.nextUrl.searchParams.toString();
+    return await fetchBackend(`/api/admin/teams${search ? `?${search}` : ''}`, { method: 'GET' });
   } catch (error: unknown) {
     return NextResponse.json(
       {

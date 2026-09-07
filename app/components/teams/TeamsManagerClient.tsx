@@ -1,14 +1,25 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useWorkforce, WORKFORCE_LONG, type Workforce } from '../workforce/WorkforceContext';
 
 interface AppUser {
   user_id: string;
   email: string | null;
   role: string | null;
   is_ovt_tl?: boolean;
+  is_mvt_tl?: boolean;
   raynet_id: string | null;
   raynet_name: string | null;
+}
+
+/** Montér from the mvt-mapa registry (via ceniky-2). */
+interface MvtPerson {
+  raynet_user_id: number;
+  name: string;
+  email: string | null;
+  region: string[] | null;
+  is_active: boolean;
 }
 
 interface TeamPerson {
@@ -21,6 +32,7 @@ interface TeamPerson {
 interface Team {
   id: number;
   name: string;
+  workforce?: Workforce;
   leader_user_id: string;
   leader: TeamPerson | null;
   members: TeamPerson[];
@@ -31,8 +43,11 @@ function userLabel(u: AppUser): string {
 }
 
 export function TeamsManagerClient() {
+  const { workforce, setWorkforce } = useWorkforce();
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [mvts, setMvts] = useState<MvtPerson[]>([]);
+  const [mvtError, setMvtError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +80,17 @@ export function TeamsManagerClient() {
       }
       setTeams(teamsBody.data as Team[]);
       setUsers((usersBody.data as AppUser[]) ?? []);
+      // Montéři registry — needed for MVT teams only; a failure must not block OVT teams.
+      try {
+        const r = await fetch('/api/mvt-registry?active=true', { headers: { Accept: 'application/json' } });
+        const b = await r.json();
+        if (r.ok && b.success) {
+          setMvts((b.data as MvtPerson[]) ?? []);
+          setMvtError(null);
+        } else setMvtError(b.error || b.message || 'Registr montérů není dostupný.');
+      } catch {
+        setMvtError('Registr montérů není dostupný.');
+      }
     } catch {
       setError('Nepodařilo se spojit se serverem.');
     } finally {
@@ -90,6 +116,14 @@ export function TeamsManagerClient() {
         .sort((a, b) => userLabel(a).localeCompare(userLabel(b), 'cs')),
     [users]
   );
+  const mvtLeaders = useMemo(
+    () => users.filter((u) => u.is_mvt_tl).sort((a, b) => userLabel(a).localeCompare(userLabel(b), 'cs')),
+    [users]
+  );
+  const mvtMembers = useMemo(() => [...mvts].sort((a, b) => a.name.localeCompare(b.name, 'cs')), [mvts]);
+  const visibleTeams = useMemo(() => teams.filter((t) => (t.workforce ?? 'ovt') === workforce), [teams, workforce]);
+  const isMvt = workforce === 'mvt';
+  const leaders = isMvt ? mvtLeaders : ovtLeaders;
 
   const openCreate = () => {
     setEditingId(null);
@@ -104,7 +138,9 @@ export function TeamsManagerClient() {
     setEditingId(team.id);
     setName(team.name);
     setLeaderId(team.leader_user_id);
-    setMemberIds(new Set(team.members.map((m) => m.user_id)));
+    setMemberIds(
+      new Set((team.workforce ?? 'ovt') === 'mvt' ? team.members.map((m) => m.raynet_id ?? '').filter(Boolean) : team.members.map((m) => m.user_id))
+    );
     setFormError(null);
     setShowForm(true);
   };
@@ -135,11 +171,9 @@ export function TeamsManagerClient() {
     setSaving(true);
     setFormError(null);
     try {
-      const payload = {
-        name: name.trim(),
-        leader_user_id: leaderId,
-        member_user_ids: [...memberIds],
-      };
+      const payload = isMvt
+        ? { name: name.trim(), workforce: 'mvt', leader_user_id: leaderId, member_raynet_ids: [...memberIds].map(Number) }
+        : { name: name.trim(), workforce: 'ovt', leader_user_id: leaderId, member_user_ids: [...memberIds] };
       const res = await fetch(
         editingId == null ? '/api/teams' : `/api/teams/${editingId}`,
         {
@@ -197,8 +231,28 @@ export function TeamsManagerClient() {
 
   return (
     <div className="space-y-6">
+      <div className="flex overflow-hidden rounded-lg border border-gray-300 text-sm" role="tablist">
+        {(['ovt', 'mvt'] as Workforce[]).map((w) => (
+          <button
+            key={w}
+            type="button"
+            role="tab"
+            aria-selected={workforce === w}
+            onClick={() => {
+              setWorkforce(w);
+              closeForm();
+            }}
+            className={`px-4 py-2 font-medium ${workforce === w ? 'bg-[#1E8449] text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            {WORKFORCE_LONG[w]} · {teams.filter((t) => (t.workforce ?? 'ovt') === w).length}
+          </button>
+        ))}
+      </div>
+      {isMvt && mvtError && (
+        <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{mvtError}</div>
+      )}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">Týmů: {teams.length}</p>
+        <p className="text-sm text-gray-600">Týmů: {visibleTeams.length}</p>
         {!showForm && (
           <button
             type="button"
@@ -235,10 +289,10 @@ export function TeamsManagerClient() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Vedoucí týmu (OVT TL)</label>
-              {ovtLeaders.length === 0 ? (
+              <label className="mb-1 block text-sm font-medium text-gray-700">Vedoucí týmu ({isMvt ? 'MVT TL' : 'OVT TL'})</label>
+              {leaders.length === 0 ? (
                 <p className="text-sm text-amber-800">
-                  Žádný uživatel není označen jako „OVT TL“. Označte ho nejdříve v administraci uživatelů.
+                  Žádný uživatel není označen jako „{isMvt ? 'MVT TL' : 'OVT TL'}“. Označte ho nejdříve v administraci uživatelů.
                 </p>
               ) : (
                 <select
@@ -247,7 +301,7 @@ export function TeamsManagerClient() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-[#1E8449]"
                 >
                   <option value="">— vyberte —</option>
-                  {ovtLeaders.map((u) => (
+                  {leaders.map((u) => (
                     <option key={u.user_id} value={u.user_id}>
                       {userLabel(u)}
                     </option>
@@ -258,9 +312,26 @@ export function TeamsManagerClient() {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Členové (OVT) — {memberIds.size} vybráno
+                Členové ({isMvt ? 'montéři' : 'OVT'}) — {memberIds.size} vybráno
               </label>
-              {ovtMembers.length === 0 ? (
+              {isMvt ? (
+                mvtMembers.length === 0 ? (
+                  <p className="text-sm text-gray-500">{mvtError ?? 'Žádní montéři v registru.'}</p>
+                ) : (
+                  <div className="max-h-64 overflow-auto rounded-lg border border-gray-200 p-2">
+                    {mvtMembers.map((m) => {
+                      const key = String(m.raynet_user_id);
+                      return (
+                        <label key={key} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-gray-50">
+                          <input type="checkbox" checked={memberIds.has(key)} onChange={() => toggleMember(key)} />
+                          <span className="text-gray-800">{m.name}</span>
+                          {m.region && m.region.length > 0 && <span className="text-gray-400">· {m.region.join(', ')}</span>}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )
+              ) : ovtMembers.length === 0 ? (
                 <p className="text-sm text-gray-500">
                   Žádní OVT (uživatelé s propojeným Raynetem) k dispozici.
                 </p>
@@ -306,21 +377,21 @@ export function TeamsManagerClient() {
         </div>
       )}
 
-      {teams.length === 0 && !showForm ? (
+      {visibleTeams.length === 0 && !showForm ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
-          <p className="font-medium text-gray-900">Zatím žádné týmy</p>
+          <p className="font-medium text-gray-900">Zatím žádné {isMvt ? 'MVT' : 'OVT'} týmy</p>
           <p className="mt-2 text-sm">Vytvořte první tým tlačítkem „Nový tým“.</p>
         </div>
       ) : (
         <ul className="space-y-3">
-          {teams.map((team) => (
+          {visibleTeams.map((team) => (
             <li key={team.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-semibold text-gray-900">{team.name}</h3>
                   <p className="mt-1 text-sm text-gray-600">
                     <span className="font-medium text-gray-700">Vedoucí: </span>
-                    {team.leader?.displayName ?? '— (neznámý / bez OVT TL)'}
+                    {team.leader?.displayName ?? `— (neznámý / bez ${isMvt ? 'MVT' : 'OVT'} TL)`}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {team.members.length === 0 ? (
