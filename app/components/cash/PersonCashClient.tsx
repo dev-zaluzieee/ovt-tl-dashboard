@@ -13,6 +13,7 @@ import {
   SOURCE_LABELS,
   fmtCzk,
   fmtDate,
+  fmtDateTime,
   personName,
 } from './cashTypes';
 
@@ -173,6 +174,11 @@ export function PersonCashClient({ personId }: { personId: number }) {
               const note = [
                 e.customer_name,
                 e.expense_category && e.expense_category !== 'Other' ? e.expense_category : null,
+                e.entry_type === 'bank_deposit' && e.deposit_channel === 'post'
+                  ? `${e.declared_variable_symbol ? `VS ${e.declared_variable_symbol}` : 'bez VS'}${
+                      e.declared_gross_czk ? ` · předáno ${fmtCzk(Number(e.declared_gross_czk))}` : ''
+                    }${e.fee_czk && Number(e.fee_czk) > 0 ? ` · poplatek ${fmtCzk(Number(e.fee_czk))}` : ''}`
+                  : null,
                 e.note,
               ]
                 .filter(Boolean)
@@ -189,9 +195,11 @@ export function PersonCashClient({ personId }: { personId: number }) {
                         : undefined
                   }
                 >
-                  <td className="px-2 py-1">{fmtDate(e.happened_at)}</td>
+                  <td className="px-2 py-1">{fmtDateTime(e.happened_at)}</td>
                   <td className={`truncate px-2 py-1 ${e.voided_at ? 'line-through' : ''}`}>
-                    {ENTRY_TYPE_LABELS[e.entry_type] ?? e.entry_type}
+                    {e.entry_type === 'bank_deposit' && e.deposit_channel === 'post'
+                      ? 'Vklad na poště'
+                      : ENTRY_TYPE_LABELS[e.entry_type] ?? e.entry_type}
                   </td>
                   <td
                     className={`px-2 py-1 text-right tabular-nums ${

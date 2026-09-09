@@ -34,6 +34,13 @@ export interface CashEntry {
   void_reason: string | null;
   recon_status: 'pending' | 'reconciled' | 'discrepancy' | null;
   expense_category: string | null;
+  /** bank_deposit: 'bank_card' (bankomat) or 'post' (Česká pošta). */
+  deposit_channel?: 'bank_card' | 'post' | null;
+  declared_variable_symbol?: string | null;
+  declared_gross_czk?: string | null;
+  fee_czk?: string | null;
+  fee_deducted?: boolean | null;
+  related_entry_id?: number | null;
   attachments: { id: number; filename: string }[];
 }
 
@@ -70,6 +77,18 @@ export function fmtCzk(n: number): string {
 export function fmtDate(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'Europe/Prague' });
+}
+/** Ledger row timestamp — date + time, so same-day entries (e.g. an inventura) are distinguishable. */
+export function fmtDateTime(iso: string | null): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('cs-CZ', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Prague',
+  });
 }
 export function personName(p: { display_name: string | null; email: string }): string {
   return (p.display_name && p.display_name.trim()) || p.email.split('@')[0] || p.email;
