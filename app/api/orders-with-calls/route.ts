@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthToken, refreshSessionWithBackend } from '@/lib/backendFetch';
-import { fetchAllCalls, normalizePhone } from '@/lib/playerBackend';
+import { fetchCallPhoneSummary } from '@/lib/playerBackend';
 
 /**
  * GET /api/orders-with-calls?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -10,11 +10,14 @@ import { fetchAllCalls, normalizePhone } from '@/lib/playerBackend';
  * count toward the intersection.
  *
  * Flow:
- *   1. Fetch all calls via player-backend (with optional date clamp).
- *   2. Extract unique phone match keys from those calls.
- *   3. POST keys to ceniky-2 → orders whose phone matches ANY key.
- *   4. Join: attach per-order call count + latest callTime to each row.
+ *   1. Fetch the per-phone call summary from player-backend (date range is
+ *      applied server-side — never pull the raw call list, it's tens of MB).
+ *   2. POST the phone keys to ceniky-2 → orders whose phone matches ANY key.
+ *   3. Join: attach per-order call count + latest callTime to each row.
  */
+
+// Player-backend aggregates over the whole range; give the roundtrip room.
+export const maxDuration = 60;
 
 interface BackendOrder {
   id: number;
@@ -61,32 +64,19 @@ export async function GET(request: NextRequest) {
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
 
-  const fromMs = from ? Date.parse(`${from}T00:00:00`) : Number.NEGATIVE_INFINITY;
-  const toMs = to ? Date.parse(`${to}T23:59:59`) : Number.POSITIVE_INFINITY;
-
   try {
-    // 1. Fetch all calls from player backend.
-    const calls = await fetchAllCalls();
-    // Filter by date range (if provided) + tally per phone key.
-    const perKey = new Map<
-      string,
-      { count: number; lastCallTime: string; agents: Set<string> }
-    >();
-    for (const c of calls) {
-      const t = Date.parse(c.callTime);
-      if (!Number.isFinite(t) || t < fromMs || t > toMs) continue;
-      const k = normalizePhone(c.phone);
-      if (!k) continue;
-      const cur = perKey.get(k) ?? {
-        count: 0,
-        lastCallTime: c.callTime,
-        agents: new Set<string>(),
-      };
-      cur.count += 1;
-      if (c.callTime > cur.lastCallTime) cur.lastCallTime = c.callTime;
-      if (c.agent) cur.agents.add(c.agent);
-      perKey.set(k, cur);
-    }
+    // 1. Per-phone aggregate from player backend (date clamp applied there).
+    const summary = await fetchCallPhoneSummary({ from, to });
+    const perKey = new Map(
+      summary.map((s) => [
+        s.phoneKey,
+        {
+          count: s.callCount,
+          lastCallTime: s.lastCallTime,
+          agents: s.agents,
+        },
+      ])
+    );
 
     if (perKey.size === 0) {
       return NextResponse.json({
@@ -118,7 +108,7 @@ export async function GET(request: NextRequest) {
         ...o,
         call_count: stats?.count ?? 0,
         last_call_time: stats?.lastCallTime ?? null,
-        agents: stats ? [...stats.agents].sort() : [],
+        agents: stats?.agents ?? [],
       };
     });
     // Newest calls first (fall back to created_at).

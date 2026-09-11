@@ -115,14 +115,66 @@ async function authedFetch(
 
 export type PlayerCall = PlayerCallRow;
 
-/** Fetch every call the service account can see. Player backend doesn't filter
- *  server-side — callers apply their own predicate (usually phone match). */
-export async function fetchAllCalls(): Promise<PlayerCall[]> {
-  const res = await authedFetch('/api/calls', { method: 'GET' });
+export interface CallsQuery {
+  /** YYYY-MM-DD (inclusive) */
+  from?: string | null;
+  /** YYYY-MM-DD (inclusive) */
+  to?: string | null;
+  /** One number or several — matched loosely on the last 9 digits. */
+  phones?: string[];
+  limit?: number;
+}
+
+function buildCallsQueryString(query: CallsQuery): string {
+  const qs = new URLSearchParams();
+  if (query.from) qs.set('from', query.from);
+  if (query.to) qs.set('to', query.to);
+  if (query.phones && query.phones.length > 0) {
+    qs.set('phone', query.phones.join(','));
+  }
+  if (query.limit !== undefined) qs.set('limit', String(query.limit));
+  return qs.size > 0 ? `?${qs}` : '';
+}
+
+/** Fetch calls the service account can see, filtered server-side. Always pass
+ *  a date range or phone list — the full history is tens of MB and blows the
+ *  serverless function's time/memory budget. */
+export async function fetchCalls(
+  query: CallsQuery = {}
+): Promise<PlayerCall[]> {
+  const res = await authedFetch(`/api/calls${buildCallsQueryString(query)}`, {
+    method: 'GET',
+  });
   if (!res.ok) {
     throw new Error(`player-backend /calls failed (${res.status})`);
   }
   const body = (await res.json()) as PlayerCall[] | { data?: PlayerCall[] };
+  return Array.isArray(body) ? body : (body.data ?? []);
+}
+
+export interface CallPhoneSummary {
+  /** Last 9 digits of the phone — same match key as ceniky-2 uses. */
+  phoneKey: string;
+  callCount: number;
+  lastCallTime: string;
+  agents: string[];
+}
+
+/** Per-phone aggregate (count + latest call + agents) for the given range.
+ *  Returns a few hundred kB instead of the full call list. */
+export async function fetchCallPhoneSummary(
+  query: Pick<CallsQuery, 'from' | 'to'> = {}
+): Promise<CallPhoneSummary[]> {
+  const res = await authedFetch(
+    `/api/calls/phone-summary${buildCallsQueryString(query)}`,
+    { method: 'GET' }
+  );
+  if (!res.ok) {
+    throw new Error(`player-backend /calls/phone-summary failed (${res.status})`);
+  }
+  const body = (await res.json()) as
+    | CallPhoneSummary[]
+    | { data?: CallPhoneSummary[] };
   return Array.isArray(body) ? body : (body.data ?? []);
 }
 

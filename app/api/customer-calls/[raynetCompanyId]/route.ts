@@ -1,22 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthToken, refreshSessionWithBackend } from '@/lib/backendFetch';
-import {
-  fetchAllCalls,
-  normalizePhone,
-  type PlayerCall,
-} from '@/lib/playerBackend';
+import { fetchCalls, type PlayerCall } from '@/lib/playerBackend';
 
 /**
  * GET /api/customer-calls/[raynetCompanyId]?from=YYYY-MM-DD&to=YYYY-MM-DD
  *
  * Two-step lookup:
  *   1. GET /api/admin/tl-customer-phones/:id → distinct phones from local orders.
- *   2. GET player-backend /api/calls → all calls the service account sees.
- *   3. Filter to calls whose normalized phone matches any customer phone,
- *      then optionally clamp to the date range client asked for.
+ *   2. GET player-backend /api/calls filtered by those phones + date range —
+ *      the filtering happens server-side, we never pull the full call list.
  *
  * Returns { phones, calls } where calls is sorted newest-first.
  */
+
+export const maxDuration = 60;
+
 async function fetchPhonesFromCeniky2(
   raynetCompanyId: string
 ): Promise<{ phones: Array<{ normalized: string; raw: string }> }> {
@@ -69,11 +67,13 @@ export async function GET(
         data: { phones: [], calls: [] as PlayerCall[] },
       });
     }
-    const phoneSet = new Set(phones.map((p) => p.normalized));
-
     let calls: PlayerCall[];
     try {
-      calls = await fetchAllCalls();
+      calls = await fetchCalls({
+        from,
+        to,
+        phones: phones.map((p) => p.normalized),
+      });
     } catch (err) {
       // Bubble up as a soft error so the UI can distinguish "no calls" from
       // "player backend down".
@@ -89,21 +89,11 @@ export async function GET(
       );
     }
 
-    // Filter by phone (with normalization). Optionally clamp to date range.
-    const fromMs = from ? Date.parse(`${from}T00:00:00`) : Number.NEGATIVE_INFINITY;
-    const toMs = to ? Date.parse(`${to}T23:59:59`) : Number.POSITIVE_INFINITY;
-    const matched = calls.filter((c) => {
-      const n = normalizePhone(c.phone);
-      if (!n || !phoneSet.has(n)) return false;
-      const t = Date.parse(c.callTime);
-      if (!Number.isFinite(t)) return true;
-      return t >= fromMs && t <= toMs;
-    });
-    matched.sort((a, b) => Date.parse(b.callTime) - Date.parse(a.callTime));
+    calls.sort((a, b) => Date.parse(b.callTime) - Date.parse(a.callTime));
 
     return NextResponse.json({
       success: true,
-      data: { phones, calls: matched },
+      data: { phones, calls },
     });
   } catch (err) {
     return NextResponse.json(
