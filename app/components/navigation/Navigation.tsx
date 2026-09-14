@@ -63,6 +63,7 @@ export const NAV: Record<Workforce, NavGroup[]> = {
       label: 'Historie',
       items: [
         { href: '/poslane-na-retence', label: 'Poslané na retence', description: 'Historická stopa zakázek, které TL poslal do retence — kdo, kdy a zda si je retence už převzala.' },
+        { href: '/automat-zf', label: 'Automat ZF', description: 'Neuhrazené zálohy převodem / fakturou, které systém 5 dní po vystavení ZF pošle do fronty retencí — příští dávka, historie, odložení.' },
         { href: '/skryte-zakazky', label: 'Skryté zakázky', description: 'Zakázky, které TL potvrdil a skryl z problematických.' },
         { href: '/kontrola-nemozne-realizace', label: 'Nemožná realizace', description: 'Kontrola zakázek označených jako nerealizovatelné.' },
       ],
