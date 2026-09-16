@@ -2,7 +2,7 @@
 
 /**
  * Automat ZF — monitoring of the automatic "unpaid záloha převodem / fakturou
- * -> retention queue 5 days after ZF issue" batch (ceniky-2 backend, weekdays
+ * -> retention queue N days after ZF issue" batch (ceniky-2 backend, weekdays
  * 06:00 Europe/Prague). Same data on the office retention module and the TL
  * dashboard: next run + what it will send, everything watched but not sent
  * (with the reason), history of runs, and the human overrides "Poslat hned"
@@ -76,15 +76,17 @@ interface Status {
   deferrals: Array<{ id: number; raynet_event_id: string; order_id: number | null; deferred_until: string; reason: string; actor: string; source: string; created_at: string }>;
 }
 
-const BUCKET_META: Record<Bucket, { label: string; cls: string; help: string }> = {
-  due: { label: "V příští dávce", cls: "border-rose-300 bg-rose-50 text-rose-800", help: "Splňuje pravidlo: ZF vystavena před 5+ dny, záloha neuhrazená." },
-  not_due: { label: "Čeká na 5. den", cls: "border-amber-300 bg-amber-50 text-amber-800", help: "Neuhrazená, ale od vystavení ZF ještě neuplynulo 5 dní." },
+/** Bucket chips; `days` = the backend's rule (3, from /status). */
+const bucketMeta = (days: number): Record<Bucket, { label: string; cls: string; help: string }> => ({
+  due: { label: "V příští dávce", cls: "border-rose-300 bg-rose-50 text-rose-800", help: `Splňuje pravidlo: ZF vystavena před ${days}+ dny, záloha neuhrazená.` },
+  not_due: { label: `Čeká na ${days}. den`, cls: "border-amber-300 bg-amber-50 text-amber-800", help: `Neuhrazená, ale od vystavení ZF ještě neuplynulo ${days} dní.` },
   paid: { label: "Uhrazeno", cls: "border-emerald-300 bg-emerald-50 text-emerald-800", help: "Fakturace eviduje platbu — office ještě nepotvrdil v TRIÁŽI (tag ZF čekáme zůstává)." },
   cannot_judge: { label: "Nelze posoudit", cls: "border-gray-300 bg-gray-100 text-gray-700", help: "Bez ERP párování nebo fakturace o ZF nic neví. Automat NIKDY neposílá." },
   no_zf_date: { label: "Bez data ZF", cls: "border-gray-300 bg-gray-100 text-gray-700", help: "Raynet nemá datum vystavení ZF — fakturace ji zatím nezapsala." },
   already_queued: { label: "Ve frontě", cls: "border-purple-300 bg-purple-50 text-purple-800", help: "Už čeká ve frontě retencí (poslal OVT, TL, office nebo dřívější běh)." },
   deferred: { label: "Odloženo", cls: "border-sky-300 bg-sky-50 text-sky-800", help: "Člověk odložil; po datu se vrátí mezi kandidáty." },
-};
+});
+const DEFAULT_DAYS = 3;
 
 function fmtDateTime(iso: string | null): string {
   if (!iso) return "—";
@@ -127,6 +129,8 @@ export function AutomatZfClient() {
   const [notice, setNotice] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const isAdmin = useMemo(() => getCookie("user_role") === "admin", []);
+  const days = status?.rule.daysAfterIssue ?? DEFAULT_DAYS;
+  const BUCKET_META = useMemo(() => bucketMeta(days), [days]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -379,7 +383,7 @@ export function AutomatZfClient() {
           </button>
         )}
         <span className="text-xs text-gray-500">
-          Pravidlo: záloha převodem / fakturou, ZF vystavena před {status?.rule.daysAfterIssue ?? 5}+ dny, fakturace neeviduje úhradu → fronta retencí (jen zařazení, retence rozhoduje).
+          Pravidlo: záloha převodem / fakturou, ZF vystavena před {days}+ dny, fakturace neeviduje úhradu → fronta retencí (jen zařazení, retence rozhoduje).
         </span>
       </div>
 

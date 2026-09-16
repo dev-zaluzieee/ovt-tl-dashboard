@@ -14,8 +14,8 @@ export default function AutomatZfPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-[#1E8449]">Automat ZF</h1>
           <p className="mt-2 text-gray-600">
-            Neuhrazené zálohy převodem / fakturou jdou 5 dní po vystavení zálohové faktury automaticky do
-            fronty retencí (všední den 6:00). Tady vidíte, co půjde v příští dávce a co už automat poslal;
+            Neuhrazené zálohy převodem / fakturou jdou několik dní po vystavení zálohové faktury automaticky do
+            fronty retencí (všední den 6:00; přesný počet dní je u pravidla níže). Tady vidíte, co půjde v příští dávce a co už automat poslal;
             zakázku můžete poslat hned nebo odložit.
           </p>
         </div>
