@@ -25,7 +25,7 @@ interface OutcomeRow {
 
 const API = '/api/mvt-outcomes';
 const PAGE_SIZE = 50;
-const STATUSES = ['PENDING', 'SENDING', 'SUCCESS', 'PARTIAL_SUCCESS', 'FAILED'];
+const STATUSES = ['PENDING', 'SENDING', 'SUCCESS', 'PARTIAL_SUCCESS', 'FAILED', 'SUPERSEDED'];
 
 /** Zápisy z aplikace — every outcome submission from the montér app. */
 export function MvtLogsClient() {

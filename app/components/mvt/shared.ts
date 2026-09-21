@@ -1,5 +1,5 @@
 /** Shared types/labels for the MVT side of the team-leader portal. */
-export type AppState = 'unassigned' | 'planned' | 'in_progress' | 'overdue' | 'done' | 'zachrana' | 'reklamace' | 'failed' | 'closed_raynet';
+export type AppState = 'unassigned' | 'planned' | 'in_progress' | 'overdue' | 'done' | 'zachrana' | 'reklamace' | 'failed' | 'closed_raynet' | 'reopened';
 
 export interface TlPerson {
   raynetId: number;
@@ -32,6 +32,8 @@ export interface TlDayEvent {
   uploads: number;
   appState: AppState;
   raynetUrl: string;
+  /** Active / recent reopen ("Otevřít k opravě") of the event. */
+  reopen?: { id: number; status: 'requested' | 'open' | 'used' | 'expired' | 'declined' | 'cancelled'; isOpen: boolean; expiresAt: string | null; openReason: string | null; openedBy: string | null } | null;
 }
 
 export const STATE_UI: Record<AppState, { label: string; cls: string }> = {
@@ -44,10 +46,20 @@ export const STATE_UI: Record<AppState, { label: string; cls: string }> = {
   reklamace: { label: 'Odesláno na reklamace', cls: 'bg-rose-100 text-rose-800' },
   failed: { label: 'Zápis selhal', cls: 'bg-red-100 text-red-800' },
   closed_raynet: { label: 'Uzavřeno v Raynetu', cls: 'bg-gray-200 text-gray-700' },
+  reopened: { label: 'Otevřeno k opravě', cls: 'bg-amber-100 text-amber-800' },
 };
 
 export const WORKFLOW_LABEL: Record<string, string> = { montaz: 'Montáž', reklamace: 'Reklamace' };
 export const OUTCOME_LABEL: Record<string, string> = { happy: 'Dokončeno', reklamace: 'Odesláno na reklamace', zachrana: 'Dokončeno se záchranou' };
+
+export const OUTCOME_STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Čeká',
+  SENDING: 'Zapisuje se',
+  SUCCESS: 'Zapsáno',
+  PARTIAL_SUCCESS: 'Zapsáno · ERP nezapsáno',
+  FAILED: 'Selhalo',
+  SUPERSEDED: 'Nahrazeno opravou',
+};
 
 export function statusClasses(status: string): string {
   switch (status) {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { TeamFilter, type TeamSelection } from '../teams/TeamFilter';
 import { STATE_UI, eventInTeam, fmtDateTime, ymd, type TlDayEvent } from './shared';
+import { openForCorrection } from './reopen';
 
 type OpenKind = 'no_outcome' | 'erp_failed' | 'failed' | 'reklamace_waiting';
 interface OpenItem {
@@ -155,6 +156,24 @@ export function MvtOpenClient() {
                   <td className="whitespace-nowrap px-3 py-2 text-xs">
                     <a href={it.event.raynetUrl} target="_blank" rel="noopener noreferrer" className="mr-2 text-blue-600 hover:underline">Raynet</a>
                     {it.event.outcome && <Link href={`/mvt/zapisy/${it.event.outcome.id}`} className="mr-2 text-blue-600 hover:underline">Zápis</Link>}
+                    {it.event.outcome && it.event.reopen?.status !== 'open' && (
+                      <button
+                        type="button"
+                        disabled={busy === it.event.id}
+                        onClick={async () => {
+                          setBusy(it.event.id);
+                          try {
+                            if (await openForCorrection(it.event.id, it.event.customer ?? String(it.event.id))) await load();
+                          } finally {
+                            setBusy(null);
+                          }
+                        }}
+                        className="mr-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-amber-900 disabled:opacity-50"
+                      >
+                        Otevřít k opravě
+                      </button>
+                    )}
+                    {it.event.reopen?.status === 'open' && <span className="mr-2 text-amber-800">🔓 otevřeno</span>}
                     {it.mark ? (
                       <button type="button" disabled={busy === it.event.id} onClick={() => void unmark(it)} className="rounded border border-gray-300 px-2 py-1 text-gray-700 disabled:opacity-50">Vrátit</button>
                     ) : (
