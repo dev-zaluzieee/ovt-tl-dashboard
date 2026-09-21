@@ -6,7 +6,7 @@ import { OUTCOME_LABEL, WORKFLOW_LABEL, fmtDateTime, fmtKc, statusClasses } from
 
 interface Detail {
   outcome: {
-    id: number; event_id: number; order_id: number | null; erp_order_id: number | null; workflow: string; outcome: string;
+    id: number; event_id: number; order_id: number | null; erp_order_id: number | null; erp_complaint_id?: number | null; workflow: string; outcome: string;
     monter_raynet_id: number; monter_name: string | null; actor_email?: string | null; payload: Record<string, unknown>; status: string; test_mode: boolean;
     error_message: string | null; warnings: unknown[] | null; duration_ms: number | null; created_at: string; completed_at: string | null;
   };
@@ -17,6 +17,8 @@ interface Detail {
 const TARGET_LABEL: Record<string, string> = {
   raynet_event: 'Raynet — událost (pole + stav)',
   erp_order: 'ERP — zakázka (stav + sloupce)',
+  erp_comment: 'ERP — komentář',
+  erp_complaint: 'ERP — reklamace',
   raynet_attachment: 'Raynet — příloha',
   finance_cash: 'Hotovost — pokladna montéra',
 };
@@ -88,7 +90,7 @@ export function MvtLogDetailClient({ id }: { id: string }) {
               </div>
               <div><dt className="text-xs text-gray-500">Odesláno</dt><dd>{fmtDateTime(o.created_at)}</dd></div>
               <div><dt className="text-xs text-gray-500">Raynet event</dt><dd className="tabular-nums">{o.event_id}</dd></div>
-              <div><dt className="text-xs text-gray-500">Objednávka / ERP</dt><dd className="tabular-nums">{o.order_id ?? '—'} / {o.erp_order_id ?? '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500">Objednávka / ERP</dt><dd className="tabular-nums">{o.order_id ?? '—'} / {o.erp_order_id ?? '—'}{o.erp_complaint_id != null ? ` · reklamace ${o.erp_complaint_id}` : ''}</dd></div>
             </dl>
             {o.error_message && <p className="mt-3 rounded bg-red-50 p-2 text-sm text-red-800">{o.error_message}</p>}
             {Array.isArray(o.warnings) && o.warnings.length > 0 && (

@@ -9,6 +9,7 @@ interface OutcomeRow {
   event_id: number;
   order_id: number | null;
   erp_order_id: number | null;
+  erp_complaint_id?: number | null;
   workflow: 'montaz' | 'reklamace';
   outcome: 'happy' | 'reklamace' | 'zachrana';
   monter_raynet_id: number;
@@ -129,7 +130,7 @@ export function MvtLogsClient() {
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums">{typeof r.payload?.vybranoKolik === 'number' ? `${r.payload.vybranoKolik.toLocaleString('cs-CZ')} Kč` : '—'}{typeof r.payload?.zpusobUhrady === 'string' ? <span className="ml-1 text-xs text-gray-500">{r.payload.zpusobUhrady}</span> : null}</td>
                 <td className="px-3 py-2 tabular-nums">{r.event_id}</td>
                 <td className="px-3 py-2 tabular-nums">{r.order_id ?? '—'}</td>
-                <td className="px-3 py-2 tabular-nums">{r.erp_order_id ?? '—'}</td>
+                <td className="px-3 py-2 tabular-nums">{r.erp_order_id ?? '—'}{r.erp_complaint_id != null ? <span className="text-gray-500"> · rekl. {r.erp_complaint_id}</span> : null}</td>
                 <td className="px-3 py-2"><span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClasses(r.status)}`}>{r.status}</span>{r.test_mode && <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] text-purple-800">TEST</span>}</td>
                 <td className="px-3 py-2"><Link href={`/mvt/zapisy/${r.id}`} className="text-blue-600 hover:underline">Detail</Link></td>
               </tr>
