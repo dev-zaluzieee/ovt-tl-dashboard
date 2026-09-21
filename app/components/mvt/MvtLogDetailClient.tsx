@@ -7,7 +7,7 @@ import { OUTCOME_LABEL, WORKFLOW_LABEL, fmtDateTime, fmtKc, statusClasses } from
 interface Detail {
   outcome: {
     id: number; event_id: number; order_id: number | null; erp_order_id: number | null; workflow: string; outcome: string;
-    monter_raynet_id: number; monter_name: string | null; payload: Record<string, unknown>; status: string; test_mode: boolean;
+    monter_raynet_id: number; monter_name: string | null; actor_email?: string | null; payload: Record<string, unknown>; status: string; test_mode: boolean;
     error_message: string | null; warnings: unknown[] | null; duration_ms: number | null; created_at: string; completed_at: string | null;
   };
   steps: { id: number; target: string; status: string; request_payload: unknown; response_status: number | null; response_body: unknown; error_code: string | null; error_message: string | null; duration_ms: number | null; created_at: string }[];
@@ -79,7 +79,13 @@ export function MvtLogDetailClient({ id }: { id: string }) {
               {o.test_mode && <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] text-purple-800">TEST</span>}
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-4">
-              <div><dt className="text-xs text-gray-500">Montér</dt><dd>{o.monter_name ?? `#${o.monter_raynet_id}`}</dd></div>
+              <div>
+                <dt className="text-xs text-gray-500">Montér</dt>
+                <dd>
+                  {o.monter_name ?? `#${o.monter_raynet_id}`}
+                  {o.actor_email && <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-800">odeslal {o.actor_email} jménem montéra</span>}
+                </dd>
+              </div>
               <div><dt className="text-xs text-gray-500">Odesláno</dt><dd>{fmtDateTime(o.created_at)}</dd></div>
               <div><dt className="text-xs text-gray-500">Raynet event</dt><dd className="tabular-nums">{o.event_id}</dd></div>
               <div><dt className="text-xs text-gray-500">Objednávka / ERP</dt><dd className="tabular-nums">{o.order_id ?? '—'} / {o.erp_order_id ?? '—'}</dd></div>

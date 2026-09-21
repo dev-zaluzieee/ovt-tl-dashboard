@@ -13,6 +13,7 @@ interface OutcomeRow {
   outcome: 'happy' | 'reklamace' | 'zachrana';
   monter_raynet_id: number;
   monter_name: string | null;
+  actor_email?: string | null;
   status: string;
   test_mode: boolean;
   error_message: string | null;
@@ -122,7 +123,7 @@ export function MvtLogsClient() {
             ) : rows.map((r) => (
               <tr key={r.id} className="border-t border-gray-100 hover:bg-gray-50">
                 <td className="whitespace-nowrap px-3 py-2">{fmtDateTime(r.created_at)}</td>
-                <td className="px-3 py-2">{r.monter_name ?? `#${r.monter_raynet_id}`}</td>
+                <td className="px-3 py-2">{r.monter_name ?? `#${r.monter_raynet_id}`}{r.actor_email && <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-800" title={`odeslal ${r.actor_email}`}>admin</span>}</td>
                 <td className="px-3 py-2">{WORKFLOW_LABEL[r.workflow] ?? r.workflow}</td>
                 <td className="px-3 py-2">{OUTCOME_LABEL[r.outcome] ?? r.outcome}</td>
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums">{typeof r.payload?.vybranoKolik === 'number' ? `${r.payload.vybranoKolik.toLocaleString('cs-CZ')} Kč` : '—'}{typeof r.payload?.zpusobUhrady === 'string' ? <span className="ml-1 text-xs text-gray-500">{r.payload.zpusobUhrady}</span> : null}</td>
