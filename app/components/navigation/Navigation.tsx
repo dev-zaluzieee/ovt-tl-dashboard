@@ -79,6 +79,7 @@ export const NAV: Record<Workforce, NavGroup[]> = {
       items: [
         { href: '/mvt/prehled-dne', label: 'Přehled dne', description: 'Montáže, servisy a reklamace dne po montérech, se stavem dokončení z aplikace. Jen ke čtení.' },
         { href: '/mvt/nedokoncene', label: 'Nedokončené montáže', description: 'Montáže po termínu bez výsledku, nezdařené zápisy do ERP a reklamace čekající na založení.' },
+        { href: '/mvt/doplatky', label: 'Doplatky', description: 'Zápisy, kde vybraná částka nesedí s očekávaným doplatkem, a platby fakturou ke kontrole.' },
       ],
     },
     {
