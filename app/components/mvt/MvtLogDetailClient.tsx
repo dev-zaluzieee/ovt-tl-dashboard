@@ -26,6 +26,7 @@ const KIND_LABEL: Record<string, string> = { predavak: 'Předávací protokol', 
 const FIELD_LABEL: Record<string, string> = {
   outcome: 'Výsledek', monter: 'Montér', vybranoKolik: 'Vybráno kolik', zpusobUhrady: 'Způsob úhrady', slevaMvt: 'Sleva (zadaná)',
   slevaMvtEffective: 'Sleva (zapsaná)', infoKeSleve: 'Info ke slevě', infoKZachrane: 'Info k záchraně', doplatekAtSubmit: 'Doplatek při odeslání',
+  duvodLabel: 'Důvod (proč nedopadla)', komentar: 'Co se stalo / komentář', expectedSource: 'Zdroj očekávané částky',
   expectedAtSubmit: 'Očekávaná částka při odeslání', testMode: 'Testovací režim',
 };
 

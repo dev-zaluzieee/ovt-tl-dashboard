@@ -135,6 +135,7 @@ export function MvtDayClient() {
                           {e.outcome.vybranoKolik != null && <>{fmtKc(e.outcome.vybranoKolik)}{e.outcome.zpusobUhrady ? ` · ${e.outcome.zpusobUhrady}` : ''}</>}
                           {e.outcome.slevaMvt ? <> · sleva {fmtKc(e.outcome.slevaMvt)}</> : null}
                           {e.outcome.status === 'PARTIAL_SUCCESS' && <span className="ml-1 text-amber-700">· ERP nezapsáno</span>}
+                          {e.outcome.duvod && <span className="ml-1 text-rose-700">· {e.outcome.duvod}</span>}
                         </p>
                       )}
                     </td>

@@ -6,7 +6,7 @@ import { TeamFilter, type TeamSelection } from '../teams/TeamFilter';
 import { OUTCOME_LABEL, WORKFLOW_LABEL, eventInTeam, fmtDateTime, fmtKc, ymd, type TlDayEvent } from './shared';
 import { openForCorrection, reopenAction } from './reopen';
 
-type Kind = 'nesedi_doplatek' | 'eskalace' | 'reopen_request';
+type Kind = 'nesedi_doplatek' | 'eskalace' | 'reopen_request' | 'zapis_selhal' | 'erp_nezapsano' | 'reklamace_ceka';
 type Severity = 'red' | 'amber' | 'low' | 'info';
 interface Resolution {
   reason: 'chyba_mvt' | 'jina_chyba' | 'v_poradku';
@@ -35,10 +35,16 @@ export interface ProblemItem {
 
 export const KIND_UI: Record<Kind, { label: string; cls: string }> = {
   eskalace: { label: 'Eskalováno na TL', cls: 'bg-rose-100 text-rose-800' },
+  zapis_selhal: { label: 'Zápis selhal', cls: 'bg-red-100 text-red-800' },
+  erp_nezapsano: { label: 'ERP nezapsáno', cls: 'bg-amber-100 text-amber-800' },
   nesedi_doplatek: { label: 'Nesedí doplatek', cls: 'bg-amber-100 text-amber-800' },
+  reklamace_ceka: { label: 'Reklamace čeká', cls: 'bg-purple-100 text-purple-800' },
   reopen_request: { label: 'Žádost o otevření', cls: 'bg-sky-100 text-sky-800' },
 };
 const SEV_ROW: Record<Severity, string> = { red: 'border-l-4 border-rose-400', amber: 'border-l-4 border-amber-400', low: 'border-l-4 border-gray-200', info: 'border-l-4 border-blue-200' };
+/** The backend may ship a kind this build does not know yet (deploy skew) — degrade, never crash. */
+const kindUi = (k: string) => KIND_UI[k as Kind] ?? { label: k, cls: 'bg-gray-100 text-gray-700' };
+const sevRow = (s: string) => SEV_ROW[s as Severity] ?? 'border-l-4 border-gray-200';
 const REASON_LABEL: Record<Resolution['reason'], string> = { chyba_mvt: 'Chyba MVT', jina_chyba: 'Jiná chyba', v_poradku: 'V pořádku' };
 const SOURCE_LABEL: Record<string, string> = { finalni: 'Finální doplatek (kancelář)', admf: 'ADMF', raynet: 'Zaměření', zbyva: 'Zbývá uhradit' };
 const ERP_SEDI: Record<string, string> = { ano: 'Ano', ne: 'Ne', zkontroluj: 'ZKONTROLUJ' };
@@ -56,7 +62,7 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
   const label = it.event?.customer ?? (d.customer as string | null) ?? `zápis ${it.key}`;
 
   const resolveProblem = async () => {
-    const reason = window.prompt(`Uzavřít — ${label}. Důvod: chyba_mvt / jina_chyba / v_poradku`, 'v_poradku');
+    const reason = window.prompt(`Uzavřít — ${label}. Důvod: chyba_mvt / jina_chyba / v_poradku`, it.kind === 'nesedi_doplatek' ? 'v_poradku' : 'jina_chyba');
     if (reason == null) return;
     const r = reason.trim().toLowerCase();
     if (!['chyba_mvt', 'jina_chyba', 'v_poradku'].includes(r)) return window.alert('Zadejte chyba_mvt, jina_chyba nebo v_poradku.');
@@ -125,9 +131,9 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
   };
 
   return (
-    <tr className={`border-t border-gray-100 align-top ${SEV_ROW[it.severity]} ${it.resolution ? 'opacity-60' : ''}`}>
+    <tr className={`border-t border-gray-100 align-top ${sevRow(it.severity)} ${it.resolution ? 'opacity-60' : ''}`}>
       <td className="px-3 py-2">
-        <span className={`rounded px-2 py-0.5 text-xs font-medium ${KIND_UI[it.kind].cls}`}>{KIND_UI[it.kind].label}</span>
+        <span className={`rounded px-2 py-0.5 text-xs font-medium ${kindUi(it.kind).cls}`}>{kindUi(it.kind).label}</span>
         <p className="mt-1 text-sm font-medium text-gray-900">{it.title}</p>
         <p className="mt-0.5 max-w-sm text-xs text-gray-600">{it.reason}</p>
         {it.kind === 'nesedi_doplatek' && (
@@ -146,6 +152,13 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
           </p>
         )}
         {it.kind === 'reopen_request' && <p className="mt-1 text-xs text-gray-500">{String(d.requestedBy ?? '')} · {fmtDateTime(it.at)}</p>}
+        {['zapis_selhal', 'erp_nezapsano', 'reklamace_ceka'].includes(it.kind) && (
+          <p className="mt-1 text-xs text-gray-500">
+            {fmtDateTime(it.at)}
+            {d.erpComplaintId ? ` · reklamace #${String(d.erpComplaintId)}${d.claimStatus ? ` (${String(d.claimStatus)})` : ''}` : ''}
+            {d.komentar ? ` · „${String(d.komentar)}“` : ''}
+          </p>
+        )}
       </td>
       {!compact && (
         <td className="px-3 py-2">
@@ -174,7 +187,7 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
           {it.event && <a href={it.event.raynetUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Raynet</a>}
           {it.erpUrl && <a href={it.erpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">ERP</a>}
           {it.kind === 'nesedi_doplatek' && <Link href={`/mvt/zapisy/${it.key}`} className="text-blue-600 hover:underline">Zápis</Link>}
-          {it.kind === 'eskalace' && d.outcomeId ? <Link href={`/mvt/zapisy/${String(d.outcomeId)}`} className="text-blue-600 hover:underline">Zápis</Link> : null}
+          {(it.kind === 'eskalace' || ['zapis_selhal', 'erp_nezapsano', 'reklamace_ceka'].includes(it.kind)) && d.outcomeId ? <Link href={`/mvt/zapisy/${String(d.outcomeId)}`} className="text-blue-600 hover:underline">Zápis</Link> : null}
           {it.resolveVia === 'reopen' ? (
             <>
               <button type="button" disabled={busy} onClick={() => void approve()} className="rounded bg-[#1E8449] px-2 py-1 font-medium text-white disabled:opacity-50">Otevřít (48 h)</button>
@@ -206,8 +219,14 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
 
 /** Problematické zakázky (MVT): a queue of things needing a TL decision, resolved with a reason. */
 export function MvtProblemsClient() {
-  const [from, setFrom] = useState(() => ymd(new Date(Date.now() - 29 * 86_400_000)));
-  const [to, setTo] = useState(() => ymd(new Date()));
+  // Dates are filled after mount: the server and the browser can disagree on
+  // "today", so the SSR markup differed from the first client render (React #418).
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  useEffect(() => {
+    setFrom(ymd(new Date(Date.now() - 29 * 86_400_000)));
+    setTo(ymd(new Date()));
+  }, []);
   const [includeResolved, setIncludeResolved] = useState(false);
   const [items, setItems] = useState<ProblemItem[]>([]);
   const [resolvedCount, setResolvedCount] = useState(0);
@@ -218,6 +237,7 @@ export function MvtProblemsClient() {
   const [kinds, setKinds] = useState<Kind[]>([]);
 
   const load = useCallback(async () => {
+    if (!from || !to) return;
     setLoading(true);
     setError(null);
     try {
@@ -227,7 +247,7 @@ export function MvtProblemsClient() {
         setError(json.error || json.message || `HTTP ${res.status}`);
         return;
       }
-      setItems(json.data.items ?? []);
+      setItems((json.data?.items ?? []) as ProblemItem[]);
       setResolvedCount(json.data.resolvedCount ?? 0);
     } catch {
       setError('Chyba spojení.');
@@ -250,8 +270,8 @@ export function MvtProblemsClient() {
         <TeamFilter workforce="mvt" value={teamId} onChange={(sel) => { setTeamId(sel?.id ?? null); setTeam(sel); }} />
         <div className="flex flex-wrap gap-1">
           {(Object.keys(KIND_UI) as Kind[]).map((k) => (
-            <button key={k} type="button" onClick={() => setKinds((p) => (p.includes(k) ? p.filter((x) => x !== k) : [...p, k]))} className={`rounded-full px-2.5 py-1 text-xs font-medium ${KIND_UI[k].cls} ${kinds.includes(k) ? 'ring-2 ring-gray-500 ring-offset-1' : 'opacity-80'}`}>
-              {KIND_UI[k].label} · {counts[k] ?? 0}
+            <button key={k} type="button" onClick={() => setKinds((p) => (p.includes(k) ? p.filter((x) => x !== k) : [...p, k]))} className={`rounded-full px-2.5 py-1 text-xs font-medium ${kindUi(k).cls} ${kinds.includes(k) ? 'ring-2 ring-gray-500 ring-offset-1' : 'opacity-80'}`}>
+              {kindUi(k).label} · {counts[k] ?? 0}
             </button>
           ))}
         </div>

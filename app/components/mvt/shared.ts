@@ -28,6 +28,7 @@ export interface TlDayEvent {
     vybranoKolik: number | null;
     zpusobUhrady: string | null;
     slevaMvt: number | null;
+    duvod?: string | null;
   } | null;
   uploads: number;
   appState: AppState;
@@ -49,7 +50,7 @@ export const STATE_UI: Record<AppState, { label: string; cls: string }> = {
   reopened: { label: 'Otevřeno k opravě', cls: 'bg-amber-100 text-amber-800' },
 };
 
-export const WORKFLOW_LABEL: Record<string, string> = { montaz: 'Montáž', reklamace: 'Reklamace' };
+export const WORKFLOW_LABEL: Record<string, string> = { montaz: 'Montáž', reklamace: 'Reklamace', servis: 'Servis', placena_oprava: 'Placená oprava' };
 export const OUTCOME_LABEL: Record<string, string> = { happy: 'Dokončeno', reklamace: 'Odesláno na reklamace', zachrana: 'Dokončeno se záchranou' };
 
 export const OUTCOME_STATUS_LABEL: Record<string, string> = {
