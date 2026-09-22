@@ -51,6 +51,8 @@ const RAYNET_MONEY = new Set(['Vybrano_ko_4ba23', 'Vybrano_ko_85b19', 'Sleva_MVT
 const ERP_ORDER_STATUS: Record<string, string> = { 'dokoncena-montaz': 'Dokončená montáž', reklamace: 'Reklamace', natrasovani: 'Natrasování', 'objednavka-dokoncena': 'Objednávka dokončena' };
 const ERP_COL: Record<string, string> = {
   dokoncena_montaz: 'Dokončena montáž?',
+  servis_dokoncen: 'Dokončeno? servis',
+  proc_nedopadl_servis: 'Proč ne? servis',
   proc_nedopadla_montaz: 'Proč ne/výhrada montáž',
   datum_montaze: 'Dat. montáže',
   cas_montaze: 'Čas montáže',
