@@ -6,6 +6,7 @@ import { NAV, SHARED_NAV } from '../navigation/Navigation';
 import { STATE_UI, fmtDateTime, type TlDayEvent } from './shared';
 import { KIND_UI, ProblemRow, type ProblemItem } from './MvtProblemsClient';
 import { REOPEN_STATUS_UI, hoursLeftLabel, openForCorrection, reopenAction, type TlReopenItem } from './reopen';
+import { ReklamaceRow, REKL_STATE_UI, type ReklamaceItem } from './MvtReklamaceClient';
 
 interface OpenItem {
   kind: 'no_outcome' | 'closed_outside';
@@ -18,6 +19,7 @@ interface Overview {
   problems: { counts: Record<string, number>; top: ProblemItem[] };
   open: { counts: { missing: number; older: number; closedOutsideApp: number }; top: OpenItem[]; byMonter: { name: string; missing: number; older: number }[] };
   reopens: { open: TlReopenItem[]; requested: TlReopenItem[] };
+  reklamace?: { counts: Record<string, number>; top: ReklamaceItem[] };
 }
 const OPEN_COUNT_LABEL: Record<string, string> = { missing: 'chybí výsledek', older: 'starší backlog', closedOutsideApp: 'uzavřeno mimo aplikaci' };
 
@@ -93,6 +95,23 @@ export function MvtOverviewClient() {
                   <ReopenLine key={r.id} r={r} onChanged={() => void load()} />
                 ))}
               </ul>
+            )}
+          </Block>
+
+          <Block title="Reklamace z montáží" count={(data.reklamace?.counts.ceka ?? 0) + (data.reklamace?.counts.bez_reklamace ?? 0)} href="/mvt/reklamace" tone="gray">
+            <p className="px-2 pb-2 text-xs text-gray-500">
+              {(['ceka', 'bez_reklamace', 'naplanovano'] as const).map((k) => `${REKL_STATE_UI[k].label.toLowerCase()} ${data.reklamace?.counts[k] ?? 0}`).join(' · ')}
+            </p>
+            {(data.reklamace?.top ?? []).length === 0 ? (
+              <p className="px-2 pb-2 text-sm text-gray-500">Nic otevřeného.</p>
+            ) : (
+              <table className="min-w-full text-sm">
+                <tbody>
+                  {(data.reklamace?.top ?? []).map((it) => (
+                    <ReklamaceRow key={it.outcomeId} it={it} compact />
+                  ))}
+                </tbody>
+              </table>
             )}
           </Block>
 

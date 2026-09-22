@@ -79,7 +79,13 @@ export function statusClasses(status: string): string {
 
 export function fmtDateTime(iso: string | null): string {
   if (!iso) return '—';
-  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T'));
+  // Postgres text timestamps look like "2026-09-21 12:21:02.631086+00" — JS needs
+  // "T", at most 3 fraction digits and a "+00:00" offset.
+  const norm = iso
+    .replace(' ', 'T')
+    .replace(/(\.\d{3})\d+/, '$1')
+    .replace(/([+-]\d{2})$/, '$1:00');
+  const d = new Date(norm);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
