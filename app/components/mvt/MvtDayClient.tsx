@@ -129,7 +129,7 @@ export function MvtDayClient() {
                       {e.zamerovac ? <>Zaměřovač: <span className="text-gray-800">{e.zamerovac.name}</span></> : <span className="text-amber-700">Zaměření nenalezeno</span>}
                     </td>
                     <td className="px-3 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATE_UI[e.appState].cls}`}>{STATE_UI[e.appState].label}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${(STATE_UI[e.appState] ?? { cls: 'bg-gray-100 text-gray-700' }).cls}`}>{(STATE_UI[e.appState] ?? { label: e.appState }).label}</span>
                       {e.outcome && (
                         <p className="mt-1 text-xs text-gray-600">
                           {e.outcome.vybranoKolik != null && <>{fmtKc(e.outcome.vybranoKolik)}{e.outcome.zpusobUhrady ? ` · ${e.outcome.zpusobUhrady}` : ''}</>}

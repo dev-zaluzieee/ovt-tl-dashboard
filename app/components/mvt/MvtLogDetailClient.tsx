@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { OUTCOME_LABEL, WORKFLOW_LABEL, fmtDateTime, fmtKc, statusClasses } from './shared';
+import { OUTCOME_LABEL, WORKFLOW_LABEL, fmtDateTime, fmtKc, statusClasses, OUTCOME_STATUS_LABEL } from './shared';
+import { explainStep } from './stepExplain';
 
 interface Detail {
   outcome: {
@@ -14,14 +15,6 @@ interface Detail {
   attachments: { id: number; kind: string; file_name: string; file_size: number | null; created_at: string }[];
 }
 
-const TARGET_LABEL: Record<string, string> = {
-  raynet_event: 'Raynet — událost (pole + stav)',
-  erp_order: 'ERP — zakázka (stav + sloupce)',
-  erp_comment: 'ERP — komentář',
-  erp_complaint: 'ERP — reklamace',
-  raynet_attachment: 'Raynet — příloha',
-  finance_cash: 'Hotovost — pokladna montéra',
-};
 const KIND_LABEL: Record<string, string> = { predavak: 'Předávací protokol', reklamacni_formular: 'Reklamační formulář', foto: 'Foto z montáže' };
 const FIELD_LABEL: Record<string, string> = {
   outcome: 'Výsledek', monter: 'Montér', vybranoKolik: 'Vybráno kolik', zpusobUhrady: 'Způsob úhrady', slevaMvt: 'Sleva (zadaná)',
@@ -78,7 +71,7 @@ export function MvtLogDetailClient({ id }: { id: string }) {
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900">{WORKFLOW_LABEL[o.workflow] ?? o.workflow} → {OUTCOME_LABEL[o.outcome] ?? o.outcome}</h1>
-              <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClasses(o.status)}`}>{o.status}</span>
+              <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClasses(o.status)}`}>{OUTCOME_STATUS_LABEL[o.status] ?? o.status}</span>
               {o.test_mode && <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] text-purple-800">TEST</span>}
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-4">
@@ -107,16 +100,29 @@ export function MvtLogDetailClient({ id }: { id: string }) {
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Co se kam zapsalo</h2>
             {data.steps.length === 0 ? <p className="text-sm text-gray-500">Žádné kroky (zápis neproběhl).</p> : (
-              <ul className="space-y-2">
-                {data.steps.map((s) => (
-                  <li key={s.id} className="flex flex-wrap items-center gap-3 rounded border border-gray-100 p-3 text-sm">
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClasses(s.status === 'SKIPPED' ? 'PENDING' : s.status)}`}>{s.status === 'SKIPPED' ? 'BEZ ZMĚNY' : s.status}</span>
-                    <span className="font-medium">{TARGET_LABEL[s.target] ?? s.target}</span>
-                    <span className="text-xs text-gray-500">{fmtDateTime(s.created_at)}</span>
-                    {s.error_message && <span className="text-xs text-red-700">{s.error_message}</span>}
-                  </li>
-                ))}
-              </ul>
+              <ol className="space-y-3">
+                {data.steps.map((s) => {
+                  const ex = explainStep(s);
+                  const badge = s.status === 'SKIPPED' ? { text: 'Bez změny', cls: 'bg-gray-100 text-gray-600' } : s.status === 'SUCCESS' ? { text: 'Zapsáno', cls: 'bg-green-100 text-green-800' } : { text: 'Nezdařilo se', cls: 'bg-red-100 text-red-800' };
+                  return (
+                    <li key={s.id} className={`rounded-lg border p-3 text-sm ${s.status === 'FAILED' ? 'border-red-200 bg-red-50/40' : s.status === 'SKIPPED' ? 'border-gray-200 bg-gray-50/60' : 'border-gray-200'}`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded px-2 py-0.5 text-xs font-medium ${badge.cls}`}>{badge.text}</span>
+                        <span className="font-semibold text-gray-900">{ex.title}</span>
+                        <span className="ml-auto text-xs text-gray-500">{fmtDateTime(s.created_at)}{s.duration_ms != null ? ` · ${s.duration_ms} ms` : ''}</span>
+                      </div>
+                      {ex.lines.length > 0 && (
+                        <ul className="mt-2 space-y-0.5 pl-4 text-gray-800">
+                          {ex.lines.map((l, i) => <li key={i} className="list-disc">{l}</li>)}
+                        </ul>
+                      )}
+                      {ex.quote && <blockquote className="mt-2 whitespace-pre-wrap border-l-2 border-gray-300 pl-3 text-gray-700">{ex.quote}</blockquote>}
+                      {ex.note && <p className={`mt-2 text-xs ${s.status === 'FAILED' ? 'text-red-700' : 'text-gray-600'}`}>{ex.note}</p>}
+                      {ex.backfill && <p className="mt-2 text-[11px] text-purple-700">Doplněno ručně: {ex.backfill}</p>}
+                    </li>
+                  );
+                })}
+              </ol>
             )}
             <button type="button" onClick={() => setShowRaw((v) => !v)} className="mt-3 text-xs text-gray-500 underline">{showRaw ? 'Skrýt technické detaily' : 'Technické detaily (pro IT)'}</button>
             {showRaw && <pre className="mt-2 max-h-96 overflow-auto rounded bg-gray-50 p-2 text-xs">{JSON.stringify(data.steps, null, 2)}</pre>}

@@ -1,5 +1,5 @@
 /** Shared types/labels for the MVT side of the team-leader portal. */
-export type AppState = 'unassigned' | 'planned' | 'in_progress' | 'overdue' | 'done' | 'zachrana' | 'reklamace' | 'failed' | 'closed_raynet' | 'reopened';
+export type AppState = 'unassigned' | 'planned' | 'in_progress' | 'past_end' | 'overdue' | 'done' | 'zachrana' | 'reklamace' | 'failed' | 'closed_raynet' | 'reopened';
 
 export interface TlPerson {
   raynetId: number;
@@ -41,6 +41,7 @@ export const STATE_UI: Record<AppState, { label: string; cls: string }> = {
   unassigned: { label: 'Bez montéra (fronta)', cls: 'bg-gray-100 text-gray-500' },
   planned: { label: 'Naplánováno', cls: 'bg-gray-100 text-gray-700' },
   in_progress: { label: 'Probíhá', cls: 'bg-blue-100 text-blue-800' },
+  past_end: { label: 'Skončilo · čeká na zápis', cls: 'bg-amber-50 text-amber-800' },
   overdue: { label: 'Po termínu bez výsledku', cls: 'bg-rose-100 text-rose-800' },
   done: { label: 'Dokončeno', cls: 'bg-green-100 text-green-800' },
   zachrana: { label: 'Se záchranou', cls: 'bg-amber-100 text-amber-800' },
