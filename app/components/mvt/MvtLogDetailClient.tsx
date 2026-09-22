@@ -15,7 +15,7 @@ interface Detail {
   attachments: { id: number; kind: string; file_name: string; file_size: number | null; created_at: string }[];
 }
 
-const KIND_LABEL: Record<string, string> = { predavak: 'Předávací protokol', reklamacni_formular: 'Reklamační formulář', foto: 'Foto z montáže' };
+const KIND_LABEL: Record<string, string> = { predavak: 'Předávací protokol', reklamacni_formular: 'Reklamační protokol', foto: 'Foto z montáže' };
 const FIELD_LABEL: Record<string, string> = {
   outcome: 'Výsledek', monter: 'Montér', vybranoKolik: 'Vybráno kolik', zpusobUhrady: 'Způsob úhrady', slevaMvt: 'Sleva (zadaná)',
   slevaMvtEffective: 'Sleva (zapsaná)', infoKeSleve: 'Info ke slevě', infoKZachrane: 'Info k záchraně', doplatekAtSubmit: 'Doplatek při odeslání',

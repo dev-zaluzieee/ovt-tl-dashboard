@@ -68,6 +68,7 @@ const ERP_COL: Record<string, string> = {
   reklamace_datum_montaze: 'Datum montáže',
   reklamace_datum_zamereni: 'Datum zaměření',
   reklamace_blocker: 'Na co čekám',
+  vinik_kategorie: 'Viník kategorie',
 };
 const ERP_VAL: Record<string, string> = {
   ano: 'Ano', ne: 'Ne', zkontroluj: 'ZKONTROLUJ',
@@ -77,6 +78,7 @@ const ERP_VAL: Record<string, string> = {
   sleva_monter: 'Sleva montér', placena_oprava: 'Placená oprava', zjisteno_monterem: 'Zjištěno montérem', servis: 'Servis',
   prvni: 'První', druha: 'Druhá', treti: 'Třetí', ctvrta: 'Čtvrtá', pata: 'Pátá', info_od_montera: 'Info od montéra',
   'reklamace-nova': 'Nová', 'reklamace-proveruje-se': 'Prověřuje se', 'reklamace-vyresena': 'Vyřešena',
+  ovt: 'OVT', vyrobce: 'Výrobce', monter: 'Montér', zakaznik: 'Zákazník', dopravce: 'Dopravce', sklad: 'Sklad',
 };
 const SKIP_REASON: Record<string, string> = {
   'no erp_order_id': 'Objednávka nemá ERP zakázku — kancelář doplní ručně.',
@@ -91,6 +93,15 @@ const fmtD = (v: string): string => {
 };
 const erpValue = (slug: string, v: unknown): string => {
   const s = String(v);
+  // multiselect values arrive JSON-encoded: '["ovt"]'
+  if (s.startsWith('[')) {
+    try {
+      const arr = JSON.parse(s) as unknown[];
+      if (Array.isArray(arr)) return arr.map((x) => ERP_VAL[String(x)] ?? String(x)).join(', ');
+    } catch {
+      /* fall through */
+    }
+  }
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return fmtD(s);
   if (slug === 'cas_montaze') return s.slice(0, 5);
   if (slug === 'reklamace_cena_kompenzace') return fmtKc(Number(s));
