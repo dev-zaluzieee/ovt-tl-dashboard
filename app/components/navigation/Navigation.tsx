@@ -81,6 +81,7 @@ export const NAV: Record<Workforce, NavGroup[]> = {
         { href: '/mvt', label: 'Přehled', description: 'Vše, co potřebuje rozhodnutí team leadera: problematické zakázky, události otevřené k opravě, nedokončené montáže.' },
         { href: '/mvt/prehled-dne', label: 'Přehled dne', description: 'Montáže, servisy a reklamace dne po montérech, se stavem dokončení z aplikace. Jen ke čtení.' },
         { href: '/mvt/nedokoncene', label: 'Chybí výsledek', description: 'Zakázky po termínu bez zaznamenaného výsledku — v aplikaci ani v Raynetu; plus co bylo uzavřeno mimo aplikaci.' },
+        { href: '/mvt/parovani', label: 'Párování montáží', description: 'Zítřejší montáže, které systém nespároval s objednávkou — kancelář vybere objednávku, jinak je montér v aplikaci neuzavře.' },
         { href: '/mvt/problematicke-zakazky', label: 'Problematické zakázky', description: 'Eskalace od financí a kanceláře, nesedící doplatky a žádosti montérů o otevření k opravě — každou uzavřete s důvodem.' },
       ],
     },

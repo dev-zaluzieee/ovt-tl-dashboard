@@ -20,6 +20,7 @@ interface Overview {
   open: { counts: { missing: number; older: number; closedOutsideApp: number }; top: OpenItem[]; byMonter: { name: string; missing: number; older: number }[] };
   reopens: { open: TlReopenItem[]; requested: TlReopenItem[] };
   reklamace?: { counts: Record<string, number>; top: ReklamaceItem[] };
+  pairing?: { date: string; unresolved: number; uncertain: number; total: number };
 }
 const OPEN_COUNT_LABEL: Record<string, string> = { missing: 'chybí výsledek', older: 'starší backlog', closedOutsideApp: 'uzavřeno mimo aplikaci' };
 
@@ -96,6 +97,21 @@ export function MvtOverviewClient() {
                 ))}
               </ul>
             )}
+          </Block>
+
+          <Block title="Párování na zítra" count={data.pairing?.unresolved ?? 0} href="/mvt/parovani" tone={(data.pairing?.unresolved ?? 0) > 0 ? 'rose' : 'gray'}>
+            <p className="px-2 pb-2 text-sm text-gray-700">
+              {data.pairing ? (
+                <>
+                  {data.pairing.total} montáží na {data.pairing.date.slice(8, 10)}. {data.pairing.date.slice(5, 7)}. ·{' '}
+                  <b className={data.pairing.unresolved ? 'text-rose-700' : 'text-gray-500'}>{data.pairing.unresolved} k spárování</b> ·{' '}
+                  <b className={data.pairing.uncertain ? 'text-amber-700' : 'text-gray-500'}>{data.pairing.uncertain} k potvrzení</b>
+                </>
+              ) : (
+                'Nepodařilo se načíst.'
+              )}
+            </p>
+            {(data.pairing?.unresolved ?? 0) > 0 && <p className="px-2 pb-2 text-xs text-gray-500">Montéři tyto události zítra v aplikaci neuzavřou, dokud je kancelář nespáruje.</p>}
           </Block>
 
           <Block title="Reklamace z montáží" count={(data.reklamace?.counts.ceka ?? 0) + (data.reklamace?.counts.bez_reklamace ?? 0)} href="/mvt/reklamace" tone="gray">
