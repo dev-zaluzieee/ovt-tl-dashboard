@@ -268,6 +268,7 @@ export function MvtDayClient() {
                             )}
                             {e.outcome.slevaMvt ? <> · sleva {fmtKc(e.outcome.slevaMvt)}</> : null}
                             {e.outcome.status === 'PARTIAL_SUCCESS' && <span className="ml-1 text-amber-700">· ERP nezapsáno</span>}
+                            {e.outcome.erpUnpaired && <span className="ml-1 font-medium text-rose-700">· ERP nezapsáno (bez párování)</span>}
                             {e.outcome.duvod && <span className="ml-1 text-rose-700">· {e.outcome.duvod}</span>}
                           </p>
                         )}
@@ -283,7 +284,7 @@ export function MvtDayClient() {
                             Chybí výsledek
                           </Link>
                         )}
-                        {(e.appState === 'failed' || e.outcome?.status === 'PARTIAL_SUCCESS' || e.reopen?.status === 'requested') && (
+                        {(e.appState === 'failed' || e.outcome?.status === 'PARTIAL_SUCCESS' || e.outcome?.erpUnpaired || e.reopen?.status === 'requested') && (
                           <Link href="/mvt/problematicke-zakazky" className="mr-2 text-blue-600 hover:underline">
                             Problematické
                           </Link>

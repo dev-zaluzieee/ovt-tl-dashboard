@@ -29,6 +29,7 @@ export interface TlDayEvent {
     zpusobUhrady: string | null;
     slevaMvt: number | null;
     duvod?: string | null;
+    erpUnpaired?: boolean;
   } | null;
   uploads: number;
   appState: AppState;

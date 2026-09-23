@@ -20,6 +20,7 @@ const FIELD_LABEL: Record<string, string> = {
   outcome: 'Výsledek', monter: 'Montér', vybranoKolik: 'Vybráno kolik', zpusobUhrady: 'Způsob úhrady', slevaMvt: 'Sleva (zadaná)',
   slevaMvtEffective: 'Sleva (zapsaná)', infoKeSleve: 'Info ke slevě', infoKZachrane: 'Info k záchraně', doplatekAtSubmit: 'Doplatek při odeslání',
   duvodLabel: 'Důvod (proč nedopadla)', komentar: 'Co se stalo / komentář', expectedSource: 'Zdroj očekávané částky',
+  doplatekDeferred: 'Doplatek nevybrán — zůstává k úhradě', slevaCorrectedAt: 'Sleva opravena (nebyla poskytnuta)',
   expectedAtSubmit: 'Očekávaná částka při odeslání', testMode: 'Testovací režim',
 };
 
@@ -30,7 +31,7 @@ function PayloadTable({ p }: { p: Record<string, unknown> }) {
     .map(([k, v]) => {
       let text: string;
       if (k === 'outcome') text = OUTCOME_LABEL[String(v)] ?? String(v);
-      else if (typeof v === 'number' && /kolik|sleva|doplatek|expected/i.test(k)) text = fmtKc(v);
+      else if (typeof v === 'number' && /kolik|sleva|doplatek|expected|deferred/i.test(k)) text = fmtKc(v);
       else if (typeof v === 'boolean') text = v ? 'Ano' : 'Ne';
       else text = String(v);
       return { label: FIELD_LABEL[k] ?? k, text };

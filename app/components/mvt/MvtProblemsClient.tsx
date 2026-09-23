@@ -6,7 +6,7 @@ import { TeamFilter, type TeamSelection } from '../teams/TeamFilter';
 import { OUTCOME_LABEL, WORKFLOW_LABEL, eventInTeam, fmtDateTime, fmtKc, ymd, type TlDayEvent } from './shared';
 import { openForCorrection, reopenAction } from './reopen';
 
-type Kind = 'nesedi_doplatek' | 'eskalace' | 'reopen_request' | 'zapis_selhal' | 'erp_nezapsano';
+type Kind = 'nesedi_doplatek' | 'eskalace' | 'reopen_request' | 'zapis_selhal' | 'erp_nezapsano' | 'erp_nesparovano';
 type Severity = 'red' | 'amber' | 'low' | 'info';
 interface Resolution {
   reason: 'chyba_mvt' | 'jina_chyba' | 'v_poradku';
@@ -37,6 +37,7 @@ export const KIND_UI: Record<Kind, { label: string; cls: string }> = {
   eskalace: { label: 'Eskalováno na TL', cls: 'bg-rose-100 text-rose-800' },
   zapis_selhal: { label: 'Zápis selhal', cls: 'bg-red-100 text-red-800' },
   erp_nezapsano: { label: 'ERP nezapsáno', cls: 'bg-amber-100 text-amber-800' },
+  erp_nesparovano: { label: 'ERP nezapsáno · bez párování', cls: 'bg-rose-100 text-rose-800' },
   nesedi_doplatek: { label: 'Nesedí doplatek', cls: 'bg-amber-100 text-amber-800' },
   reopen_request: { label: 'Žádost o otevření', cls: 'bg-sky-100 text-sky-800' },
 };
@@ -151,7 +152,7 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
           </p>
         )}
         {it.kind === 'reopen_request' && <p className="mt-1 text-xs text-gray-500">{String(d.requestedBy ?? '')} · {fmtDateTime(it.at)}</p>}
-        {['zapis_selhal', 'erp_nezapsano'].includes(it.kind) && (
+        {['zapis_selhal', 'erp_nezapsano', 'erp_nesparovano'].includes(it.kind) && (
           <p className="mt-1 text-xs text-gray-500">
             {fmtDateTime(it.at)}
             {d.erpComplaintId ? ` · reklamace #${String(d.erpComplaintId)}` : ''}
@@ -186,7 +187,7 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
           {it.event && <a href={it.event.raynetUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Raynet</a>}
           {it.erpUrl && <a href={it.erpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">ERP</a>}
           {it.kind === 'nesedi_doplatek' && <Link href={`/mvt/zapisy/${it.key}`} className="text-blue-600 hover:underline">Zápis</Link>}
-          {(it.kind === 'eskalace' || ['zapis_selhal', 'erp_nezapsano'].includes(it.kind)) && d.outcomeId ? <Link href={`/mvt/zapisy/${String(d.outcomeId)}`} className="text-blue-600 hover:underline">Zápis</Link> : null}
+          {(it.kind === 'eskalace' || ['zapis_selhal', 'erp_nezapsano', 'erp_nesparovano'].includes(it.kind)) && d.outcomeId ? <Link href={`/mvt/zapisy/${String(d.outcomeId)}`} className="text-blue-600 hover:underline">Zápis</Link> : null}
           {it.resolveVia === 'reopen' ? (
             <>
               <button type="button" disabled={busy} onClick={() => void approve()} className="rounded bg-[#1E8449] px-2 py-1 font-medium text-white disabled:opacity-50">Otevřít (48 h)</button>
