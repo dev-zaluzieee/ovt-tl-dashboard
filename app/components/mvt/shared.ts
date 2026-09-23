@@ -1,5 +1,5 @@
 /** Shared types/labels for the MVT side of the team-leader portal. */
-export type AppState = 'unassigned' | 'planned' | 'in_progress' | 'past_end' | 'overdue' | 'done' | 'zachrana' | 'reklamace' | 'failed' | 'closed_raynet' | 'reopened';
+export type AppState = 'unassigned' | 'planned' | 'in_progress' | 'past_end' | 'overdue' | 'done' | 'zachrana' | 'reklamace' | 'failed' | 'closed_raynet' | 'closed_manual' | 'reopened';
 
 export interface TlPerson {
   raynetId: number;
@@ -34,7 +34,10 @@ export interface TlDayEvent {
   appState: AppState;
   raynetUrl: string;
   /** Active / recent reopen ("Otevřít k opravě") of the event. */
-  reopen?: { id: number; status: 'requested' | 'open' | 'used' | 'expired' | 'declined' | 'cancelled'; isOpen: boolean; expiresAt: string | null; openReason: string | null; openedBy: string | null } | null;
+  reopen?: { id: number; status: 'requested' | 'open' | 'used' | 'expired' | 'declined' | 'cancelled'; isOpen: boolean; expiresAt: string | null; openReason: string | null; openedBy: string | null; requestReason?: string | null } | null;
+  erpOrderId?: number | null;
+  erpUrl?: string | null;
+  claim?: { id: number; status: string; statusLabel: string; blocker: string | null; blockerLabel: string | null; druh: string | null; portalUrl: string } | null;
 }
 
 export const STATE_UI: Record<AppState, { label: string; cls: string }> = {
@@ -48,6 +51,7 @@ export const STATE_UI: Record<AppState, { label: string; cls: string }> = {
   reklamace: { label: 'Odesláno na reklamace', cls: 'bg-rose-100 text-rose-800' },
   failed: { label: 'Zápis selhal', cls: 'bg-red-100 text-red-800' },
   closed_raynet: { label: 'Uzavřeno v Raynetu', cls: 'bg-gray-200 text-gray-700' },
+  closed_manual: { label: 'Uzavřeno ručně v Raynetu', cls: 'bg-gray-200 text-gray-600' },
   reopened: { label: 'Otevřeno k opravě', cls: 'bg-amber-100 text-amber-800' },
 };
 
