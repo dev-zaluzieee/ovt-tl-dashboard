@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fmtDateTime, fmtKc, fmtTime, ymd } from './shared';
+import { officePortalOrderDeepLink } from '@/lib/officePortalUrls';
+
+const ERP_BASE = (process.env.NEXT_PUBLIC_ERP_BASE_URL?.replace(/\/$/, '')) || 'https://systeeem.cz';
+const erpOrderLink = (id: number) => `${ERP_BASE}/orders/${id}`;
 
 type Status = 'linked' | 'office' | 'auto_high' | 'auto_medium' | 'ambiguous' | 'unpaired' | 'no_order';
 interface Candidate {
@@ -41,7 +45,7 @@ function Candidates({ row, onPair, busy }: { row: Row; onPair: (orderId: number)
         const chosen = row.orderId === c.id;
         return (
           <li key={c.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded border px-3 py-2 text-sm ${chosen ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
-            <a href={`/objednavka/${c.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">#{c.id}</a>
+            <a href={officePortalOrderDeepLink(c.id)} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline" title="Objednávka v kancelářském portálu (zaměření, formuláře)">#{c.id}</a>
             <span className="text-gray-900">{c.name ?? '—'}</span>
             <span className="text-xs text-gray-500">{[c.address, c.city].filter(Boolean).join(', ')}</span>
             <span className="text-xs text-gray-500">zaměření {fmtDateTime(c.createdAt).slice(0, 10)} · {zamerovac(c.userId)}</span>
@@ -49,7 +53,11 @@ function Candidates({ row, onPair, busy }: { row: Row; onPair: (orderId: number)
               {c.admfExported ? 'ADMF objednána' : c.admfCount ? `ADMF ${c.admfCount}× neobjednána` : 'bez ADMF'}
             </span>
             {c.doplatek != null && <span className="text-xs text-gray-600">doplatek {fmtKc(c.doplatek)}</span>}
-            {c.erpOrderId && <span className="text-xs text-gray-500">ERP #{c.erpOrderId}</span>}
+            {c.erpOrderId && (
+              <a href={erpOrderLink(c.erpOrderId)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline" title="Zakázka v ERP">
+                ERP #{c.erpOrderId}
+              </a>
+            )}
             <span className="text-[11px] text-gray-400">shoda: {c.via.map((v) => VIA[v]).join(', ')}</span>
             <button type="button" disabled={busy || chosen} onClick={() => onPair(c.id)} className={`ml-auto rounded px-2 py-1 text-xs font-medium disabled:opacity-50 ${chosen ? 'border border-green-300 text-green-800' : 'bg-[#1E8449] text-white'}`}>
               {chosen ? (row.status === 'auto_medium' ? 'Potvrdit' : 'Vybráno') : 'Spárovat'}
@@ -73,6 +81,10 @@ export function MvtPairingClient() {
   const [busy, setBusy] = useState<number | null>(null);
   const [showSettled, setShowSettled] = useState(false);
   const [manual, setManual] = useState<Record<number, string>>({});
+  const [q, setQ] = useState('');
+  const [monterFilter, setMonterFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Status[]>([]);
+  const [onlyWithSubmission, setOnlyWithSubmission] = useState(false);
 
   const load = useCallback(async () => {
     if (!date) return;
@@ -139,10 +151,26 @@ export function MvtPairingClient() {
               {row.address ?? '—'}{row.phone ? ` · ${row.phone}` : ''} · {row.monteri.join(', ') || 'bez montéra'}
               {row.title && row.customer ? ` · ${row.title}` : ''}
             </p>
-            {row.auto && <p className="mt-1 text-xs text-gray-600">Automaticky: objednávka #{row.auto.orderId} — {row.auto.matched}</p>}
+            {row.auto && (
+              <p className="mt-1 text-xs text-gray-600">
+                Automaticky:{' '}
+                <a href={officePortalOrderDeepLink(row.auto.orderId)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  objednávka #{row.auto.orderId}
+                </a>{' '}
+                — {row.auto.matched}
+              </p>
+            )}
             {row.office && (
               <p className="mt-1 text-xs text-gray-600">
-                Kancelář: {row.office.decision === 'no_order' ? 'bez objednávky' : `objednávka #${row.office.order_id}`} · {row.office.decided_by} · {fmtDateTime(row.office.decided_at)}
+                Kancelář:{' '}
+                {row.office.decision === 'no_order' ? (
+                  'bez objednávky'
+                ) : (
+                  <a href={officePortalOrderDeepLink(row.office.order_id ?? 0)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    objednávka #{row.office.order_id}
+                  </a>
+                )}{' '}
+                · {row.office.decided_by} · {fmtDateTime(row.office.decided_at)}
                 {row.office.note ? ` · „${row.office.note}“` : ''}
                 {row.office.decision === 'paired' && !row.office.raynet_linked && <span className="ml-1 text-amber-700">· odkaz do Raynetu se nezapsal</span>}
               </p>
@@ -191,6 +219,30 @@ export function MvtPairingClient() {
 
   const isToday = useMemo(() => date === ymd(new Date()), [date]);
 
+  // Filters apply across all three sections; the montér list comes from the day itself.
+  const allRows = useMemo(() => (data ? [...data.unresolved, ...data.uncertain, ...data.settled] : []), [data]);
+  const monteri = useMemo(() => [...new Set(allRows.flatMap((r) => r.monteri))].sort((a, b) => a.localeCompare(b, 'cs')), [allRows]);
+  const norm = (v: string) => v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const matches = useCallback(
+    (r: Row) => {
+      if (monterFilter && !r.monteri.includes(monterFilter)) return false;
+      if (statusFilter.length && !statusFilter.includes(r.status)) return false;
+      if (onlyWithSubmission && !r.hasSubmission) return false;
+      if (q.trim()) {
+        const needle = norm(q.trim());
+        const hay = norm([r.customer, r.title, r.address, r.phone, String(r.eventId), r.orderId != null ? `#${r.orderId}` : '', ...r.monteri, ...r.candidates.map((c) => `#${c.id} ${c.name ?? ''} ${c.address ?? ''}`)].filter(Boolean).join(' '));
+        if (!hay.includes(needle)) return false;
+      }
+      return true;
+    },
+    [monterFilter, statusFilter, onlyWithSubmission, q]
+  );
+  const unresolved = useMemo(() => (data?.unresolved ?? []).filter(matches), [data, matches]);
+  const uncertain = useMemo(() => (data?.uncertain ?? []).filter(matches), [data, matches]);
+  const settled = useMemo(() => (data?.settled ?? []).filter(matches), [data, matches]);
+  const statusCounts = useMemo(() => allRows.reduce<Record<string, number>>((a, r) => ({ ...a, [r.status]: (a[r.status] ?? 0) + 1 }), {}), [allRows]);
+  const filtersActive = !!q.trim() || !!monterFilter || statusFilter.length > 0 || onlyWithSubmission;
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -207,29 +259,79 @@ export function MvtPairingClient() {
         <button type="button" onClick={() => void load()} className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm">Obnovit</button>
       </div>
 
+      {!loading && data && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Hledat: zákazník, adresa, telefon, montér, číslo události nebo objednávky…"
+            className="min-w-[18rem] flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm"
+          />
+          <select value={monterFilter} onChange={(e) => setMonterFilter(e.target.value)} className="rounded border border-gray-300 px-2 py-1.5 text-sm">
+            <option value="">všichni montéři</option>
+            {monteri.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <div className="flex flex-wrap gap-1">
+            {(Object.keys(STATUS_UI) as Status[])
+              .filter((st) => statusCounts[st])
+              .map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setStatusFilter((prev) => (prev.includes(st) ? prev.filter((x) => x !== st) : [...prev, st]))}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_UI[st].cls} ${statusFilter.includes(st) ? 'ring-2 ring-gray-500 ring-offset-1' : 'opacity-80'}`}
+                >
+                  {STATUS_UI[st].label} · {statusCounts[st]}
+                </button>
+              ))}
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={onlyWithSubmission} onChange={(e) => setOnlyWithSubmission(e.target.checked)} />
+            jen už zapsané v aplikaci
+          </label>
+          {filtersActive && (
+            <button type="button" onClick={() => { setQ(''); setMonterFilter(''); setStatusFilter([]); setOnlyWithSubmission(false); }} className="text-xs text-blue-600 hover:underline">
+              zrušit filtry
+            </button>
+          )}
+        </div>
+      )}
+
       {error && <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
       {loading && <p className="py-8 text-center text-gray-500">Načítám…</p>}
       {!loading && data && (
         <>
           <section>
             <h2 className="mb-2 text-sm font-semibold text-gray-900">
-              K spárování <span className="text-gray-500">· {data.unresolved.length}</span>
+              K spárování <span className="text-gray-500">· {unresolved.length}{filtersActive && unresolved.length !== data.unresolved.length ? ` z ${data.unresolved.length}` : ''}</span>
             </h2>
             <p className="mb-2 text-xs text-gray-500">Montér tyto události v aplikaci neuzavře, dokud nerozhodnete. Vyberte objednávku, nebo označte, že žádná není.</p>
-            {data.unresolved.length === 0 ? <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">Vše spárováno. 🎉</p> : <ul className="space-y-3">{data.unresolved.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>}
+            {unresolved.length === 0 ? (
+              <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">{filtersActive && data.unresolved.length ? 'Filtru nic neodpovídá.' : 'Vše spárováno. 🎉'}</p>
+            ) : (
+              <ul className="space-y-3">{unresolved.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>
+            )}
           </section>
           <section>
             <h2 className="mb-2 text-sm font-semibold text-gray-900">
-              K potvrzení <span className="text-gray-500">· {data.uncertain.length}</span>
+              K potvrzení <span className="text-gray-500">· {uncertain.length}{filtersActive && uncertain.length !== data.uncertain.length ? ` z ${data.uncertain.length}` : ''}</span>
             </h2>
             <p className="mb-2 text-xs text-gray-500">Spárováno automaticky jen podle adresy nebo kontaktu. Montér může uzavřít i bez potvrzení — zkontrolujte, že objednávka sedí.</p>
-            {data.uncertain.length === 0 ? <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">Nic k potvrzení.</p> : <ul className="space-y-3">{data.uncertain.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>}
+            {uncertain.length === 0 ? (
+              <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">{filtersActive && data.uncertain.length ? 'Filtru nic neodpovídá.' : 'Nic k potvrzení.'}</p>
+            ) : (
+              <ul className="space-y-3">{uncertain.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>
+            )}
           </section>
           <section>
             <button type="button" onClick={() => setShowSettled((v) => !v)} className="text-sm font-semibold text-gray-900">
-              {showSettled ? '▾' : '▸'} Spárováno <span className="text-gray-500">· {data.settled.length}</span>
+              {showSettled || filtersActive ? '▾' : '▸'} Spárováno <span className="text-gray-500">· {settled.length}{filtersActive && settled.length !== data.settled.length ? ` z ${data.settled.length}` : ''}</span>
             </button>
-            {showSettled && <ul className="mt-2 space-y-3">{data.settled.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>}
+            {(showSettled || filtersActive) && (
+              settled.length === 0 ? <p className="mt-2 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">Nic.</p> : <ul className="mt-2 space-y-3">{settled.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>
+            )}
           </section>
         </>
       )}
