@@ -143,12 +143,15 @@ export function MvtPairingClient() {
           <div>
             <p className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-sm text-gray-700">{fmtTime(row.scheduledFrom)}–{fmtTime(row.scheduledTill)}</span>
+              <span className={`rounded px-2 py-0.5 text-sm font-semibold ${row.monteri.length ? 'bg-sky-100 text-sky-900' : 'bg-gray-100 text-gray-500'}`}>
+                {row.monteri.join(' + ') || 'bez montéra'}
+              </span>
               <span className="font-semibold text-gray-900">{row.customer ?? row.title ?? `Událost ${row.eventId}`}</span>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ui.cls}`}>{ui.label}</span>
               {row.hasSubmission && <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-800">už zapsáno v aplikaci</span>}
             </p>
             <p className="text-xs text-gray-500">
-              {row.address ?? '—'}{row.phone ? ` · ${row.phone}` : ''} · {row.monteri.join(', ') || 'bez montéra'}
+              {row.address ?? '—'}{row.phone ? ` · ${row.phone}` : ''}
               {row.title && row.customer ? ` · ${row.title}` : ''}
             </p>
             {row.auto && (
