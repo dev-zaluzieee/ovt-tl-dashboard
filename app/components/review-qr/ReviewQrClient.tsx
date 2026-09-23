@@ -5,7 +5,9 @@
  *   1. global switch (default OFF — nothing shows on any tablet until flipped)
  *   2. QR targets: label + platform + URL; the QR is rendered from the URL
  *      (no images stored), "Náhled" shows what the tablet will display
- *   3. assignment: which target each OVT shows; unassigned OVTs get the default
+ *   3. assignment: which target each OVT shows PER PLATFORM — Google for B2C
+ *      customers, Firmy.cz for B2B (the tablet decides from the ADMF:
+ *      právnická osoba / IČO). Unassigned slots fall back to that platform's default.
  *   4. answers: what OVTs did with the prompt (last N days), per OVT + log
  *
  * Writes are admin-only on the backend; TL users are role admin, marketing
@@ -33,6 +35,7 @@ interface Target {
 }
 interface Assignment {
   ovt_email: string;
+  platform: Platform;
   target_id: number;
 }
 interface AppUser {
@@ -47,6 +50,7 @@ interface PromptRow {
   order_id: number | null;
   ovt_email: string;
   target_label: string | null;
+  audience: "b2c" | "b2b";
   shown_at: string;
   outcome: "written" | "not_shown" | "refused" | null;
   reason: string | null;
@@ -62,6 +66,11 @@ interface PromptStats {
 }
 
 const PLATFORM_LABEL: Record<Platform, string> = { google: "Google", firmy: "Firmy.cz", other: "Jiné" };
+/** The two audiences the tablet distinguishes; `other` targets are never auto-shown. */
+const AUDIENCE_PLATFORMS: Array<{ platform: Platform; audience: string }> = [
+  { platform: "google", audience: "B2C (soukromá osoba)" },
+  { platform: "firmy", audience: "B2B (firma, IČO)" },
+];
 const OUTCOME_LABEL: Record<string, string> = {
   written: "napsal",
   not_shown: "neukázáno",
@@ -183,8 +192,13 @@ export function ReviewQrClient() {
   async function toggleEnabled() {
     if (!settings) return;
     const next = !settings.enabled;
-    if (next && !targets.some((t) => t.active && (t.is_default || t.assigned_count > 0))) {
-      setError("Před zapnutím přidejte alespoň jeden aktivní QR cíl a nastavte ho jako výchozí nebo ho přiřaďte OVT.");
+    const missing = AUDIENCE_PLATFORMS.filter(
+      ({ platform }) => !targets.some((t) => t.active && t.platform === platform && (t.is_default || t.assigned_count > 0))
+    );
+    if (next && missing.length > 0) {
+      setError(
+        `Před zapnutím nastavte výchozí (nebo přiřazený) aktivní cíl pro: ${missing.map((m) => PLATFORM_LABEL[m.platform]).join(", ")}. Jinak by tito zákazníci QR neviděli.`
+      );
       return;
     }
     if (await send("/api/review-qr/settings", "PUT", { enabled: next }, "toggle")) {
@@ -216,23 +230,27 @@ export function ReviewQrClient() {
     }
   }
 
-  async function assign(email: string, targetId: number | null) {
-    if (await send("/api/review-qr/assignments", "PUT", { ovtEmail: email, targetId }, `as-${email}`)) {
+  async function assign(email: string, platform: Platform, targetId: number | null) {
+    const key = `as-${email}-${platform}`;
+    if (await send("/api/review-qr/assignments", "PUT", { ovtEmail: email, platform, targetId }, key)) {
       setAssignments((prev) => {
-        const rest = prev.filter((a) => a.ovt_email !== email.toLowerCase());
-        return targetId == null ? rest : [...rest, { ovt_email: email.toLowerCase(), target_id: targetId }];
+        const rest = prev.filter((a) => !(a.ovt_email === email.toLowerCase() && a.platform === platform));
+        return targetId == null ? rest : [...rest, { ovt_email: email.toLowerCase(), platform, target_id: targetId }];
       });
-      setTargets((prev) => prev); // counts refresh on next load
     }
   }
 
+  /** email -> platform -> target id */
   const assignmentByEmail = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const a of assignments) m.set(a.ovt_email, a.target_id);
+    const m = new Map<string, Map<Platform, number>>();
+    for (const a of assignments) {
+      if (!m.has(a.ovt_email)) m.set(a.ovt_email, new Map());
+      m.get(a.ovt_email)!.set(a.platform, a.target_id);
+    }
     return m;
   }, [assignments]);
   const targetById = useMemo(() => new Map(targets.map((t) => [t.id, t])), [targets]);
-  const defaultTarget = targets.find((t) => t.is_default) ?? null;
+  const defaultFor = (platform: Platform) => targets.find((t) => t.is_default && t.platform === platform) ?? null;
 
   const ovts = useMemo(() => {
     const q = ovtFilter.trim().toLowerCase();
@@ -302,7 +320,8 @@ export function ReviewQrClient() {
         <h2 className="text-lg font-semibold text-gray-900">QR cíle</h2>
         <p className="text-sm text-gray-500">
           Jeden cíl = jedna stránka s recenzemi (Google Praha, Firmy.cz Ostrava…). QR se generuje z URL, obrázky se neukládají.
-          Výchozí cíl vidí každý OVT bez vlastního přiřazení.
+          Google je pro soukromé zákazníky (B2C), Firmy.cz pro firmy (B2B, právnická osoba / IČO v ADMF). Každá platforma má
+          svůj výchozí cíl pro OVT bez vlastního přiřazení.
         </p>
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -322,7 +341,9 @@ export function ReviewQrClient() {
                   <td className="px-3 py-2 font-medium text-gray-800">
                     {t.label}
                     {t.is_default && (
-                      <span className="ml-2 rounded bg-[#E3F2FD] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[#1565C0]">výchozí</span>
+                      <span className="ml-2 rounded bg-[#E3F2FD] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[#1565C0]">
+                        výchozí {PLATFORM_LABEL[t.platform]}
+                      </span>
                     )}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">{PLATFORM_LABEL[t.platform]}</td>
@@ -473,8 +494,19 @@ export function ReviewQrClient() {
           />
         </div>
         <p className="text-sm text-gray-500">
-          Bez vlastního přiřazení platí výchozí cíl{defaultTarget ? ` (${defaultTarget.label})` : ""}
-          {!defaultTarget && <span className="text-amber-700"> — zatím žádný výchozí cíl, nepřiřazení OVT QR neuvidí</span>}.
+          Každý OVT má dva QR: Google pro soukromé zákazníky a Firmy.cz pro firmy. Tablet vybere podle ADMF (právnická osoba /
+          IČO). Prázdný výběr = výchozí cíl platformy
+          {AUDIENCE_PLATFORMS.map(({ platform }) => {
+            const d = defaultFor(platform);
+            return (
+              <span key={platform}>
+                {" · "}
+                {PLATFORM_LABEL[platform]}:{" "}
+                {d ? <span className="text-gray-700">{d.label}</span> : <span className="text-amber-700">bez výchozího, neukáže se</span>}
+              </span>
+            );
+          })}
+          .
         </p>
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -482,47 +514,57 @@ export function ReviewQrClient() {
               <tr>
                 <th className="px-3 py-2">OVT</th>
                 <th className="px-3 py-2">E-mail</th>
-                <th className="px-3 py-2">QR cíl</th>
+                {AUDIENCE_PLATFORMS.map(({ platform, audience }) => (
+                  <th key={platform} className="px-3 py-2">
+                    {PLATFORM_LABEL[platform]} <span className="font-normal normal-case text-gray-400">{audience}</span>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {ovts.map((u) => {
                 const email = (u.email ?? "").toLowerCase();
-                const current = assignmentByEmail.get(email) ?? null;
+                const mine = assignmentByEmail.get(email);
                 return (
                   <tr key={u.user_id}>
                     <td className="px-3 py-2 whitespace-nowrap text-gray-800">{personLabel(u)}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-gray-500">{u.email}</td>
-                    <td className="px-3 py-2">
-                      {isAdmin ? (
-                        <select
-                          className={input}
-                          value={current ?? ""}
-                          disabled={busy === `as-${email}`}
-                          onChange={(e) => void assign(email, e.target.value ? Number(e.target.value) : null)}
-                        >
-                          <option value="">{defaultTarget ? `výchozí (${defaultTarget.label})` : "— bez QR —"}</option>
-                          {targets
-                            .filter((t) => t.active || t.id === current)
-                            .map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {PLATFORM_LABEL[t.platform]} · {t.label}
-                                {t.active ? "" : " (neaktivní)"}
-                              </option>
-                            ))}
-                        </select>
-                      ) : (
-                        <span className="text-gray-700">
-                          {current ? targetById.get(current)?.label ?? `#${current}` : defaultTarget ? `výchozí (${defaultTarget.label})` : "—"}
-                        </span>
-                      )}
-                    </td>
+                    {AUDIENCE_PLATFORMS.map(({ platform }) => {
+                      const current = mine?.get(platform) ?? null;
+                      const d = defaultFor(platform);
+                      return (
+                        <td key={platform} className="px-3 py-2">
+                          {isAdmin ? (
+                            <select
+                              className={input}
+                              value={current ?? ""}
+                              disabled={busy === `as-${email}-${platform}`}
+                              onChange={(e) => void assign(email, platform, e.target.value ? Number(e.target.value) : null)}
+                            >
+                              <option value="">{d ? `výchozí (${d.label})` : "— bez QR —"}</option>
+                              {targets
+                                .filter((t) => t.platform === platform && (t.active || t.id === current))
+                                .map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.label}
+                                    {t.active ? "" : " (neaktivní)"}
+                                  </option>
+                                ))}
+                            </select>
+                          ) : (
+                            <span className="text-gray-700">
+                              {current ? targetById.get(current)?.label ?? `#${current}` : d ? `výchozí (${d.label})` : "—"}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
               {ovts.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-3 py-6 text-center text-gray-500">
+                  <td colSpan={4} className="px-3 py-6 text-center text-gray-500">
                     Žádný OVT neodpovídá filtru.
                   </td>
                 </tr>
@@ -603,6 +645,7 @@ export function ReviewQrClient() {
                 <th className="px-3 py-2">Kdy</th>
                 <th className="px-3 py-2">OVT</th>
                 <th className="px-3 py-2">Zákazník</th>
+                <th className="px-3 py-2">Typ</th>
                 <th className="px-3 py-2">QR</th>
                 <th className="px-3 py-2">Odpověď</th>
                 <th className="px-3 py-2">Důvod</th>
@@ -617,6 +660,7 @@ export function ReviewQrClient() {
                     {p.customer_name ?? "—"}
                     {p.order_id != null && <span className="ml-1 text-xs text-gray-400">#{p.order_id}</span>}
                   </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-gray-500">{p.audience === "b2b" ? "firma" : "soukromá"}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-gray-600">{p.target_label ?? "—"}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {p.outcome ? (
@@ -634,7 +678,7 @@ export function ReviewQrClient() {
               ))}
               {prompts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-gray-500">
+                  <td colSpan={7} className="px-3 py-6 text-center text-gray-500">
                     Za zvolené období tablet žádný QR neukázal.
                   </td>
                 </tr>
