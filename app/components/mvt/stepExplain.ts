@@ -41,7 +41,9 @@ const RAYNET_CF: Record<string, string> = {
   Sleva_MVT_62bd9: 'Sleva (MVT)',
   Sleva_MVT_422f2: 'Sleva (MVT, reklamace)',
   Info_ke_sl_e80f2: 'Info ke slevě',
-  Info_ke_sl_e9d6d: 'Info ke slevě (reklamace)',
+  Info_ke_sl_e9d6d: 'Info ke slevě (rekl. oddělení)',
+  Info_ke_sl_5b2c0: 'Info ke slevě (MVT, reklamace)',
+  Sleva_RT_05062: 'Sleva (rekl. oddělení)',
   Info_k_zac_82b3e: 'Info k záchraně',
   Dokonceno_1d4b3: 'Dokončeno',
 };
