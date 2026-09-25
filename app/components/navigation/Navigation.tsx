@@ -57,7 +57,7 @@ export const NAV: Record<Workforce, NavGroup[]> = {
       items: [
         { href: '/vysledky', label: 'Výsledková tabule', description: 'Výkon OVT (zaměření, objednávky, konverze, hodnota) za den i měsíc, celkově i po týmech.' },
         { href: '/hotovost', label: 'Hotovost', description: 'Kolik hotovosti má kdo u sebe — stejná čísla jako vidí finance.' },
-        { href: '/recenze-qr', label: 'Recenze QR', description: 'QR na recenzi pobočky, který tablet ukáže po uzavření zakázky na místě — zapnutí, cíle, přiřazení OVT, odpovědi.' },
+        { href: '/recenze-qr', label: 'Recenze QR', description: 'QR na recenzi pobočky, který tablet ukáže po uzavření zakázky na místě — zapnutí, QR podle krajů pro B2C a B2B, výchozí QR, cíle, odpovědi.' },
       ],
     },
     {
