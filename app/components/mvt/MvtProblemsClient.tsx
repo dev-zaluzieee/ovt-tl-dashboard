@@ -7,7 +7,8 @@ import { OUTCOME_LABEL, WORKFLOW_LABEL, eventInTeam, fmtDateTime, fmtKc, ymd, ty
 import { openForCorrection, reopenAction } from './reopen';
 
 type Kind = 'nesedi_doplatek' | 'eskalace' | 'reopen_request' | 'zapis_selhal' | 'erp_nezapsano' | 'erp_nesparovano';
-type Severity = 'red' | 'amber' | 'low' | 'info';
+/** 'ok' = checked and clean (invoicing confirms the invoice is paid) — safe to close. */
+type Severity = 'red' | 'amber' | 'low' | 'info' | 'ok';
 interface Resolution {
   reason: 'chyba_mvt' | 'jina_chyba' | 'v_poradku';
   note: string | null;
@@ -41,9 +42,11 @@ export const KIND_UI: Record<Kind, { label: string; cls: string }> = {
   nesedi_doplatek: { label: 'Nesedí doplatek', cls: 'bg-amber-100 text-amber-800' },
   reopen_request: { label: 'Žádost o otevření', cls: 'bg-sky-100 text-sky-800' },
 };
-const SEV_ROW: Record<Severity, string> = { red: 'border-l-4 border-rose-400', amber: 'border-l-4 border-amber-400', low: 'border-l-4 border-gray-200', info: 'border-l-4 border-blue-200' };
+const SEV_ROW: Record<Severity, string> = { red: 'border-l-4 border-rose-400', amber: 'border-l-4 border-amber-400', low: 'border-l-4 border-gray-200', info: 'border-l-4 border-blue-200', ok: 'border-l-4 border-green-500 bg-green-50/60' };
 /** The backend may ship a kind this build does not know yet (deploy skew) — degrade, never crash. */
 const kindUi = (k: string) => KIND_UI[k as Kind] ?? { label: k, cls: 'bg-gray-100 text-gray-700' };
+/** A row whose check came back clean wears the green chip, not the amber "Nesedí doplatek". */
+const chipUi = (it: { kind: string; severity: string }) => (it.severity === 'ok' ? { label: 'Ověřeno — lze uzavřít', cls: 'bg-green-100 text-green-800' } : kindUi(it.kind));
 const sevRow = (s: string) => SEV_ROW[s as Severity] ?? 'border-l-4 border-gray-200';
 const REASON_LABEL: Record<Resolution['reason'], string> = { chyba_mvt: 'Chyba MVT', jina_chyba: 'Jiná chyba', v_poradku: 'V pořádku' };
 const SOURCE_LABEL: Record<string, string> = { finalni: 'Finální doplatek (kancelář)', admf: 'ADMF', raynet: 'Zaměření', zbyva: 'Zbývá uhradit' };
@@ -133,7 +136,7 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
   return (
     <tr className={`border-t border-gray-100 align-top ${sevRow(it.severity)} ${it.resolution ? 'opacity-60' : ''}`}>
       <td className="px-3 py-2">
-        <span className={`rounded px-2 py-0.5 text-xs font-medium ${kindUi(it.kind).cls}`}>{kindUi(it.kind).label}</span>
+        <span className={`rounded px-2 py-0.5 text-xs font-medium ${chipUi(it).cls}`}>{chipUi(it).label}</span>
         <p className="mt-1 text-sm font-medium text-gray-900">{it.title}</p>
         <p className="mt-0.5 max-w-sm text-xs text-gray-600">{it.reason}</p>
         {it.kind === 'nesedi_doplatek' && (
