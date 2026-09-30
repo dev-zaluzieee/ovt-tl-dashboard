@@ -12,14 +12,24 @@ interface Candidate {
   id: number; name: string | null; phone: string | null; address: string | null; city: string | null; createdAt: string; erpOrderId: number | null;
   userId: string | null; admfCount: number; admfExported: boolean; doplatek: number | null; via: ('client' | 'phone' | 'email' | 'address')[];
 }
+interface Claim { id: number; status: string; statusLabel: string; parentErpOrderId: number | null; createdAt: string; druh: string | null; druhLabel: string | null; portalUrl: string }
 interface Row {
   eventId: number; scheduledFrom: string | null; scheduledTill: string | null; title: string | null; customer: string | null; address: string | null; phone: string | null;
   monteri: string[]; raynetUrl: string; status: Status; orderId: number | null;
   auto: { orderId: number; method: string; confidence: string; matched: string } | null;
   candidates: Candidate[];
-  office: { decision: 'paired' | 'no_order'; order_id: number | null; decided_by: string; decided_at: string; note: string | null; raynet_linked: boolean } | null;
+  office: { decision: 'paired' | 'no_order'; order_id: number | null; erp_complaint_id?: number | null; erp_order_id?: number | null; decided_by: string; decided_at: string; note: string | null; raynet_linked: boolean } | null;
   hasSubmission: boolean;
+  /** montáž pairs with an order; servis / reklamace pair with an ERP claim (older backend: undefined → montáž). */
+  kind?: 'montaz' | 'complaint';
+  categoryId?: number;
+  claim?: Claim | null;
+  claimVia?: 'office' | 'parent' | 'contacts' | null;
+  claimCandidates?: Claim[];
+  claimAmbiguous?: boolean;
+  blocking?: boolean;
 }
+const KIND_LABEL: Record<number, string> = { 221: 'montáž', 222: 'servis', 223: 'reklamace', 348: 'placená oprava' };
 interface Day { date: string; total: number; unresolved: Row[]; uncertain: Row[]; settled: Row[] }
 
 const STATUS_UI: Record<Status, { label: string; cls: string }> = {
@@ -69,7 +79,40 @@ function Candidates({ row, onPair, busy }: { row: Row; onPair: (orderId: number)
   );
 }
 
-/** Párování montáží — the office pairs tomorrow's uncertain events; one day per load. */
+/** Servis / reklamace: the office chooses the ERP claim the visit belongs to. */
+function ClaimCandidates({ row, onPair, busy }: { row: Row; onPair: (erpComplaintId: number) => void; busy: boolean }) {
+  const list = row.claimCandidates ?? [];
+  if (list.length === 0) {
+    return (
+      <p className="text-xs text-gray-500">
+        {row.claim ? `Reklamace #${row.claim.id} (${row.claim.statusLabel}) — nalezena automaticky.` : 'V ERP se nenašla žádná otevřená reklamace tohoto zákazníka (podle objednávky, telefonu ani e-mailu). Montér událost uzavře, do ERP se ale nic nezapíše — pokud reklamaci znáte, zadejte její číslo níže.'}
+      </p>
+    );
+  }
+  return (
+    <ul className="space-y-1.5">
+      {list.map((c) => {
+        const chosen = row.claim?.id === c.id;
+        return (
+          <li key={c.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded border px-3 py-2 text-sm ${chosen ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
+            <a href={c.portalUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline" title="Reklamace v ERP">reklamace #{c.id}</a>
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800">{c.statusLabel}</span>
+            {c.druhLabel && <span className="text-xs text-gray-700">{c.druhLabel}</span>}
+            <span className="text-xs text-gray-500">založena {fmtDateTime(c.createdAt).slice(0, 10)}</span>
+            {c.parentErpOrderId != null && (
+              <a href={erpOrderLink(c.parentErpOrderId)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline" title="Původní zakázka v ERP">zakázka ERP #{c.parentErpOrderId}</a>
+            )}
+            <button type="button" disabled={busy || chosen} onClick={() => onPair(c.id)} className={`ml-auto rounded px-2 py-1 text-xs font-medium disabled:opacity-50 ${chosen ? 'border border-green-300 text-green-800' : 'bg-[#1E8449] text-white'}`}>
+              {chosen ? 'Vybráno' : 'Tahle'}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Párování — the office pairs tomorrow's uncertain events (montáž → objednávka, servis / reklamace → reklamace v ERP); one day per load. */
 export function MvtPairingClient() {
   const [date, setDate] = useState('');
   useEffect(() => {
@@ -147,7 +190,9 @@ export function MvtPairingClient() {
                 {row.monteri.join(' + ') || 'bez montéra'}
               </span>
               <span className="font-semibold text-gray-900">{row.customer ?? row.title ?? `Událost ${row.eventId}`}</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ui.cls}`}>{ui.label}</span>
+              {row.categoryId != null && row.categoryId !== 221 && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">{KIND_LABEL[row.categoryId] ?? row.categoryId}</span>}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ui.cls}`}>{row.kind === 'complaint' && row.status === 'ambiguous' ? 'Více otevřených reklamací' : ui.label}</span>
+              {row.kind === 'complaint' && row.status === 'unpaired' && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600" title="Montér událost uzavře, do ERP se nic nezapíše">neblokuje montéra</span>}
               {row.hasSubmission && <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-800">už zapsáno v aplikaci</span>}
             </p>
             <p className="text-xs text-gray-500">
@@ -168,6 +213,10 @@ export function MvtPairingClient() {
                 Kancelář:{' '}
                 {row.office.decision === 'no_order' ? (
                   'bez objednávky'
+                ) : row.office.erp_complaint_id != null ? (
+                  <a href={`${ERP_BASE}/claims/${row.office.erp_complaint_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    reklamace #{row.office.erp_complaint_id}
+                  </a>
                 ) : (
                   <a href={officePortalOrderDeepLink(row.office.order_id ?? 0)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                     objednávka #{row.office.order_id}
@@ -175,7 +224,7 @@ export function MvtPairingClient() {
                 )}{' '}
                 · {row.office.decided_by} · {fmtDateTime(row.office.decided_at)}
                 {row.office.note ? ` · „${row.office.note}“` : ''}
-                {row.office.decision === 'paired' && !row.office.raynet_linked && <span className="ml-1 text-amber-700">· odkaz do Raynetu se nezapsal</span>}
+                {row.office.decision === 'paired' && row.office.erp_complaint_id == null && !row.office.raynet_linked && <span className="ml-1 text-amber-700">· odkaz do Raynetu se nezapsal</span>}
               </p>
             )}
           </div>
@@ -199,7 +248,24 @@ export function MvtPairingClient() {
             )}
           </div>
         </div>
-        {row.status !== 'no_order' && (
+        {row.status !== 'no_order' && row.kind === 'complaint' && (
+          <div className="mt-3">
+            <ClaimCandidates row={row} busy={busy === row.eventId} onPair={(erpComplaintId) => void act(row, { action: 'pair', erpComplaintId })} />
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <span className="text-gray-500">Jiná reklamace (číslo z ERP):</span>
+              <input value={manual[row.eventId] ?? ''} onChange={(e) => setManual((m) => ({ ...m, [row.eventId]: e.target.value }))} placeholder="číslo reklamace" className="w-36 rounded border border-gray-300 px-2 py-1" inputMode="numeric" />
+              <button
+                type="button"
+                disabled={busy === row.eventId || !/^\d+$/.test(manual[row.eventId] ?? '')}
+                onClick={() => void act(row, { action: 'pair', erpComplaintId: Number(manual[row.eventId]) })}
+                className="rounded bg-[#1E8449] px-2 py-1 font-medium text-white disabled:opacity-50"
+              >
+                Spárovat
+              </button>
+            </div>
+          </div>
+        )}
+        {row.status !== 'no_order' && row.kind !== 'complaint' && (
           <div className="mt-3">
             <Candidates row={row} busy={busy === row.eventId} onPair={(orderId) => void act(row, { action: 'pair', orderId })} />
             <div className="mt-2 flex items-center gap-2 text-xs">
@@ -310,7 +376,7 @@ export function MvtPairingClient() {
             <h2 className="mb-2 text-sm font-semibold text-gray-900">
               K spárování <span className="text-gray-500">· {unresolved.length}{filtersActive && unresolved.length !== data.unresolved.length ? ` z ${data.unresolved.length}` : ''}</span>
             </h2>
-            <p className="mb-2 text-xs text-gray-500">Montér tyto události v aplikaci neuzavře, dokud nerozhodnete. Vyberte objednávku, nebo označte, že žádná není.</p>
+            <p className="mb-2 text-xs text-gray-500">Montáž: montér ji v aplikaci neuzavře, dokud nevyberete objednávku (nebo neoznačíte, že žádná není). Servis a reklamace: vyberte reklamaci v ERP — s více otevřenými reklamacemi je montér blokovaný, bez nalezené reklamace uzavře, ale do ERP se nic nezapíše.</p>
             {unresolved.length === 0 ? (
               <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">{filtersActive && data.unresolved.length ? 'Filtru nic neodpovídá.' : 'Vše spárováno. 🎉'}</p>
             ) : (
