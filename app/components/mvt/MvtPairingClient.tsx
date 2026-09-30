@@ -32,7 +32,7 @@ interface Row {
   blocking?: boolean;
 }
 const KIND_LABEL: Record<number, string> = { 221: 'montáž', 222: 'servis', 223: 'reklamace', 348: 'placená oprava' };
-interface Day { date: string; total: number; unresolved: Row[]; uncertain: Row[]; settled: Row[] }
+interface Day { date: string; total: number; unresolved: Row[]; uncertain: Row[]; settled: Row[]; unplanned?: Row[] }
 
 const STATUS_UI: Record<Status, { label: string; cls: string }> = {
   linked: { label: 'Odkaz v Raynetu', cls: 'bg-green-100 text-green-800' },
@@ -132,6 +132,7 @@ export function MvtPairingClient() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [showSettled, setShowSettled] = useState(false);
+  const [showUnplanned, setShowUnplanned] = useState(false);
   const [manual, setManual] = useState<Record<number, string>>({});
   const [q, setQ] = useState('');
   const [monterFilter, setMonterFilter] = useState('');
@@ -411,6 +412,15 @@ export function MvtPairingClient() {
               settled.length === 0 ? <p className="mt-2 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">Nic.</p> : <ul className="mt-2 space-y-3">{settled.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>
             )}
           </section>
+          {(data.unplanned?.length ?? 0) > 0 && (
+            <section>
+              <button type="button" onClick={() => setShowUnplanned((v) => !v)} className="text-sm font-semibold text-gray-900">
+                {showUnplanned ? '▾' : '▸'} Bez montéra <span className="text-gray-500">· {data.unplanned!.length}</span>
+              </button>
+              <p className="mt-1 text-xs text-gray-500">Zaparkované ve frontě „Montáže k naplánování“ — nikdo na ně nejede, párovat je zatím není třeba. Objeví se výše, jakmile dostanou montéra.</p>
+              {showUnplanned && <ul className="mt-2 space-y-3">{data.unplanned!.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>}
+            </section>
+          )}
         </>
       )}
     </div>
