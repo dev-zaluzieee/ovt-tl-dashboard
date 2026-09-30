@@ -24,9 +24,11 @@ interface Row {
   kind?: 'montaz' | 'complaint';
   categoryId?: number;
   claim?: Claim | null;
-  claimVia?: 'office' | 'parent' | 'contacts' | null;
+  claimVia?: 'office' | 'parent' | 'contacts' | 'submission' | null;
   claimCandidates?: Claim[];
   claimAmbiguous?: boolean;
+  /** The only claim found is already resolved — nothing to write. */
+  claimResolved?: boolean;
   blocking?: boolean;
 }
 const KIND_LABEL: Record<number, string> = { 221: 'montáž', 222: 'servis', 223: 'reklamace', 348: 'placená oprava' };
@@ -82,10 +84,17 @@ function Candidates({ row, onPair, busy }: { row: Row; onPair: (orderId: number)
 /** Servis / reklamace: the office chooses the ERP claim the visit belongs to. */
 function ClaimCandidates({ row, onPair, busy }: { row: Row; onPair: (erpComplaintId: number) => void; busy: boolean }) {
   const list = row.claimCandidates ?? [];
+  const claimLink = row.claim ? <a href={row.claim.portalUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">reklamace #{row.claim.id}</a> : null;
+  if (row.claimVia === 'submission' && row.claim) {
+    return <p className="text-xs text-gray-600">Zapsáno z aplikace na {claimLink} ({row.claim.statusLabel}).</p>;
+  }
+  if (row.claimResolved && row.claim) {
+    return <p className="text-xs text-gray-500">Zákazník nemá otevřenou reklamaci — poslední {claimLink} je už {row.claim.statusLabel.toLowerCase()}. Montér událost uzavře, do ERP se nic nezapíše; pokud návštěva patří k jiné reklamaci, zadejte její číslo níže.</p>;
+  }
   if (list.length === 0) {
     return (
       <p className="text-xs text-gray-500">
-        {row.claim ? `Reklamace #${row.claim.id} (${row.claim.statusLabel}) — nalezena automaticky.` : 'V ERP se nenašla žádná otevřená reklamace tohoto zákazníka (podle objednávky, telefonu ani e-mailu). Montér událost uzavře, do ERP se ale nic nezapíše — pokud reklamaci znáte, zadejte její číslo níže.'}
+        {row.claim ? <>Nalezena automaticky: {claimLink} ({row.claim.statusLabel}).</> : 'V ERP se nenašla žádná otevřená reklamace tohoto zákazníka (podle objednávky, telefonu ani e-mailu). Montér událost uzavře, do ERP se ale nic nezapíše — pokud reklamaci znáte, zadejte její číslo níže.'}
       </p>
     );
   }
