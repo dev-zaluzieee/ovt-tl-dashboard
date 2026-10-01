@@ -220,16 +220,17 @@ export function MvtDayClient() {
           <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
           zobrazit i uzavřené a frontu{hiddenCount ? ` (${hiddenCount})` : ''}
         </label>
-        <label className="relative ml-auto text-sm">
+        <div className="flex w-full items-center gap-2 border-t border-gray-200 pt-3">
+        <label className="relative flex-1 text-sm">
           <input
             type="search"
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
-            placeholder="Hledat: číslo události, zákazník, telefon"
-            className="w-72 rounded border border-gray-300 px-2 py-1.5"
+            placeholder="Hledat událost: číslo události, jméno zákazníka nebo telefon — najde ji v kterýkoli den"
+            className="w-full rounded border border-gray-300 px-3 py-1.5"
           />
           {searchQ.trim().length >= 3 && (
-            <div className="absolute right-0 top-full z-20 mt-1 max-h-96 w-[28rem] overflow-y-auto rounded-md border border-gray-300 bg-white shadow-lg">
+            <div className="absolute left-0 top-full z-20 mt-1 max-h-96 w-full max-w-2xl overflow-y-auto rounded-md border border-gray-300 bg-white shadow-lg">
               {searchBusy && !searchHits && <p className="px-3 py-2 text-sm text-gray-500">Hledám…</p>}
               {searchHits && searchHits.length === 0 && <p className="px-3 py-2 text-sm text-gray-500">Nic nenalezeno.</p>}
               {(searchHits ?? []).map((h) => (
@@ -256,9 +257,10 @@ export function MvtDayClient() {
             </div>
           )}
         </label>
-        <button type="button" onClick={() => void load()} className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm">
+        <button type="button" onClick={() => void load()} className="whitespace-nowrap rounded border border-gray-300 bg-white px-3 py-1.5 text-sm">
           Obnovit
         </button>
+        </div>
       </div>
 
       {!loading && events.length > 0 && (
