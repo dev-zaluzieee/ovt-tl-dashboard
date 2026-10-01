@@ -279,12 +279,12 @@ export function MvtPairingClient() {
           <div className="mt-3">
             <Candidates row={row} busy={busy === row.eventId} onPair={(orderId) => void act(row, { action: 'pair', orderId })} />
             <div className="mt-2 flex items-center gap-2 text-xs">
-              <span className="text-gray-500">Jiná objednávka:</span>
-              <input value={manual[row.eventId] ?? ''} onChange={(e) => setManual((m) => ({ ...m, [row.eventId]: e.target.value }))} placeholder="číslo objednávky" className="w-36 rounded border border-gray-300 px-2 py-1" inputMode="numeric" />
+              <span className="text-gray-500">Jiná zakázka (číslo z ERP):</span>
+              <input value={manual[row.eventId] ?? ''} onChange={(e) => setManual((m) => ({ ...m, [row.eventId]: e.target.value }))} placeholder="číslo ERP zakázky" className="w-36 rounded border border-gray-300 px-2 py-1" inputMode="numeric" />
               <button
                 type="button"
                 disabled={busy === row.eventId || !/^\d+$/.test(manual[row.eventId] ?? '')}
-                onClick={() => void act(row, { action: 'pair', orderId: Number(manual[row.eventId]) })}
+                onClick={() => void act(row, { action: 'pair', erpOrderId: Number(manual[row.eventId]) })}
                 className="rounded bg-[#1E8449] px-2 py-1 font-medium text-white disabled:opacity-50"
               >
                 Spárovat
