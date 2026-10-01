@@ -4,13 +4,28 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { TeamFilter, type TeamSelection } from '../teams/TeamFilter';
 import { STATE_UI, eventInTeam, fmtKc, fmtTime, ymd, type AppState, type TlDayEvent, type TlPerson } from './shared';
-import { hoursLeftLabel } from './reopen';
+import { hoursLeftLabel, openForCorrection } from './reopen';
 
 /** States hidden in the default compact view — visible via the chips and the toggle. */
 const QUIET: AppState[] = ['closed_raynet', 'closed_manual', 'unassigned'];
 const QUEUE_MONTAZ = 'Bez montéra (fronta trasování)';
 const QUEUE_REKLAMACE = 'Bez technika (fronta reklamací)';
 const isComplaintCat = (c: number | null) => c != null && [222, 223, 348].includes(c);
+
+interface SearchHit {
+  eventId: number;
+  scheduledFrom: string | null;
+  date: string | null;
+  title: string | null;
+  customer: string | null;
+  address: string | null;
+  categoryId: number | null;
+  categoryLabel: string;
+  status: string | null;
+  monteri: string[];
+  raynetUrl: string;
+}
+const fmtDay = (d: string | null) => (d ? `${Number(d.slice(8, 10))}. ${Number(d.slice(5, 7))}. ${d.slice(0, 4)}` : '');
 
 /**
  * Přehled dne (MVT): every montér event of a day with its app state. Read-only
@@ -33,6 +48,15 @@ export function MvtDayClient() {
   const [states, setStates] = useState<AppState[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState<Date | null>(null);
+  // Search (Karel, 2026-10-01, like finance's Doklady search): event number, customer
+  // name or phone → jump the day to the hit and highlight its row. The TL could not
+  // reach a specific event before — closed-outside lists cap at 50, Problematické
+  // only shows failures (event 597916, Varnsdorf).
+  const [searchQ, setSearchQ] = useState('');
+  const [searchHits, setSearchHits] = useState<SearchHit[] | null>(null);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [rowBusy, setRowBusy] = useState<number | null>(null);
 
   const load = useCallback(
     async (silent = false) => {
@@ -74,6 +98,45 @@ export function MvtDayClient() {
       clearInterval(t);
     };
   }, [load]);
+
+  useEffect(() => {
+    const q = searchQ.trim();
+    if (q.length < 3) {
+      setSearchHits(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setSearchBusy(true);
+      try {
+        const res = await fetch(`/api/mvt-search?q=${encodeURIComponent(q)}`);
+        const json = await res.json().catch(() => null);
+        setSearchHits(res.ok && json?.success ? ((json.data?.hits ?? []) as SearchHit[]) : []);
+      } catch {
+        setSearchHits([]);
+      } finally {
+        setSearchBusy(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQ]);
+
+  const jumpTo = (h: SearchHit) => {
+    if (!h.date) return;
+    setDate(h.date);
+    setShowAll(true);
+    setStates([]);
+    setMonter('');
+    setHighlightId(h.eventId);
+    setSearchQ('');
+    setSearchHits(null);
+    setTimeout(() => setHighlightId(null), 10_000);
+  };
+  // Scroll the highlighted row into view once the day has loaded.
+  useEffect(() => {
+    if (highlightId == null || loading) return;
+    const el = document.getElementById(`mvt-event-${highlightId}`);
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [highlightId, loading, events]);
 
   const shift = (n: number) => {
     const d = new Date(date + 'T00:00:00');
@@ -157,7 +220,43 @@ export function MvtDayClient() {
           <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
           zobrazit i uzavřené a frontu{hiddenCount ? ` (${hiddenCount})` : ''}
         </label>
-        <button type="button" onClick={() => void load()} className="ml-auto rounded border border-gray-300 bg-white px-3 py-1.5 text-sm">
+        <label className="relative ml-auto text-sm">
+          <input
+            type="search"
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            placeholder="Hledat: číslo události, zákazník, telefon"
+            className="w-72 rounded border border-gray-300 px-2 py-1.5"
+          />
+          {searchQ.trim().length >= 3 && (
+            <div className="absolute right-0 top-full z-20 mt-1 max-h-96 w-[28rem] overflow-y-auto rounded-md border border-gray-300 bg-white shadow-lg">
+              {searchBusy && !searchHits && <p className="px-3 py-2 text-sm text-gray-500">Hledám…</p>}
+              {searchHits && searchHits.length === 0 && <p className="px-3 py-2 text-sm text-gray-500">Nic nenalezeno.</p>}
+              {(searchHits ?? []).map((h) => (
+                <button
+                  key={h.eventId}
+                  type="button"
+                  onClick={() => jumpTo(h)}
+                  disabled={!h.date}
+                  className="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-gray-50 disabled:opacity-60"
+                >
+                  <span className="font-medium text-gray-900">{h.customer ?? h.title ?? `Událost ${h.eventId}`}</span>
+                  <span className="ml-1.5 rounded bg-gray-100 px-1 py-0.5 text-[10px] text-gray-700">{h.categoryLabel}</span>
+                  {h.status === 'COMPLETED' && <span className="ml-1 rounded bg-green-100 px-1 py-0.5 text-[10px] text-green-800">uzavřeno v Raynetu</span>}
+                  <br />
+                  <span className="text-xs text-gray-500">
+                    {fmtDay(h.date)}
+                    {h.scheduledFrom ? ` ${fmtTime(h.scheduledFrom)}` : ''}
+                    {h.address ? ` · ${h.address}` : ''}
+                    {h.monteri.length ? ` · ${h.monteri.join(' + ')}` : ' · bez montéra'}
+                    {` · #${h.eventId}`}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </label>
+        <button type="button" onClick={() => void load()} className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm">
           Obnovit
         </button>
       </div>
@@ -214,7 +313,11 @@ export function MvtDayClient() {
                   const partners = e.monters.filter((m) => m.name !== name);
                   const ui = STATE_UI[e.appState] ?? { label: e.appState, cls: 'bg-gray-100 text-gray-700' };
                   return (
-                    <tr key={`${name}-${e.id}`} className="border-t border-gray-100 align-top hover:bg-gray-50">
+                    <tr
+                      key={`${name}-${e.id}`}
+                      id={`mvt-event-${e.id}`}
+                      className={`border-t border-gray-100 align-top hover:bg-gray-50 ${highlightId === e.id ? 'bg-blue-50 ring-2 ring-inset ring-blue-400' : ''}`}
+                    >
                       <td className="whitespace-nowrap px-4 py-2 tabular-nums text-gray-700">
                         {fmtTime(e.scheduledFrom)}–{fmtTime(e.scheduledTill)}
                       </td>
@@ -274,6 +377,26 @@ export function MvtDayClient() {
                         )}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
+                        {['done', 'zachrana', 'reklamace', 'closed_raynet', 'closed_manual'].includes(e.appState) &&
+                          e.reopen?.status !== 'open' &&
+                          e.reopen?.status !== 'requested' && (
+                            <button
+                              type="button"
+                              disabled={rowBusy === e.id}
+                              onClick={async () => {
+                                setRowBusy(e.id);
+                                try {
+                                  if (await openForCorrection(e.id, e.customer ?? String(e.id))) await load(true);
+                                } finally {
+                                  setRowBusy(null);
+                                }
+                              }}
+                              title="Otevře událost na 48 h, aby šel výsledek zapsat nebo opravit v aplikaci (i přes „Jednat jako montér“)"
+                              className="mr-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-amber-900 disabled:opacity-50"
+                            >
+                              Otevřít k opravě
+                            </button>
+                          )}
                         {e.outcome && (
                           <Link href={`/mvt/zapisy/${e.outcome.id}`} className="mr-2 text-blue-600 hover:underline">
                             Zápis
