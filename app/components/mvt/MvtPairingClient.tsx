@@ -35,7 +35,7 @@ interface Row {
   /** Montáž with no local order anywhere: the customer's ERP orders without a local order (create-and-pair). */
   erpCandidates?: ErpCandidate[];
 }
-interface ErpCandidate { erpOrderId: number; status: string; createdAt: string | null; customerName: string | null; customerPhone: string | null }
+interface ErpCandidate { erpOrderId: number; status: string; createdAt: string | null; customerName: string | null; customerPhone: string | null; customerHasLocalOrder?: { orderId: number; erpOrderId: number | null } | null }
 const ERP_STATUS_LABEL: Record<string, string> = { natrasovani: 'Natrasování', 'objednavka-dokoncena': 'Objednávka dokončena', 'ceka-na-trasovace': 'Čeká na trasovače', 'nadstandardni-objednavka': 'Nadstandardní objednávka', zamereni: 'Zaměření', 'dokoncena-montaz': 'Dokončena montáž', reklamace: 'Reklamace' };
 const fmtDay = (iso: string | null | undefined) => (iso ? `${iso.slice(8, 10)}. ${iso.slice(5, 7)}. ${iso.slice(0, 4)}` : '—');
 const KIND_LABEL: Record<number, string> = { 221: 'montáž', 222: 'servis', 223: 'reklamace', 348: 'placená oprava' };
@@ -299,9 +299,16 @@ export function MvtPairingClient() {
             <Candidates row={row} busy={busy === row.eventId} onPair={(orderId) => void act(row, { action: 'pair', orderId })} />
             {(row.erpCandidates?.length ?? 0) > 0 && (
               <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-xs">
-                <p className="mb-1 text-amber-900">
-                  Zákazník nemá v našem systému žádnou objednávku, v ERP má tyto zakázky. Vyberte tu správnou — objednávka se založí z ERP záznamu (bez ADMF) a montáž se spáruje:
-                </p>
+                {row.erpCandidates![0].customerHasLocalOrder ? (
+                  <p className="mb-1 font-medium text-rose-800">
+                    Pozor: zákazník už má v našem systému objednávku #{row.erpCandidates![0].customerHasLocalOrder!.orderId}
+                    {row.erpCandidates![0].customerHasLocalOrder!.erpOrderId != null ? ` (ERP #${row.erpCandidates![0].customerHasLocalOrder!.erpOrderId})` : ''}, ale tato montáž je na jiné ERP zakázce. Nejspíš kancelář založila v ERP druhou zakázku ručně. Nejdřív ověřte, jestli nejde o duplicitu — pokud ano, spárujte montáž s existující objednávkou (tlačítko výše, nebo číslo ERP níže) a duplicitní ERP zakázku nechte vyřešit kancelář. Novou objednávku zakládejte jen pokud jde opravdu o další zakázku.
+                  </p>
+                ) : (
+                  <p className="mb-1 text-amber-900">
+                    Zákazník nemá v našem systému žádnou objednávku, v ERP má tyto zakázky. Vyberte tu správnou — objednávka se založí z ERP záznamu (bez ADMF) a montáž se spáruje:
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-2">
                   {row.erpCandidates!.map((c) => (
                     <button
