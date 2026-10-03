@@ -11,6 +11,7 @@ type Status = 'linked' | 'office' | 'auto_high' | 'auto_medium' | 'ambiguous' | 
 interface Candidate {
   id: number; name: string | null; phone: string | null; address: string | null; city: string | null; createdAt: string; erpOrderId: number | null;
   userId: string | null; admfCount: number; admfExported: boolean; doplatek: number | null; via: ('client' | 'phone' | 'email' | 'address')[];
+  acceptedQuoteId?: number | null; acceptedQuoteZaloha?: number | null;
 }
 interface Claim { id: number; status: string; statusLabel: string; parentErpOrderId: number | null; createdAt: string; druh: string | null; druhLabel: string | null; portalUrl: string }
 interface Row {
@@ -68,9 +69,15 @@ function Candidates({ row, onPair, busy }: { row: Row; onPair: (orderId: number)
             <span className="text-gray-900">{c.name ?? '—'}</span>
             <span className="text-xs text-gray-500">{[c.address, c.city].filter(Boolean).join(', ')}</span>
             <span className="text-xs text-gray-500">zaměření {fmtDateTime(c.createdAt).slice(0, 10)} · {zamerovac(c.userId)}</span>
-            <span className={`rounded px-1.5 py-0.5 text-[11px] ${c.admfExported ? 'bg-emerald-100 text-emerald-800' : c.admfCount ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>
-              {c.admfExported ? 'ADMF objednána' : c.admfCount ? `ADMF ${c.admfCount}× neobjednána` : 'bez ADMF'}
-            </span>
+            {c.acceptedQuoteId != null ? (
+              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-800" title="Objednáno přes retenci — akceptovaná cenová nabídka; ADMF z tabletu se neexportovala, to je v pořádku">
+                objednáno přes CN #{c.acceptedQuoteId}{c.acceptedQuoteZaloha != null ? ` · záloha ${fmtKc(c.acceptedQuoteZaloha)}` : ''}
+              </span>
+            ) : (
+              <span className={`rounded px-1.5 py-0.5 text-[11px] ${c.admfExported ? 'bg-emerald-100 text-emerald-800' : c.admfCount ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`} title={c.admfExported ? 'ADMF z tabletu byla exportována s „Chci objednat“' : c.admfCount ? 'ADMF existuje, ale nebyla exportována s „Chci objednat“ (retence, nedopadlo, nebo rozpracováno)' : 'Objednávka nemá žádnou ADMF z tabletu (import z ERP, doobjednávka)'}>
+                {c.admfExported ? 'ADMF objednána' : c.admfCount ? `ADMF ${c.admfCount}× neobjednána` : 'bez ADMF'}
+              </span>
+            )}
             {c.doplatek != null && <span className="text-xs text-gray-600">doplatek {fmtKc(c.doplatek)}</span>}
             {c.erpOrderId && (
               <a href={erpOrderLink(c.erpOrderId)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline" title="Zakázka v ERP">
