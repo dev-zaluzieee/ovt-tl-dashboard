@@ -36,7 +36,6 @@ interface Row {
   erpCandidates?: ErpCandidate[];
 }
 interface ErpCandidate { erpOrderId: number; status: string; createdAt: string | null; customerName: string | null; customerPhone: string | null }
-interface Watch { from: string; to: string; days: number; rows: Row[]; unplanned: Row[]; generatedAt: string }
 const ERP_STATUS_LABEL: Record<string, string> = { natrasovani: 'Natrasování', 'objednavka-dokoncena': 'Objednávka dokončena', 'ceka-na-trasovace': 'Čeká na trasovače', 'nadstandardni-objednavka': 'Nadstandardní objednávka', zamereni: 'Zaměření', 'dokoncena-montaz': 'Dokončena montáž', reklamace: 'Reklamace' };
 const fmtDay = (iso: string | null | undefined) => (iso ? `${iso.slice(8, 10)}. ${iso.slice(5, 7)}. ${iso.slice(0, 4)}` : '—');
 const KIND_LABEL: Record<number, string> = { 221: 'montáž', 222: 'servis', 223: 'reklamace', 348: 'placená oprava' };
@@ -142,9 +141,6 @@ export function MvtPairingClient() {
   const [showSettled, setShowSettled] = useState(false);
   const [showUnplanned, setShowUnplanned] = useState(false);
   const [manual, setManual] = useState<Record<number, string>>({});
-  const [watch, setWatch] = useState<Watch | null>(null);
-  const [watchLoading, setWatchLoading] = useState(false);
-  const [watchError, setWatchError] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [monterFilter, setMonterFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
@@ -171,23 +167,6 @@ export function MvtPairingClient() {
   useEffect(() => {
     void load();
   }, [load]);
-  const loadWatch = useCallback(async (refresh = false) => {
-    setWatchLoading(true);
-    setWatchError(null);
-    try {
-      const res = await fetch(`/api/mvt-pairing/missing-orders?days=14${refresh ? '&refresh=1' : ''}`);
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        setWatchError(json.error || json.message || `HTTP ${res.status}`);
-        return;
-      }
-      setWatch(json.data as Watch);
-    } catch {
-      setWatchError('Chyba spojení.');
-    } finally {
-      setWatchLoading(false);
-    }
-  }, []);
 
   const shift = (n: number) => {
     const d = new Date(date + 'T00:00:00');
@@ -208,7 +187,6 @@ export function MvtPairingClient() {
         );
       }
       await load();
-      if (watch) await loadWatch(true);
     } finally {
       setBusy(null);
     }
@@ -483,34 +461,6 @@ export function MvtPairingClient() {
               {showUnplanned && <ul className="mt-2 space-y-3">{data.unplanned!.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>}
             </section>
           )}
-          <section className="border-t border-gray-200 pt-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-sm font-semibold text-gray-900">
-                K založení · příštích 14 dní{watch ? <span className="text-gray-500"> · {watch.rows.length}</span> : null}
-              </h2>
-              <button type="button" onClick={() => void loadWatch(!!watch)} disabled={watchLoading} className="rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
-                {watchLoading ? 'Načítám…' : watch ? 'Obnovit' : 'Načíst'}
-              </button>
-              {watch && <span className="text-xs text-gray-500">{fmtDay(watch.from)} – {fmtDay(watch.to)} · stav k {new Date(watch.generatedAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>}
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Naplánované montáže, jejichž zákazník nemá v našem systému žádnou objednávku (zakázka vznikla jen v ERP — doobjednávka, web, firemní nákup). Založte ji dopředu, aby montér nestál na místě se zamčenou událostí.</p>
-            {watchError && <div className="mt-2 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{watchError}</div>}
-            {watch && !watchLoading && (
-              watch.rows.length === 0 ? (
-                <p className="mt-2 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">Všechny naplánované montáže mají objednávku. 🎉{watch.unplanned.length ? ` (${watch.unplanned.length} bez montéra čeká na naplánování.)` : ''}</p>
-              ) : (
-                <div className="mt-2 space-y-4">
-                  {Array.from(new Set(watch.rows.map((r) => (r.scheduledFrom ?? '').slice(0, 10)))).map((day) => (
-                    <div key={day}>
-                      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{fmtDay(day)}</h3>
-                      <ul className="space-y-3">{watch.rows.filter((r) => (r.scheduledFrom ?? '').slice(0, 10) === day).map((r) => <RowCard key={r.eventId} row={r} />)}</ul>
-                    </div>
-                  ))}
-                  {watch.unplanned.length > 0 && <p className="text-xs text-gray-500">Dalších {watch.unplanned.length} bez montéra (ve frontě k naplánování) — objeví se tu, jakmile dostanou montéra.</p>}
-                </div>
-              )
-            )}
-          </section>
         </>
       )}
     </div>
