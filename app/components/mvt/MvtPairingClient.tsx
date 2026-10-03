@@ -16,6 +16,8 @@ interface Claim { id: number; status: string; statusLabel: string; parentErpOrde
 interface Row {
   eventId: number; scheduledFrom: string | null; scheduledTill: string | null; title: string | null; customer: string | null; address: string | null; phone: string | null;
   monteri: string[]; raynetUrl: string; status: Status; orderId: number | null;
+  /** orders.origin — 'erp_import_mvt' / 'erp_import' = order created from the ERP record, no ADMF. */
+  orderOrigin?: string | null;
   auto: { orderId: number; method: string; confidence: string; matched: string } | null;
   candidates: Candidate[];
   office: { decision: 'paired' | 'no_order'; order_id: number | null; erp_complaint_id?: number | null; erp_order_id?: number | null; decided_by: string; decided_at: string; note: string | null; raynet_linked: boolean } | null;
@@ -30,7 +32,13 @@ interface Row {
   /** The only claim found is already resolved — nothing to write. */
   claimResolved?: boolean;
   blocking?: boolean;
+  /** Montáž with no local order anywhere: the customer's ERP orders without a local order (create-and-pair). */
+  erpCandidates?: ErpCandidate[];
 }
+interface ErpCandidate { erpOrderId: number; status: string; createdAt: string | null; customerName: string | null; customerPhone: string | null }
+interface Watch { from: string; to: string; days: number; rows: Row[]; unplanned: Row[]; generatedAt: string }
+const ERP_STATUS_LABEL: Record<string, string> = { natrasovani: 'Natrasování', 'objednavka-dokoncena': 'Objednávka dokončena', 'ceka-na-trasovace': 'Čeká na trasovače', 'nadstandardni-objednavka': 'Nadstandardní objednávka', zamereni: 'Zaměření', 'dokoncena-montaz': 'Dokončena montáž', reklamace: 'Reklamace' };
+const fmtDay = (iso: string | null | undefined) => (iso ? `${iso.slice(8, 10)}. ${iso.slice(5, 7)}. ${iso.slice(0, 4)}` : '—');
 const KIND_LABEL: Record<number, string> = { 221: 'montáž', 222: 'servis', 223: 'reklamace', 348: 'placená oprava' };
 interface Day { date: string; total: number; unresolved: Row[]; uncertain: Row[]; settled: Row[]; unplanned?: Row[] }
 
@@ -134,6 +142,9 @@ export function MvtPairingClient() {
   const [showSettled, setShowSettled] = useState(false);
   const [showUnplanned, setShowUnplanned] = useState(false);
   const [manual, setManual] = useState<Record<number, string>>({});
+  const [watch, setWatch] = useState<Watch | null>(null);
+  const [watchLoading, setWatchLoading] = useState(false);
+  const [watchError, setWatchError] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [monterFilter, setMonterFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
@@ -160,6 +171,23 @@ export function MvtPairingClient() {
   useEffect(() => {
     void load();
   }, [load]);
+  const loadWatch = useCallback(async (refresh = false) => {
+    setWatchLoading(true);
+    setWatchError(null);
+    try {
+      const res = await fetch(`/api/mvt-pairing/missing-orders?days=14${refresh ? '&refresh=1' : ''}`);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setWatchError(json.error || json.message || `HTTP ${res.status}`);
+        return;
+      }
+      setWatch(json.data as Watch);
+    } catch {
+      setWatchError('Chyba spojení.');
+    } finally {
+      setWatchLoading(false);
+    }
+  }, []);
 
   const shift = (n: number) => {
     const d = new Date(date + 'T00:00:00');
@@ -172,7 +200,15 @@ export function MvtPairingClient() {
       const res = await fetch(`/api/mvt-pairing/${row.eventId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await res.json().catch(() => null);
       if (!res.ok || !j?.success) window.alert(j?.error || j?.message || `Nepodařilo se (HTTP ${res.status}).`);
+      else if (j?.data?.bootstrappedOrderId) {
+        const zam = j.data.bootstrappedZamereniEventId;
+        window.alert(
+          `ERP zakázka neměla v našem systému objednávku — založena objednávka #${j.data.bootstrappedOrderId} z ERP záznamu (bez ADMF) a montáž spárována.` +
+            (zam ? ` Zaměření (událost ${zam}) propojeno.` : ' Zaměření v Raynetu se nepodařilo jednoznačně dohledat, propojte ho případně v kancelářském portálu.')
+        );
+      }
       await load();
+      if (watch) await loadWatch(true);
     } finally {
       setBusy(null);
     }
@@ -231,7 +267,12 @@ export function MvtPairingClient() {
                   <a href={officePortalOrderDeepLink(row.office.order_id ?? 0)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                     objednávka #{row.office.order_id}
                   </a>
-                )}{' '}
+                )}
+                {row.orderOrigin === 'erp_import_mvt' || row.orderOrigin === 'erp_import' ? (
+                  <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800" title="Objednávka byla založena z ERP záznamu — za ní není ADMF z tabletu">
+                    založeno z ERP · bez ADMF
+                  </span>
+                ) : null}{' '}
                 · {row.office.decided_by} · {fmtDateTime(row.office.decided_at)}
                 {row.office.note ? ` · „${row.office.note}“` : ''}
                 {row.office.decision === 'paired' && row.office.erp_complaint_id == null && !row.office.raynet_linked && <span className="ml-1 text-amber-700">· odkaz do Raynetu se nezapsal</span>}
@@ -278,6 +319,27 @@ export function MvtPairingClient() {
         {row.status !== 'no_order' && row.kind !== 'complaint' && (
           <div className="mt-3">
             <Candidates row={row} busy={busy === row.eventId} onPair={(orderId) => void act(row, { action: 'pair', orderId })} />
+            {(row.erpCandidates?.length ?? 0) > 0 && (
+              <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-xs">
+                <p className="mb-1 text-amber-900">
+                  Zákazník nemá v našem systému žádnou objednávku, v ERP má tyto zakázky. Vyberte tu správnou — objednávka se založí z ERP záznamu (bez ADMF) a montáž se spáruje:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {row.erpCandidates!.map((c) => (
+                    <button
+                      key={c.erpOrderId}
+                      type="button"
+                      disabled={busy === row.eventId}
+                      onClick={() => void act(row, { action: 'pair', erpOrderId: c.erpOrderId })}
+                      className="rounded border border-amber-400 bg-white px-2 py-1 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                      title={`${c.customerName ?? ''} ${c.customerPhone ?? ''}`.trim()}
+                    >
+                      Založit a spárovat ERP #{c.erpOrderId} · {ERP_STATUS_LABEL[c.status] ?? c.status} · {fmtDay(c.createdAt)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mt-2 flex items-center gap-2 text-xs">
               <span className="text-gray-500">Jiná zakázka (číslo z ERP):</span>
               <input value={manual[row.eventId] ?? ''} onChange={(e) => setManual((m) => ({ ...m, [row.eventId]: e.target.value }))} placeholder="číslo ERP zakázky" className="w-36 rounded border border-gray-300 px-2 py-1" inputMode="numeric" />
@@ -421,6 +483,34 @@ export function MvtPairingClient() {
               {showUnplanned && <ul className="mt-2 space-y-3">{data.unplanned!.map((r) => <RowCard key={r.eventId} row={r} />)}</ul>}
             </section>
           )}
+          <section className="border-t border-gray-200 pt-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-sm font-semibold text-gray-900">
+                K založení · příštích 14 dní{watch ? <span className="text-gray-500"> · {watch.rows.length}</span> : null}
+              </h2>
+              <button type="button" onClick={() => void loadWatch(!!watch)} disabled={watchLoading} className="rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+                {watchLoading ? 'Načítám…' : watch ? 'Obnovit' : 'Načíst'}
+              </button>
+              {watch && <span className="text-xs text-gray-500">{fmtDay(watch.from)} – {fmtDay(watch.to)} · stav k {new Date(watch.generatedAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Naplánované montáže, jejichž zákazník nemá v našem systému žádnou objednávku (zakázka vznikla jen v ERP — doobjednávka, web, firemní nákup). Založte ji dopředu, aby montér nestál na místě se zamčenou událostí.</p>
+            {watchError && <div className="mt-2 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{watchError}</div>}
+            {watch && !watchLoading && (
+              watch.rows.length === 0 ? (
+                <p className="mt-2 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">Všechny naplánované montáže mají objednávku. 🎉{watch.unplanned.length ? ` (${watch.unplanned.length} bez montéra čeká na naplánování.)` : ''}</p>
+              ) : (
+                <div className="mt-2 space-y-4">
+                  {Array.from(new Set(watch.rows.map((r) => (r.scheduledFrom ?? '').slice(0, 10)))).map((day) => (
+                    <div key={day}>
+                      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{fmtDay(day)}</h3>
+                      <ul className="space-y-3">{watch.rows.filter((r) => (r.scheduledFrom ?? '').slice(0, 10) === day).map((r) => <RowCard key={r.eventId} row={r} />)}</ul>
+                    </div>
+                  ))}
+                  {watch.unplanned.length > 0 && <p className="text-xs text-gray-500">Dalších {watch.unplanned.length} bez montéra (ve frontě k naplánování) — objeví se tu, jakmile dostanou montéra.</p>}
+                </div>
+              )
+            )}
+          </section>
         </>
       )}
     </div>
