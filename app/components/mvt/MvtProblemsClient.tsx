@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TeamFilter, type TeamSelection } from '../teams/TeamFilter';
 import { OUTCOME_LABEL, WORKFLOW_LABEL, eventInTeam, fmtDateTime, fmtKc, ymd, type TlDayEvent } from './shared';
 import { openForCorrection, reopenAction } from './reopen';
+import MvtProblemsBatchModal, { type BatchTarget } from './MvtProblemsBatchModal';
 
 type Kind = 'nesedi_doplatek' | 'eskalace' | 'reopen_request' | 'zapis_selhal' | 'erp_nezapsano' | 'erp_nesparovano';
 /** 'ok' = checked and clean (invoicing confirms the invoice is paid) — safe to close. */
@@ -14,6 +15,9 @@ interface Resolution {
   note: string | null;
   resolved_by: string;
   resolved_at: string;
+  /** Set when closing this row also wrote ERP „Sedí doplatek = Ano". */
+  erp_written_at?: string | null;
+  erp_write_note?: string | null;
 }
 export interface ProblemItem {
   kind: Kind;
@@ -58,27 +62,61 @@ export function problemInTeam(it: ProblemItem, team: TeamSelection | null): bool
   return it.monterRaynetId != null && team.memberRaynetIds.map(String).includes(String(it.monterRaynetId));
 }
 
+/** What the close did in ERP (backend result of POST .../resolve). */
+interface ErpWriteResult {
+  erpSediDoplatek: 'written' | 'already' | null;
+  erpSkipped: string | null;
+  erpError: string | null;
+  erpOrderId: number | null;
+}
+
 /** One problem row — shared with Přehled. */
-export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChanged: () => void; compact?: boolean }) {
+export function ProblemRow({
+  it,
+  onChanged,
+  compact,
+  selectable,
+  selected,
+  onToggle,
+}: {
+  it: ProblemItem;
+  onChanged: () => void;
+  compact?: boolean;
+  /** Batch column: rendered only on the full page, never in Přehled. */
+  selectable?: boolean;
+  selected?: boolean;
+  onToggle?: () => void;
+}) {
   const [busy, setBusy] = useState(false);
   const d = it.detail as Record<string, unknown>;
   const label = it.event?.customer ?? (d.customer as string | null) ?? `zápis ${it.key}`;
 
   const resolveProblem = async () => {
-    const reason = window.prompt(`Uzavřít — ${label}. Důvod: chyba_mvt / jina_chyba / v_poradku`, it.kind === 'nesedi_doplatek' ? 'v_poradku' : 'jina_chyba');
+    // Green "Ověřeno — lze uzavřít" rows also write ERP „Sedí doplatek = Ano"
+    // on close (backend re-verifies the invoice), so say so up front.
+    const willWriteErp = it.kind === 'nesedi_doplatek' && it.severity === 'ok';
+    const reason = window.prompt(
+      `Uzavřít — ${label}.${willWriteErp ? ' Při důvodu v_poradku zapíšeme do ERP „Sedí doplatek = Ano".' : ''} Důvod: chyba_mvt / jina_chyba / v_poradku`,
+      it.kind === 'nesedi_doplatek' ? 'v_poradku' : 'jina_chyba'
+    );
     if (reason == null) return;
     const r = reason.trim().toLowerCase();
     if (!['chyba_mvt', 'jina_chyba', 'v_poradku'].includes(r)) return window.alert('Zadejte chyba_mvt, jina_chyba nebo v_poradku.');
     const note = window.prompt('Poznámka (nepovinná):', '') ?? '';
     setBusy(true);
     try {
-      await fetch(`/api/mvt-problems/${it.kind}/${encodeURIComponent(it.key)}/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: r, note }) });
+      const res = await fetch(`/api/mvt-problems/${it.kind}/${encodeURIComponent(it.key)}/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: r, note }) });
+      const json = (await res.json().catch(() => null)) as { data?: ErpWriteResult } | null;
+      const erp = json?.data;
+      if (erp?.erpError) window.alert(`Uzavřeno, ale zápis do ERP selhal: ${erp.erpError}\n„Sedí doplatek" zůstává na kanceláři.`);
+      else if (erp?.erpSkipped) window.alert(`Uzavřeno. ${erp.erpSkipped}`);
       onChanged();
     } finally {
       setBusy(false);
     }
   };
   const unresolve = async () => {
+    if (it.resolution?.erp_written_at && !window.confirm('Vrátit do fronty? „Sedí doplatek = Ano" zůstane v ERP zapsané — případnou změnu udělejte v ERP nebo ve financích.')) return;
     setBusy(true);
     try {
       await fetch(`/api/mvt-problems/${it.kind}/${encodeURIComponent(it.key)}/resolve`, { method: 'DELETE' });
@@ -134,7 +172,14 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
   };
 
   return (
-    <tr className={`border-t border-gray-100 align-top ${sevRow(it.severity)} ${it.resolution ? 'opacity-60' : ''}`}>
+    <tr className={`border-t border-gray-100 align-top ${sevRow(it.severity)} ${it.resolution ? 'opacity-60' : ''} ${selected ? 'ring-1 ring-inset ring-[#1E8449]/40' : ''}`}>
+      {selectable && (
+        <td className="px-3 py-2">
+          {it.resolveVia === 'problem' && !it.resolution ? (
+            <input type="checkbox" checked={!!selected} onChange={() => onToggle?.()} aria-label="Vybrat k hromadnému uzavření" />
+          ) : null}
+        </td>
+      )}
       <td className="px-3 py-2">
         <span className={`rounded px-2 py-0.5 text-xs font-medium ${chipUi(it).cls}`}>{chipUi(it).label}</span>
         <p className="mt-1 text-sm font-medium text-gray-900">{it.title}</p>
@@ -182,6 +227,7 @@ export function ProblemRow({ it, onChanged, compact }: { it: ProblemItem; onChan
           <p className="mt-1 text-xs text-gray-500">
             Uzavřeno · {REASON_LABEL[it.resolution.reason]} · {it.resolution.resolved_by}
             {it.resolution.note ? ` · ${it.resolution.note}` : ''}
+            {it.resolution.erp_written_at ? <span className="ml-1 text-green-700">· zapsáno do ERP „Sedí doplatek = Ano“</span> : null}
           </p>
         )}
       </td>
@@ -238,6 +284,9 @@ export function MvtProblemsClient() {
   const [teamId, setTeamId] = useState<number | null>(null);
   const [team, setTeam] = useState<TeamSelection | null>(null);
   const [kinds, setKinds] = useState<Kind[]>([]);
+  /** Batch close: selected "kind:key" pairs + the open wizard. */
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchOpen, setBatchOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!from || !to) return;
@@ -265,6 +314,27 @@ export function MvtProblemsClient() {
   const visible = useMemo(() => items.filter((i) => problemInTeam(i, team) && (kinds.length === 0 || kinds.includes(i.kind))), [items, team, kinds]);
   const counts = useMemo(() => items.reduce<Record<string, number>>((a, i) => (i.resolution ? a : { ...a, [i.kind]: (a[i.kind] ?? 0) + 1 }), {}), [items]);
 
+  // Batch close works on the rows that close through the problem endpoint
+  // (nesedí doplatek + zápisy). Eskalace and žádosti have their own buttons.
+  const rowId = (i: ProblemItem) => `${i.kind}:${i.key}`;
+  const batchable = useMemo(() => visible.filter((i) => i.resolveVia === 'problem' && !i.resolution), [visible]);
+  const allSelected = batchable.length > 0 && batchable.every((i) => selected.has(rowId(i)));
+  const toggleAll = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) batchable.forEach((i) => next.delete(rowId(i)));
+      else batchable.forEach((i) => next.add(rowId(i)));
+      return next;
+    });
+  const targets: BatchTarget[] = useMemo(
+    () =>
+      batchable
+        .filter((i) => selected.has(rowId(i)))
+        .map((i) => ({ kind: i.kind, key: i.key, severity: i.severity, label: i.event?.customer ?? `zápis ${i.key}` })),
+    [batchable, selected]
+  );
+  const greenSelected = targets.filter((t) => t.severity === 'ok' && t.kind === 'nesedi_doplatek').length;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -287,10 +357,35 @@ export function MvtProblemsClient() {
       <p className="text-xs text-gray-500">Eskalace a nesedící doplatky nejsou omezené datem zápisu jen u eskalací; doplatky se hledají v zápisech ve zvoleném období. Položky zůstávají, dokud je neuzavřete — i když je kancelář mezitím opravila v ERP.</p>
 
       {error && <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
+
+      {targets.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#1E8449]/40 bg-green-50 px-3 py-2 text-sm">
+          <span className="font-medium text-[#1E8449]">Vybráno {targets.length}</span>
+          {greenSelected > 0 && (
+            <span className="text-xs text-gray-600">z toho {greenSelected} ověřených — zapíše se „Sedí doplatek = Ano“ do ERP</span>
+          )}
+          <button type="button" onClick={() => setBatchOpen(true)} className="rounded bg-[#1E8449] px-3 py-1.5 text-xs font-semibold text-white">
+            Uzavřít vybrané
+          </button>
+          <button type="button" onClick={() => setSelected(new Set())} className="text-xs text-gray-500 hover:text-gray-800">
+            zrušit výběr
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
             <tr>
+              <th className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  disabled={batchable.length === 0}
+                  onChange={toggleAll}
+                  aria-label="Vybrat vše k hromadnému uzavření"
+                />
+              </th>
               <th className="px-3 py-2">Problém</th>
               <th className="px-3 py-2">Montér / termín</th>
               <th className="px-3 py-2">Zákazník</th>
@@ -299,15 +394,44 @@ export function MvtProblemsClient() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="px-3 py-8 text-center text-gray-500">Načítám…</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center text-gray-500">Načítám…</td></tr>
             ) : visible.length === 0 ? (
-              <tr><td colSpan={4} className="px-3 py-8 text-center text-gray-500">Žádné problematické zakázky. 🎉</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center text-gray-500">Žádné problematické zakázky. 🎉</td></tr>
             ) : (
-              visible.map((it) => <ProblemRow key={`${it.kind}-${it.key}`} it={it} onChanged={() => void load()} />)
+              visible.map((it) => (
+                <ProblemRow
+                  key={`${it.kind}-${it.key}`}
+                  it={it}
+                  onChanged={() => void load()}
+                  selectable
+                  selected={selected.has(`${it.kind}:${it.key}`)}
+                  onToggle={() =>
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      const id = `${it.kind}:${it.key}`;
+                      if (next.has(id)) next.delete(id);
+                      else next.add(id);
+                      return next;
+                    })
+                  }
+                />
+              ))
             )}
           </tbody>
         </table>
       </div>
+
+      {batchOpen && targets.length > 0 && (
+        <MvtProblemsBatchModal
+          targets={targets}
+          onClose={() => setBatchOpen(false)}
+          onFinished={() => {
+            setBatchOpen(false);
+            setSelected(new Set());
+            void load();
+          }}
+        />
+      )}
     </div>
   );
 }
