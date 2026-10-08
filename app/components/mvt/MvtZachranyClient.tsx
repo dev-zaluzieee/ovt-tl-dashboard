@@ -50,6 +50,41 @@ const kc = (n: number | null | undefined) =>
 
 const days = (n: number) => `${n} ${n === 1 ? 'den' : n < 5 ? 'dny' : 'dní'}`;
 
+type SortKey = 'when' | 'held' | 'customer' | 'monter' | 'sleva';
+type SortDir = 'asc' | 'desc';
+
+/** Same sortable header the Problematické zakázky table uses. */
+function SortableTh({
+  label,
+  columnKey,
+  activeKey,
+  activeDir,
+  onClick,
+}: {
+  label: string;
+  columnKey: SortKey;
+  activeKey: SortKey;
+  activeDir: SortDir;
+  onClick: (key: SortKey) => void;
+}) {
+  const isActive = activeKey === columnKey;
+  const marker = isActive ? (activeDir === 'asc' ? '↑' : '↓') : '↕';
+  return (
+    <th className="px-3 py-2 text-left">
+      <button
+        type="button"
+        onClick={() => onClick(columnKey)}
+        className={`inline-flex items-center gap-1 ${isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'}`}
+      >
+        {label}
+        <span aria-hidden className={`${isActive ? 'text-gray-900' : 'text-gray-300'} text-[10px]`}>
+          {marker}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 /**
  * How long the save has held, in a green that deepens with age. Claims arrive
  * within three days in almost every case, so the first days carry the signal:
@@ -79,6 +114,17 @@ export function MvtZachranyClient() {
   const [onlyText, setOnlyText] = useState(false);
   const [search, setSearch] = useState('');
   const [nowMs] = useState(() => Date.now());
+  const [sortKey, setSortKey] = useState<SortKey>('when');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  /** Click the active column to flip; a new column starts on its natural side. */
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortKey(key);
+    setSortDir(key === 'customer' || key === 'monter' ? 'asc' : 'desc');
+  };
 
   const load = useCallback(async () => {
     if (!from || !to) return;
@@ -137,6 +183,36 @@ export function MvtZachranyClient() {
       return true;
     });
   }, [items, team, monter, workflow, onlyText, search]);
+
+  const sorted = useMemo(() => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const cmp = (a: string, b: string) => a.localeCompare(b, 'cs');
+    // "Vydrželo?" sorts on one axis: a claim is "worse" than any number of days
+    // held, so claims come first when sorted desc — the TL's reading order.
+    const heldRank = (i: ZachranaItem) =>
+      i.followUpClaim ? -1_000_000 + i.followUpClaim.daysAfter : ageDays(i.submittedAt);
+    return [...visible].sort((a, b) => {
+      let c = 0;
+      switch (sortKey) {
+        case 'when':
+          c = a.submittedAt.localeCompare(b.submittedAt);
+          break;
+        case 'held':
+          c = heldRank(a) - heldRank(b);
+          break;
+        case 'customer':
+          c = cmp(a.event?.customer ?? '', b.event?.customer ?? '');
+          break;
+        case 'monter':
+          c = cmp(a.monterName ?? '', b.monterName ?? '');
+          break;
+        case 'sleva':
+          c = (a.slevaMvt ?? 0) - (b.slevaMvt ?? 0);
+          break;
+      }
+      return c !== 0 ? c * dir : b.submittedAt.localeCompare(a.submittedAt);
+    });
+  }, [visible, sortKey, sortDir, nowMs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const withText = visible.filter((i) => (i.infoKZachrane || i.infoKeSleve || i.komentar || '').trim()).length;
   const slevaVisible = visible.reduce((s, i) => s + (i.slevaMvt ?? 0), 0);
@@ -234,36 +310,36 @@ export function MvtZachranyClient() {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
             <tr>
-              <th className="px-3 py-2">Kdy / montér</th>
-              <th className="px-3 py-2">Vydrželo?</th>
-              <th className="px-3 py-2">Zákazník</th>
+              <SortableTh label="Kdy" columnKey="when" activeKey={sortKey} activeDir={sortDir} onClick={handleSort} />
+              <SortableTh label="Montér" columnKey="monter" activeKey={sortKey} activeDir={sortDir} onClick={handleSort} />
+              <SortableTh label="Vydrželo?" columnKey="held" activeKey={sortKey} activeDir={sortDir} onClick={handleSort} />
+              <SortableTh label="Zákazník" columnKey="customer" activeKey={sortKey} activeDir={sortDir} onClick={handleSort} />
               <th className="px-3 py-2">Důvod záchrany</th>
-              <th className="px-3 py-2">Sleva</th>
+              <SortableTh label="Sleva" columnKey="sleva" activeKey={sortKey} activeDir={sortDir} onClick={handleSort} />
               <th className="px-3 py-2">Odkazy</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
                   Načítám…
                 </td>
               </tr>
             ) : visible.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
                   Žádné záchrany v tomto období.
                 </td>
               </tr>
             ) : (
-              visible.map((i) => (
+              sorted.map((i) => (
                 <tr key={i.outcomeId} className={`border-t border-gray-100 align-top ${i.followUpClaim ? 'bg-rose-50/40' : ''}`}>
                   <td className="whitespace-nowrap px-3 py-2">
                     <p className="text-gray-800">{fmtDateTime(i.submittedAt)}</p>
-                    <p className="text-xs text-gray-500">
-                      {i.monterName ?? '—'} · {WORKFLOW_LABEL[i.workflow] ?? i.workflow}
-                    </p>
+                    <p className="text-xs text-gray-500">{WORKFLOW_LABEL[i.workflow] ?? i.workflow}</p>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-gray-800">{i.monterName ?? '—'}</td>
                   <td className="whitespace-nowrap px-3 py-2">
                     {i.followUpClaim ? (
                       <>
