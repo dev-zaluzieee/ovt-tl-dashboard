@@ -114,6 +114,11 @@ export function MvtZachranyClient() {
   const [onlyText, setOnlyText] = useState(false);
   const [search, setSearch] = useState('');
   const [nowMs] = useState(() => Date.now());
+  // One "now" per mount: stable across re-renders and pure during render.
+  // Declared HERE, above the memos that call it — a `const` used earlier in the
+  // component body is in its temporal dead zone and throws at runtime only
+  // ("Cannot access 'ageDays' before initialization", prod build 2026-10-08).
+  const ageDays = (iso: string) => Math.max(0, Math.floor((nowMs - Date.parse(iso)) / 86_400_000));
   const [sortKey, setSortKey] = useState<SortKey>('when');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   /** Click the active column to flip; a new column starts on its natural side. */
@@ -223,8 +228,6 @@ export function MvtZachranyClient() {
     const d = failed.map((i) => i.followUpClaim!.daysAfter).sort((a, b) => a - b);
     return d[Math.floor(d.length / 2)];
   })();
-  // One "now" per mount: stable across re-renders and pure during render.
-  const ageDays = (iso: string) => Math.max(0, Math.floor((nowMs - Date.parse(iso)) / 86_400_000));
 
   return (
     <div className="space-y-4">
