@@ -88,7 +88,6 @@ export const NAV: Record<Workforce, NavGroup[]> = {
     {
       label: 'Lidé',
       items: [
-        { href: '/mvt/vysledky', label: 'Výsledky montérů', description: 'Dokončené, se záchranou, reklamace, slevy a vybraná hotovost po montérech a týmech.' },
         { href: '/hotovost', label: 'Hotovost', description: 'Kolik hotovosti má kdo u sebe — stejná čísla jako vidí finance.' },
       ],
     },
@@ -96,6 +95,7 @@ export const NAV: Record<Workforce, NavGroup[]> = {
       label: 'Historie',
       items: [
         { href: '/mvt/zapisy', label: 'Zápisy z aplikace', description: 'Každé odeslání výsledku montáže z aplikace a co se kam zapsalo (Raynet, ERP, hotovost).' },
+        { href: '/mvt/zachrany', label: 'Záchrany', description: 'Zakázky dokončené se záchranou včetně popisu, co bylo špatně a jak to montér vyřešil na místě.' },
         { href: '/mvt/reklamace', label: 'Reklamace z montáží', description: 'Co montéři poslali na reklamace a zda už vznikla navazující událost.' },
       ],
     },
