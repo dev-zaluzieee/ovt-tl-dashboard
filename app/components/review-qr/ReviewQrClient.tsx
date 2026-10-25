@@ -292,8 +292,8 @@ export function ReviewQrClient() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-gray-900">Výchozí QR</h2>
         <p className="text-sm text-gray-500">
-          Použije se, když OVT nemá v marketingovém kalendáři kraj, nebo jeho kraj nemá QR pro daný typ zákazníka. Bez výchozího
-          QR tablet v takovém případě QR neukáže.
+          Použije se, když OVT nemá v marketingovém kalendáři kraj, nebo jeho kraj nemá v daném slotu QR. Bez výchozího QR
+          tablet v takovém případě QR neukáže.
         </p>
         <div className="grid gap-3 md:grid-cols-2">
           {SLOTS.map(({ slot, label, hint, platformOrder }) => {

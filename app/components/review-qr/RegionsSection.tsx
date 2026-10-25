@@ -141,9 +141,8 @@ export function RegionsSection({
         </div>
       </div>
       <p className="text-sm text-gray-500">
-        Kraj OVT se bere z marketingového kalendáře (tady se nenastavuje). Každý kraj má primární QR (ukáže se jako první —
-        tam chceme recenze) a sekundární, na který OVT přepne, když zákazník tu platformu nemá. Nevyplněný slot = výchozí QR. Šedě jsou OVT bez ADMF za posledních {activeDays} dní,
-        otazník = OVT nemá účet v tabletu.
+        Kraj OVT se bere z marketingového kalendáře (tady se nenastavuje). Prázdný slot = výchozí QR (šedě v nabídce).
+        Šedě jsou OVT bez ADMF za posledních {activeDays} dní, otazník = OVT nemá účet v tabletu.
       </p>
 
       {!source.ok ? (
@@ -155,62 +154,69 @@ export function RegionsSection({
         <p className="text-xs text-gray-400">Marketingový kalendář: {source.ovt_count} OVT.</p>
       )}
 
-      <div className="space-y-2">
-        {rows.map(({ r, warnings }) => {
-          const active = r.ovts.filter((o) => o.admf_count > 0).length;
-          const spellings = r.raw_names.filter((n) => n !== r.key);
-          return (
-            <div
-              key={r.key}
-              className={`rounded-lg border bg-white p-3 ${
-                warnings.some((w) => w.level === "red") ? "border-rose-300" : warnings.length ? "border-amber-300" : "border-gray-200"
-              }`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-gray-900">
-                    {r.key}
-                    <span className="ml-2 text-sm font-normal text-gray-500">
-                      {r.ovts.length === 0 ? "žádný OVT v kalendáři" : `${r.ovts.length} OVT, ${active} aktivních`}
-                    </span>
-                  </h3>
-                  {spellings.length > 0 && (
-                    <p className="text-xs text-gray-400">V kalendáři zapsáno jako: {r.raw_names.join(", ")}</p>
-                  )}
-                  {warnings.map((w, i) => (
-                    <p key={i} className={`mt-1 text-xs ${w.level === "red" ? "text-rose-700" : "text-amber-700"}`}>
-                      {w.text}
-                    </p>
-                  ))}
-                  {isAdmin && !r.known && !r.in_calendar && r.config && (
-                    <button
-                      type="button"
-                      className={`${btnGhost} mt-2`}
-                      disabled={busy === `reg-${r.key}-b2c` || busy === `reg-${r.key}-b2b`}
-                      onClick={async () => {
-                        await onSetRegion(r.key, "primary", null);
-                        await onSetRegion(r.key, "secondary", null);
-                      }}
-                    >
-                      Smazat nastavení
-                    </button>
-                  )}
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {SLOTS.map(({ slot, label, hint, platformOrder }) => {
+      {/* One row per kraj — 11 regions × 2 choices is a table, not a stack of cards.
+          Hints live once in the header; the fallback shows as the select's placeholder. */}
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+            <tr>
+              <th className="px-3 py-2">Kraj</th>
+              {SLOTS.map(({ slot, label, hint }) => (
+                <th key={slot} className="px-3 py-2 font-semibold normal-case tracking-normal">
+                  <span className="uppercase tracking-wide">{label}</span>
+                  <span className="ml-2 font-normal text-gray-400">{hint}</span>
+                </th>
+              ))}
+              <th className="px-3 py-2">OVT</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map(({ r, warnings }) => {
+              const active = r.ovts.filter((o) => o.admf_count > 0).length;
+              const spellings = r.raw_names.filter((n) => n !== r.key);
+              const red = warnings.some((w) => w.level === "red");
+              return (
+                <tr key={r.key} className={red ? "bg-rose-50/40" : warnings.length ? "bg-amber-50/40" : ""}>
+                  <td className="px-3 py-2 align-top">
+                    <div className="font-medium text-gray-900">{r.key}</div>
+                    <div className="text-xs text-gray-400">
+                      {r.ovts.length === 0 ? "žádný OVT v kalendáři" : `${active} / ${r.ovts.length} aktivních`}
+                    </div>
+                    {spellings.length > 0 && (
+                      <div className="text-[11px] text-gray-400" title="Jak je kraj zapsaný v marketingovém kalendáři">
+                        kalendář: {spellings.join(", ")}
+                      </div>
+                    )}
+                    {warnings.map((w, i) => (
+                      <div key={i} className={`mt-1 text-xs ${w.level === "red" ? "text-rose-700" : "text-amber-700"}`}>
+                        {w.text}
+                      </div>
+                    ))}
+                    {isAdmin && !r.known && !r.in_calendar && r.config && (
+                      <button
+                        type="button"
+                        className={`${btnGhost} mt-1`}
+                        disabled={busy === `reg-${r.key}-primary` || busy === `reg-${r.key}-secondary`}
+                        onClick={async () => {
+                          await onSetRegion(r.key, "primary", null);
+                          await onSetRegion(r.key, "secondary", null);
+                        }}
+                      >
+                        Smazat nastavení
+                      </button>
+                    )}
+                  </td>
+                  {SLOTS.map(({ slot, platformOrder }) => {
                     const slotTargetId = regionSlotId(r.config, slot);
                     const res = resolveTarget(r.config, slot, settings, targetById);
                     const fallbackRes = resolveTarget(null, slot, settings, targetById);
-                    const emptyLabel = fallbackRes.kind === "none" ? "— bez QR —" : `— výchozí (${targetName(fallbackRes.target)}) —`;
+                    const emptyLabel = fallbackRes.kind === "none" ? "— bez QR —" : `výchozí · ${targetName(fallbackRes.target)}`;
                     const shown = resolutionText(res);
                     return (
-                      <div key={slot} className="min-w-[14rem]">
-                        <p className="text-xs text-gray-500">
-                          <span className="font-semibold text-gray-700">{label}</span> {hint}
-                        </p>
+                      <td key={slot} className="px-3 py-2 align-top">
                         {isAdmin ? (
                           <TargetSelect
-                            className="mt-1 w-full"
+                            className={`w-full min-w-[13rem] ${slotTargetId == null ? "text-gray-400" : ""}`}
                             targets={targets}
                             platformOrder={platformOrder}
                             value={slotTargetId}
@@ -219,35 +225,40 @@ export function RegionsSection({
                             onChange={(id) => void onSetRegion(r.key, slot, id)}
                           />
                         ) : (
-                          <p className={`mt-1 text-sm ${shown.tone}`}>{shown.text}</p>
+                          <span className={shown.tone}>{shown.text}</span>
                         )}
-                        {isAdmin && res.kind !== "region" && (
-                          <p className={`mt-0.5 text-xs ${shown.tone}`}>tablet ukáže: {shown.text}</p>
+                        {/* Only when the stored region target is inactive and the tablet shows something else. */}
+                        {isAdmin && res.kind !== "region" && res.regionTargetInactive && (
+                          <div className={`mt-0.5 text-xs ${shown.tone}`}>tablet ukáže: {shown.text}</div>
                         )}
-                      </div>
+                      </td>
                     );
                   })}
-                </div>
-              </div>
-              {r.ovts.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {r.ovts.map((o) => (
-                    <OvtChip key={o.raynet_user_id} o={o} activeDays={activeDays} />
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-        {rows.length === 0 && <p className="text-sm text-gray-500">Žádný kraj neodpovídá filtru.</p>}
+                  <td className="px-3 py-2 align-top">
+                    <div className="flex max-w-xs flex-wrap gap-1">
+                      {r.ovts.map((o) => (
+                        <OvtChip key={o.raynet_user_id} o={o} activeDays={activeDays} />
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-3 py-6 text-center text-sm text-gray-500">Žádný kraj neodpovídá filtru.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {source.ok && (notInCalendar.length > 0 || withoutRegion.length > 0) && (
         <div className="rounded-lg border border-amber-300 bg-white p-3">
           <h3 className="font-semibold text-gray-900">OVT mimo kraje</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Tito OVT nemají v marketingovém kalendáři kraj, takže tablet ukáže výchozí QR (B2C: {" "}
-            <span className={fallback[0].tone}>{fallback[0].text}</span>, B2B:{" "}
+            Tito OVT nemají v marketingovém kalendáři kraj, takže tablet ukáže výchozí QR (primární: {" "}
+            <span className={fallback[0].tone}>{fallback[0].text}</span>, sekundární:{" "}
             <span className={fallback[1].tone}>{fallback[1].text}</span>). Opravte to v marketingovém kalendáři, tady se kraj
             nenastavuje.
           </p>
