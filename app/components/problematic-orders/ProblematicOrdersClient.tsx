@@ -51,12 +51,15 @@ type ReasonKind =
   | 'raynet_only'
   | 'no_admf'
   | 'admf_not_exported'
+  | 'rz_not_sent'
   | 'nedopadla_recent';
 
 type Reason =
   | { kind: 'raynet_only'; agedWorkingDays: number; eventScheduledFrom: string | null }
   | { kind: 'no_admf'; agedWorkingDays: number; orderCreatedAt: string }
   | { kind: 'admf_not_exported'; agedWorkingDays: number; orderCreatedAt: string }
+  /** Znovuzaměření (reklamace) staré 2+ prac. dny bez „Odeslat znovuzaměření“ a bez nezastižen. */
+  | { kind: 'rz_not_sent'; agedWorkingDays: number; orderCreatedAt: string }
   | {
       kind: 'nedopadla_recent';
       markedAt: string;
@@ -138,6 +141,8 @@ function labelForReason(r: Reason): string {
       return 'Bez ADMF';
     case 'admf_not_exported':
       return 'ADMF neexportován';
+    case 'rz_not_sent':
+      return 'Znovuzaměření neodesláno';
     case 'nedopadla_recent': {
       // The WHY belongs on the badge itself, not buried in a tooltip —
       // TL triages by reason (požadavek 2026-07-29).
@@ -155,6 +160,8 @@ function tooltipForReason(r: Reason): string {
       return `Zakázka existuje ${r.agedWorkingDays} prac. dnů, ale OVT dosud nevytvořil ADMF formulář.`;
     case 'admf_not_exported':
       return `ADMF existuje, ale nebyl úspěšně exportován do Raynetu (${r.agedWorkingDays} prac. dnů starý).`;
+    case 'rz_not_sent':
+      return `Znovuzaměření pro reklamaci existuje ${r.agedWorkingDays} prac. dnů, ale OVT ho neuzavřel tlačítkem „Odeslat znovuzaměření“ ani jako nezastižen. ADMF se u znovuzaměření nevyplňuje.`;
     case 'nedopadla_recent':
       return (
         `OVT označil zakázku jako "Zakázka nedopadla"${
@@ -171,6 +178,7 @@ function tooltipForReason(r: Reason): string {
 const REASON_SEVERITY: ReasonKind[] = [
   'nedopadla_recent',
   'admf_not_exported',
+  'rz_not_sent',
   'no_admf',
   'raynet_only',
 ];
@@ -184,6 +192,8 @@ function stripeClass(reasons: Reason[]): string {
           return 'border-l-4 border-l-rose-500';
         case 'admf_not_exported':
           return 'border-l-4 border-l-amber-500';
+        case 'rz_not_sent':
+          return 'border-l-4 border-l-violet-500';
         case 'no_admf':
           return 'border-l-4 border-l-amber-400';
         case 'raynet_only':
@@ -202,6 +212,8 @@ function reasonBadgeClass(kind: ReasonKind): string {
       return 'border-amber-400 bg-amber-50 text-amber-950';
     case 'admf_not_exported':
       return 'border-amber-500 bg-amber-100 text-amber-950';
+    case 'rz_not_sent':
+      return 'border-violet-500 bg-violet-50 text-violet-950';
     case 'nedopadla_recent':
       return 'border-rose-500 bg-rose-50 text-rose-900';
   }
@@ -287,6 +299,7 @@ interface ReasonChip {
 const REASON_CHIPS: ReasonChip[] = [
   { kind: 'nedopadla_recent', label: 'Nedopadla' },
   { kind: 'admf_not_exported', label: 'Neexportováno' },
+  { kind: 'rz_not_sent', label: 'RZ neodesláno' },
   { kind: 'no_admf', label: 'Bez ADMF' },
   { kind: 'raynet_only', label: 'Bez zakázky' },
 ];
@@ -296,8 +309,9 @@ const REASON_CHIPS: ReasonChip[] = [
 const REASON_SEVERITY_INDEX: Record<ReasonKind, number> = {
   nedopadla_recent: 0,
   admf_not_exported: 1,
-  no_admf: 2,
-  raynet_only: 3,
+  rz_not_sent: 2,
+  no_admf: 3,
+  raynet_only: 4,
 };
 
 function rowSeverity(row: ProblematicRow): number {
@@ -370,6 +384,7 @@ export function ProblematicOrdersClient() {
         t === 'raynet_only' ||
         t === 'no_admf' ||
         t === 'admf_not_exported' ||
+        t === 'rz_not_sent' ||
         t === 'nedopadla_recent'
       ) {
         out.add(t);
