@@ -113,7 +113,7 @@ export function AnswersSection({ days, onDaysChange, prompts, stats, regionStats
                   {p.customer_name ?? "—"}
                   {p.order_id != null && <span className="ml-1 text-xs text-gray-400">#{p.order_id}</span>}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-gray-500">{p.audience === "b2b" ? "B2B firma" : "B2C soukromá"}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-gray-500">{p.slot === "secondary" ? "sekundární (přepnuto)" : p.slot === "primary" ? "primární" : "—"}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-gray-600">
                   {p.target_label
                     ? p.target_platform

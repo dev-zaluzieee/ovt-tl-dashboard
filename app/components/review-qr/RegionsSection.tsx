@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import { TargetSelect } from "./TargetSelect";
 import {
-  AUDIENCES,
+  SLOTS,
   btnGhost,
   input,
   regionSlotId,
   resolveTarget,
   targetName,
-  type Audience,
+  type Slot,
   type CalendarSource,
   type Region,
   type RegionOvt,
@@ -30,7 +30,7 @@ interface Props {
   targetById: Map<number, Target>;
   isAdmin: boolean;
   busy: string | null;
-  onSetRegion: (regionKey: string, audience: Audience, targetId: number | null) => Promise<void>;
+  onSetRegion: (regionKey: string, slot: Slot, targetId: number | null) => Promise<void>;
 }
 
 type Warning = { level: "red" | "amber"; text: string };
@@ -44,8 +44,8 @@ function resolutionText(res: Resolution): { text: string; tone: string } {
 function regionWarnings(r: Region, settings: Settings | null, targetById: Map<number, Target>): Warning[] {
   const out: Warning[] = [];
   const active = r.ovts.filter((o) => o.admf_count > 0).length;
-  for (const { audience, label, hint } of AUDIENCES) {
-    const res = resolveTarget(r.config, audience, settings, targetById);
+  for (const { slot, label, hint } of SLOTS) {
+    const res = resolveTarget(r.config, slot, settings, targetById);
     if (active > 0 && res.kind === "none") {
       out.push({ level: "red", text: `${label} (${hint}): OVT z tohoto kraje QR neuvidí. Nastavte QR kraje nebo výchozí QR.` });
     }
@@ -123,9 +123,9 @@ export function RegionsSection({
 
   const activeWithoutRegion = withoutRegion.filter((o) => o.admf_count > 0);
   const idleWithoutRegion = withoutRegion.length - activeWithoutRegion.length;
-  const fallback = AUDIENCES.map(({ audience, label }) => ({
+  const fallback = SLOTS.map(({ slot, label }) => ({
     label,
-    ...resolutionText(resolveTarget(null, audience, settings, targetById)),
+    ...resolutionText(resolveTarget(null, slot, settings, targetById)),
   }));
 
   return (
@@ -141,8 +141,8 @@ export function RegionsSection({
         </div>
       </div>
       <p className="text-sm text-gray-500">
-        Kraj OVT se bere z marketingového kalendáře (tady se nenastavuje). Každý kraj má jeden QR pro soukromé zákazníky (B2C)
-        a jeden pro firmy (B2B). Nevyplněný QR kraje = výchozí QR. Šedě jsou OVT bez ADMF za posledních {activeDays} dní,
+        Kraj OVT se bere z marketingového kalendáře (tady se nenastavuje). Každý kraj má primární QR (ukáže se jako první —
+        tam chceme recenze) a sekundární, na který OVT přepne, když zákazník tu platformu nemá. Nevyplněný slot = výchozí QR. Šedě jsou OVT bez ADMF za posledních {activeDays} dní,
         otazník = OVT nemá účet v tabletu.
       </p>
 
@@ -188,8 +188,8 @@ export function RegionsSection({
                       className={`${btnGhost} mt-2`}
                       disabled={busy === `reg-${r.key}-b2c` || busy === `reg-${r.key}-b2b`}
                       onClick={async () => {
-                        await onSetRegion(r.key, "b2c", null);
-                        await onSetRegion(r.key, "b2b", null);
+                        await onSetRegion(r.key, "primary", null);
+                        await onSetRegion(r.key, "secondary", null);
                       }}
                     >
                       Smazat nastavení
@@ -197,14 +197,14 @@ export function RegionsSection({
                   )}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {AUDIENCES.map(({ audience, label, hint, platformOrder }) => {
-                    const slot = regionSlotId(r.config, audience);
-                    const res = resolveTarget(r.config, audience, settings, targetById);
-                    const fallbackRes = resolveTarget(null, audience, settings, targetById);
+                  {SLOTS.map(({ slot, label, hint, platformOrder }) => {
+                    const slotTargetId = regionSlotId(r.config, slot);
+                    const res = resolveTarget(r.config, slot, settings, targetById);
+                    const fallbackRes = resolveTarget(null, slot, settings, targetById);
                     const emptyLabel = fallbackRes.kind === "none" ? "— bez QR —" : `— výchozí (${targetName(fallbackRes.target)}) —`;
                     const shown = resolutionText(res);
                     return (
-                      <div key={audience} className="min-w-[14rem]">
+                      <div key={slot} className="min-w-[14rem]">
                         <p className="text-xs text-gray-500">
                           <span className="font-semibold text-gray-700">{label}</span> {hint}
                         </p>
@@ -213,10 +213,10 @@ export function RegionsSection({
                             className="mt-1 w-full"
                             targets={targets}
                             platformOrder={platformOrder}
-                            value={slot}
+                            value={slotTargetId}
                             emptyLabel={emptyLabel}
-                            disabled={busy === `reg-${r.key}-${audience}`}
-                            onChange={(id) => void onSetRegion(r.key, audience, id)}
+                            disabled={busy === `reg-${r.key}-${slot}`}
+                            onChange={(id) => void onSetRegion(r.key, slot, id)}
                           />
                         ) : (
                           <p className={`mt-1 text-sm ${shown.tone}`}>{shown.text}</p>

@@ -4,12 +4,13 @@
  */
 
 export type Platform = "google" | "firmy" | "other";
-export type Audience = "b2c" | "b2b";
+/** Which QR the tablet shows first, and which one the OVT can switch to. */
+export type Slot = "primary" | "secondary";
 
 export interface Settings {
   enabled: boolean;
-  default_b2c_target_id: number | null;
-  default_b2b_target_id: number | null;
+  default_primary_target_id: number | null;
+  default_secondary_target_id: number | null;
   updated_at: string;
   updated_by: string | null;
 }
@@ -34,8 +35,8 @@ export interface RegionOvt {
 }
 
 export interface RegionConfig {
-  b2c_target_id: number | null;
-  b2b_target_id: number | null;
+  primary_target_id: number | null;
+  secondary_target_id: number | null;
   updated_at: string;
   updated_by: string | null;
 }
@@ -81,7 +82,7 @@ export interface PromptRow {
   ovt_email: string;
   target_label: string | null;
   target_platform: Platform | null;
-  audience: Audience;
+  slot: Slot;
   region: string | null;
   target_source: "region" | "default" | null;
   shown_at: string;
@@ -101,9 +102,9 @@ export interface PromptStats {
 
 export const PLATFORM_LABEL: Record<Platform, string> = { google: "Google", firmy: "Firmy.cz", other: "Jiné" };
 
-export const AUDIENCES: Array<{ audience: Audience; label: string; hint: string; platformOrder: Platform[] }> = [
-  { audience: "b2c", label: "B2C", hint: "soukromá osoba", platformOrder: ["google", "firmy", "other"] },
-  { audience: "b2b", label: "B2B", hint: "firma (právnická osoba / IČO)", platformOrder: ["firmy", "google", "other"] },
+export const SLOTS: Array<{ slot: Slot; label: string; hint: string; platformOrder: Platform[] }> = [
+  { slot: "primary", label: "Primární", hint: "ukáže se zákazníkovi jako první — sem chceme recenze", platformOrder: ["firmy", "google", "other"] },
+  { slot: "secondary", label: "Sekundární", hint: "OVT přepne, když zákazník tu platformu nemá; prázdné = globální výchozí", platformOrder: ["google", "firmy", "other"] },
 ];
 
 export const OUTCOME_LABEL: Record<string, string> = {
@@ -127,14 +128,14 @@ export function targetName(t: Pick<Target, "label" | "platform">): string {
   return `${PLATFORM_LABEL[t.platform]} · ${t.label}`;
 }
 
-export function defaultIdOf(settings: Settings | null, audience: Audience): number | null {
+export function defaultIdOf(settings: Settings | null, slot: Slot): number | null {
   if (!settings) return null;
-  return audience === "b2b" ? settings.default_b2b_target_id : settings.default_b2c_target_id;
+  return slot === "secondary" ? settings.default_secondary_target_id : settings.default_primary_target_id;
 }
 
-export function regionSlotId(config: RegionConfig | null, audience: Audience): number | null {
+export function regionSlotId(config: RegionConfig | null, slot: Slot): number | null {
   if (!config) return null;
-  return audience === "b2b" ? config.b2b_target_id : config.b2c_target_id;
+  return slot === "secondary" ? config.secondary_target_id : config.primary_target_id;
 }
 
 export type Resolution =
@@ -143,21 +144,21 @@ export type Resolution =
   | { kind: "none"; regionTargetInactive: boolean };
 
 /**
- * What the tablet shows for this audience — the same rule as ceniky-3
+ * What the tablet shows for this slot — the same rule as ceniky-3
  * review-qr.routes.ts: active region target, else active global default,
  * else nothing. `config` null = the OVT has no region.
  */
 export function resolveTarget(
   config: RegionConfig | null,
-  audience: Audience,
+  slot: Slot,
   settings: Settings | null,
   targetById: Map<number, Target>
 ): Resolution {
-  const slotId = regionSlotId(config, audience);
-  const slot = slotId != null ? targetById.get(slotId) ?? null : null;
-  if (slot?.active) return { kind: "region", target: slot };
-  const regionTargetInactive = slot != null && !slot.active;
-  const defId = defaultIdOf(settings, audience);
+  const slotId = regionSlotId(config, slot);
+  const regionTarget = slotId != null ? targetById.get(slotId) ?? null : null;
+  if (regionTarget?.active) return { kind: "region", target: regionTarget };
+  const regionTargetInactive = regionTarget != null && !regionTarget.active;
+  const defId = defaultIdOf(settings, slot);
   const def = defId != null ? targetById.get(defId) ?? null : null;
   if (def?.active) return { kind: "default", target: def, regionTargetInactive };
   return { kind: "none", regionTargetInactive };

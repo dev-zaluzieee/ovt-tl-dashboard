@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  AUDIENCES,
+  SLOTS,
   btn,
   btnGhost,
   btnPrimary,
@@ -21,9 +21,9 @@ import {
 const EMPTY_FORM = { label: "", platform: "google" as Platform, url: "", active: true };
 
 export interface TargetUsage {
-  /** Audience labels this target is the global default for. */
+  /** Slot labels this target is the global default for. */
   defaults: string[];
-  /** "B2C: Hlavní město Praha" style entries. */
+  /** "Primární: Hlavní město Praha" style entries. */
   regions: string[];
 }
 
@@ -38,11 +38,11 @@ export function usageByTarget(settings: Settings | null, regions: Region[]): Map
     }
     return u;
   };
-  for (const { audience, label } of AUDIENCES) {
-    const d = defaultIdOf(settings, audience);
+  for (const { slot, label } of SLOTS) {
+    const d = defaultIdOf(settings, slot);
     if (d != null) get(d).defaults.push(label);
     for (const r of regions) {
-      const id = regionSlotId(r.config, audience);
+      const id = regionSlotId(r.config, slot);
       if (id != null) get(id).regions.push(`${label}: ${r.key}`);
     }
   }
@@ -77,7 +77,7 @@ export function TargetsSection({ targets, usage, isAdmin, busy, onSave, onDelete
       <h2 className="text-lg font-semibold text-gray-900">QR cíle</h2>
       <p className="text-sm text-gray-500">
         Jeden cíl = jedna stránka s recenzemi (Google Praha, Firmy.cz Ostrava…). QR se generuje z URL, obrázky se neukládají.
-        Platforma je jen popisek, cíl jde použít pro B2C i B2B.
+        Platforma je to, podle čeho marketing vybírá primární QR; cíl jde dát do kteréhokoli slotu.
       </p>
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">

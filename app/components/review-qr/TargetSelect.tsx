@@ -3,7 +3,7 @@
 import { input, PLATFORM_LABEL, targetName, type Platform, type Target } from "./types";
 
 /**
- * Target picker grouped by platform in the audience's preferred order.
+ * Target picker grouped by platform in the slot's preferred order.
  * Inactive targets are listed only when currently selected, so a stale
  * choice stays visible instead of silently changing.
  */

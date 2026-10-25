@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Recenze QR admin, built around REGION x AUDIENCE. The tablet takes the
- * OVT's region (kraj) from the marketing calendar and, per ADMF, whether the
- * customer is a private person (B2C) or a firm (B2B: právnická osoba / IČO),
- * and shows that region's QR; without one it falls back to the audience's
- * global default. Any target (Google, Firmy.cz, Jiné) fits either slot.
+ * Recenze QR admin, built around REGION x SLOT (primární / sekundární; the
+ * B2B/B2C split was dropped 23. 10. 2026 — Kateřina: "nelogické"). The tablet
+ * takes the OVT's region (kraj) from the marketing calendar and shows that
+ * region's PRIMARY QR; the OVT can switch to the SECONDARY when the customer
+ * does not have that platform. An empty slot falls back to the global default.
  *
  *   1. global switch (default OFF) + how many active OVTs would see a QR
- *   2. global default QR per audience (the fallback)
+ *   2. global default QR per slot (the fallback)
  *   3. QR per region, OVTs grouped under their region, mismatches with the
  *      calendar (unknown region names, OVTs without a region / not in it)
  *   4. QR targets catalogue
@@ -26,14 +26,14 @@ import { RegionsSection } from "./RegionsSection";
 import { TargetSelect } from "./TargetSelect";
 import { TargetsSection, usageByTarget, type TargetForm } from "./TargetsSection";
 import {
-  AUDIENCES,
+  SLOTS,
   btn,
   btnPrimary,
   defaultIdOf,
   fmtDateTime,
   resolveTarget,
   targetName,
-  type Audience,
+  type Slot,
   type PromptRow,
   type PromptStats,
   type ReviewQrData,
@@ -114,7 +114,7 @@ export function ReviewQrClient() {
   const usage = useMemo(() => usageByTarget(settings, regions), [settings, regions]);
 
   /**
-   * Per audience: how many ACTIVE OVTs (ADMF in the window) would see a QR,
+   * Per slot: how many ACTIVE OVTs (ADMF in the window) would see a QR,
    * split into region QR vs global default, using the tablet's own rule.
    */
   const coverage = useMemo(() => {
@@ -124,15 +124,15 @@ export function ReviewQrClient() {
       ...data.without_region.filter((o) => o.admf_count > 0).map(() => null),
       ...data.not_in_calendar.map(() => null),
     ];
-    return AUDIENCES.map(({ audience, label, hint }) => {
+    return SLOTS.map(({ slot, label, hint }) => {
       let region = 0;
       let fallback = 0;
       for (const c of configs) {
-        const res = resolveTarget(c, audience, settings, targetById);
+        const res = resolveTarget(c, slot, settings, targetById);
         if (res.kind === "region") region++;
         else if (res.kind === "default") fallback++;
       }
-      return { audience, label, hint, total: configs.length, region, fallback, none: configs.length - region - fallback };
+      return { slot, label, hint, total: configs.length, region, fallback, none: configs.length - region - fallback };
     });
   }, [data, settings, targetById]);
 
@@ -179,15 +179,15 @@ export function ReviewQrClient() {
     }
   }
 
-  async function setDefault(audience: Audience, targetId: number | null) {
-    if (await send("/api/review-qr/defaults", "PUT", { audience, targetId }, `def-${audience}`)) {
+  async function setDefault(slot: Slot, targetId: number | null) {
+    if (await send("/api/review-qr/defaults", "PUT", { slot, targetId }, `def-${slot}`)) {
       setData((prev) =>
         prev
           ? {
               ...prev,
               settings: {
                 ...prev.settings,
-                [audience === "b2b" ? "default_b2b_target_id" : "default_b2c_target_id"]: targetId,
+                [slot === "secondary" ? "default_secondary_target_id" : "default_primary_target_id"]: targetId,
               },
             }
           : prev
@@ -195,17 +195,17 @@ export function ReviewQrClient() {
     }
   }
 
-  async function setRegion(regionKey: string, audience: Audience, targetId: number | null) {
-    if (!(await send("/api/review-qr/regions", "PUT", { regionKey, audience, targetId }, `reg-${regionKey}-${audience}`))) return;
+  async function setRegion(regionKey: string, slot: Slot, targetId: number | null) {
+    if (!(await send("/api/review-qr/regions", "PUT", { regionKey, slot, targetId }, `reg-${regionKey}-${slot}`))) return;
     setData((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
         regions: prev.regions.map((r) => {
           if (r.key !== regionKey) return r;
-          const base = r.config ?? { b2c_target_id: null, b2b_target_id: null, updated_at: new Date().toISOString(), updated_by: null };
-          const next = { ...base, [audience === "b2b" ? "b2b_target_id" : "b2c_target_id"]: targetId };
-          return { ...r, config: next.b2c_target_id == null && next.b2b_target_id == null ? null : next };
+          const base = r.config ?? { primary_target_id: null, secondary_target_id: null, updated_at: new Date().toISOString(), updated_by: null };
+          const next = { ...base, [slot === "secondary" ? "secondary_target_id" : "primary_target_id"]: targetId };
+          return { ...r, config: next.primary_target_id == null && next.secondary_target_id == null ? null : next };
         }),
       };
     });
@@ -273,7 +273,7 @@ export function ReviewQrClient() {
         {data && (
           <ul className="mt-3 space-y-1 text-sm text-gray-600">
             {coverage.map((c) => (
-              <li key={c.audience}>
+              <li key={c.slot}>
                 <span className="font-semibold text-gray-800">{c.label}</span> <span className="text-gray-400">({c.hint})</span>:{" "}
                 QR uvidí {c.region + c.fallback} z {c.total} aktivních OVT
                 <span className="text-gray-400">
@@ -296,11 +296,11 @@ export function ReviewQrClient() {
           QR tablet v takovém případě QR neukáže.
         </p>
         <div className="grid gap-3 md:grid-cols-2">
-          {AUDIENCES.map(({ audience, label, hint, platformOrder }) => {
-            const currentId = defaultIdOf(settings, audience);
+          {SLOTS.map(({ slot, label, hint, platformOrder }) => {
+            const currentId = defaultIdOf(settings, slot);
             const current = currentId != null ? targetById.get(currentId) ?? null : null;
             return (
-              <div key={audience} className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4">
+              <div key={slot} className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4">
                 <div className="min-w-0 grow">
                   <p className="text-sm font-semibold text-gray-900">
                     {label} <span className="font-normal text-gray-500">{hint}</span>
@@ -312,8 +312,8 @@ export function ReviewQrClient() {
                       platformOrder={platformOrder}
                       value={currentId}
                       emptyLabel="— bez výchozího —"
-                      disabled={busy === `def-${audience}`}
-                      onChange={(id) => void setDefault(audience, id)}
+                      disabled={busy === `def-${slot}`}
+                      onChange={(id) => void setDefault(slot, id)}
                     />
                   ) : (
                     <p className="mt-2 text-sm text-gray-700">{current ? targetName(current) : "— bez výchozího —"}</p>

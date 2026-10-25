@@ -4,7 +4,7 @@ import { ReviewQrClient } from '../components/review-qr/ReviewQrClient';
 /**
  * Recenze QR — marketing's admin for the review QR the tablet shows after a
  * closed-on-site export: global switch (default off), QR per region (kraj
- * from the marketing calendar) and audience (B2C soukromá osoba / B2B firma),
+ * from the marketing calendar) and slot (B2C soukromá osoba / B2B firma),
  * the global fallback QR, the QR targets (label + platform + URL, QR rendered
  * from the URL), and what the OVTs answered when closing the prompt.
  */
