@@ -146,6 +146,7 @@ export function CashOverviewClient() {
               <col className="w-[110px]" />
               <col className="w-[110px]" />
               <col className="w-[110px]" />
+              <col className="w-[90px]" />
               <col className="w-[70px]" />
             </colgroup>
             <thead className="border-b border-gray-200 bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500">
@@ -157,6 +158,9 @@ export function CashOverviewClient() {
                 {th('Drží od', 'held')}
                 {th('Inventura', 'inventura')}
                 {th('Poslední pohyb', 'last')}
+                <th className="px-2 py-1 text-right font-medium" title="Vklady z banky bez nahraného dokladu">
+                  Bez dokladu
+                </th>
                 <th className="px-2 py-1 text-right font-medium">Zázn.</th>
               </tr>
             </thead>
@@ -184,13 +188,24 @@ export function CashOverviewClient() {
                       {activated ? fmtDate(p.inventura_at) : <span className="text-amber-700">čeká</span>}
                     </td>
                     <td className="px-2 py-1">{fmtDate(p.last_entry_at)}</td>
+                    {/* Montéři/OVT přestali vklady deklarovat, a tím se ztratil
+                        podací lístek — TL to musí vidět u svých lidí. */}
+                    <td className="px-2 py-1 text-right tabular-nums">
+                      {(p.missing_proof_count ?? 0) > 0 ? (
+                        <span className="rounded bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                          {p.missing_proof_count}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
                     <td className="px-2 py-1 text-right tabular-nums">{p.entry_count}</td>
                   </tr>
                 );
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-2 py-6 text-center text-gray-500">
+                  <td colSpan={9} className="px-2 py-6 text-center text-gray-500">
                     Žádné osoby pro zvolený filtr.
                   </td>
                 </tr>

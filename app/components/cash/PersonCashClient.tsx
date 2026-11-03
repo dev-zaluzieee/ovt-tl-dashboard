@@ -238,6 +238,13 @@ export function PersonCashClient({ personId }: { personId: number }) {
                         spárováno
                       </span>
                     )}
+                    {/* Vklad bez dokladu — TL vidí konkrétní řádek, který má
+                        montér doplnit; nahrávat může on sám v appce nebo finance. */}
+                    {e.entry_type === 'bank_deposit' && !e.voided_at && e.attachments.length === 0 && (
+                      <span className="ml-1.5 rounded bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                        bez dokladu
+                      </span>
+                    )}
                     {e.attachments.map((a, i) => (
                       <a
                         key={a.id}

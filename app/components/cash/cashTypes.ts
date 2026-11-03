@@ -12,6 +12,8 @@ export interface CashPerson {
   overdue_czk: string;
   held_since: string | null;
   inventura_at: string | null;
+  /** Vklady z banky bez nahraného dokladu (od první inventury osoby). */
+  missing_proof_count?: number;
 }
 
 export interface CashEntry {
