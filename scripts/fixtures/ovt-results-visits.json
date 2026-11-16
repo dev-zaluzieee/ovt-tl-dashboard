@@ -3,54 +3,39 @@
   "data": {
     "visits": [
       {
-        "id": 12,
+        "id": 8,
         "type": "zamereni",
         "typeLabel": "Zaměření",
-        "title": null,
-        "status": "completed",
+        "title": "T",
+        "status": "scheduled",
         "origin": null,
-        "startsAt": "2026-11-16T08:00:00.000Z",
-        "endsAt": "2026-11-16T09:00:00.000Z",
-        "day": "2026-11-16",
-        "orderId": 10000012,
+        "startsAt": "2026-11-10T08:00:00.000Z",
+        "endsAt": "2026-11-10T09:00:00.000Z",
+        "day": "2026-11-10",
+        "orderId": 10000001,
         "complaintId": null,
         "customer": {
-          "name": "Zákazník 12",
-          "phone": "+420 777 100 012",
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
           "city": "Brno"
         },
         "orderStatus": "zamereni",
         "orderStatusLabel": "Zaměření",
         "people": [
           {
-            "id": 1,
+            "id": 5,
             "name": "Ovt Alfa",
             "source": "owner"
           }
         ],
-        "b2b": true,
+        "b2b": null,
         "state": {
-          "code": "closed",
-          "label": "Uzavřeno",
-          "closed": true,
-          "open": false
+          "code": "overdue",
+          "label": "Po termínu bez výsledku",
+          "closed": false,
+          "open": true
         },
-        "result": {
-          "outcome": "nedopadlo",
-          "outcomeLabel": "Nedopadlo",
-          "reason": "vysoka_cena",
-          "reasonLabel": "Vysoká cena",
-          "collectedAmount": null,
-          "paymentMethod": null,
-          "paymentMethodLabel": null,
-          "discountAmount": null,
-          "discountNote": null,
-          "rescueNote": null,
-          "note": null,
-          "closedByName": "Ovt Alfa",
-          "completedAt": "2026-11-16T10:00:00.000Z",
-          "current": true
-        },
+        "result": null,
         "reopen": null,
         "tabletDraft": false,
         "app": null,
@@ -60,6 +45,7 @@
       }
     ],
     "truncated": false,
-    "bucketLabel": "Nedopadlo"
+    "bucketLabel": "Bez výsledku",
+    "outcomeLabel": "no_result"
   }
 }

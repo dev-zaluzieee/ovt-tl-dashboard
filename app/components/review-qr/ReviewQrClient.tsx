@@ -17,7 +17,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { tlGet, tlSend } from "@/lib/tl-api";
 import { parsePrompts, parseReviewQr } from "@/lib/tl-parse";
 import { errorText } from "@/lib/tl-errors";
+import { plural } from "@/lib/format";
 import { QRCodeSVG } from "qrcode.react";
+import { Modal, btnGhost as kitGhost, btnPrimary as kitPrimary } from "@/app/components/ui/kit";
 import { AnswersSection } from "./AnswersSection";
 import { RegionsSection } from "./RegionsSection";
 import { TargetSelect } from "./TargetSelect";
@@ -50,6 +52,9 @@ export function ReviewQrClient() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  /** The backend's refusal of the target form (shown at the form, not at the top of the page). */
+  const [targetError, setTargetError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<Target | null>(null);
 
   const applyPrompts = useCallback((pr: PromptsData) => {
     setPrompts(pr.prompts);
@@ -179,23 +184,31 @@ export function ReviewQrClient() {
   }
 
   async function saveTarget(id: number | null, form: TargetForm): Promise<boolean> {
-    const ok = id
-      ? await send(`review-qr/targets/${id}`, "PUT", form, "save")
-      : await send("review-qr/targets", "POST", form, "save");
-    if (ok) {
-      setNotice(id ? "QR cíl upraven." : "QR cíl přidán.");
-      await load();
+    setTargetError(null);
+    setNotice(null);
+    setError(null);
+    setBusy("save");
+    try {
+      if (id) await tlSend("PUT", `review-qr/targets/${id}`, form);
+      else await tlSend("POST", "review-qr/targets", form);
+    } catch (e) {
+      setTargetError(errorText(e));
+      return false;
+    } finally {
+      setBusy(null);
     }
-    return ok;
+    setNotice(id ? "QR cíl upraven." : "QR cíl přidán.");
+    await load();
+    return true;
   }
 
-  async function removeTarget(t: Target) {
-    const u = usage.get(t.id);
-    const parts = [
-      u && u.defaults.length > 0 ? `přestane být výchozí pro ${u.defaults.join(" a ")}` : null,
-      u && u.regions.length > 0 ? `zmizí z ${u.regions.length} krajských slotů` : null,
-    ].filter(Boolean);
-    if (!confirm(`Smazat „${targetName(t)}“?${parts.length ? ` Tím ${parts.join(" a ")}.` : ""}`)) return;
+  function removeTarget(t: Target): Promise<void> {
+    setDeleting(t);
+    return Promise.resolve();
+  }
+
+  async function confirmRemove(t: Target) {
+    setDeleting(null);
     if (await send(`review-qr/targets/${t.id}`, "DELETE", undefined, `del-${t.id}`)) await load();
   }
 
@@ -238,7 +251,7 @@ export function ReviewQrClient() {
             {coverage.map((c) => (
               <li key={c.slot}>
                 <span className="font-semibold text-gray-800">{c.label}</span> <span className="text-gray-400">({c.hint})</span>:{" "}
-                QR uvidí {c.region + c.fallback} z {c.total} aktivních OVT
+                QR uvidí {c.region + c.fallback} z {c.total} {plural(c.total, 'aktivního OVT', 'aktivních OVT', 'aktivních OVT')}
                 <span className="text-gray-400">
                   {" "}
                   ({c.region} QR kraje, {c.fallback} výchozí)
@@ -308,7 +321,28 @@ export function ReviewQrClient() {
       )}
 
       {/* 4. Targets */}
-      <TargetsSection targets={targets} usage={usage} busy={busy} onSave={saveTarget} onDelete={removeTarget} />
+      <TargetsSection targets={targets} usage={usage} busy={busy} formError={targetError} onClearError={() => setTargetError(null)} onSave={saveTarget} onDelete={removeTarget} />
+      {deleting && (
+        <Modal title="Smazat QR cíl" onClose={() => setDeleting(null)}>
+          <div className="space-y-3 text-sm">
+            <p>
+              Smazat „{targetName(deleting)}“?
+              {(() => {
+                const u = usage.get(deleting.id);
+                const parts = [
+                  u && u.defaults.length > 0 ? `přestane být výchozí pro ${u.defaults.join(" a ")}` : null,
+                  u && u.regions.length > 0 ? `zmizí z ${u.regions.length} krajských slotů` : null,
+                ].filter(Boolean);
+                return parts.length ? ` Tím ${parts.join(" a ")}.` : "";
+              })()}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={kitGhost} onClick={() => setDeleting(null)}>Zrušit</button>
+              <button type="button" className={kitPrimary} onClick={() => void confirmRemove(deleting)}>Smazat</button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* 5. Answers */}
       <AnswersSection

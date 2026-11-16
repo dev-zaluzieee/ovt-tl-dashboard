@@ -5,7 +5,7 @@ import { tlGet, tlSend } from '@/lib/tl-api';
 import { parseMissing } from '@/lib/tl-parse';
 import { errorText } from '@/lib/tl-errors';
 import type { EventView, MissingRow, MvtMissing } from '@/lib/types';
-import { fmtDateTime, fmtYmd, isYmd, shiftYmd } from '@/lib/format';
+import { fmtDateTime, fmtYmd, isYmd, plural, shiftYmd } from '@/lib/format';
 import { useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Chip, Empty, EventLinks, LoadError, PageHeader, ReasonDialog, Skeleton, StateChip, btnSmall } from '@/app/components/ui/kit';
@@ -14,6 +14,16 @@ import { useListDensity } from '@/app/components/retention/listDensity';
 import { useLoad } from '@/app/components/ui/useLoad';
 import { ReopenButton } from './ReopenButton';
 import { ResultLine } from './MvtDayClient';
+
+function ageText(days: number): string {
+  if (days <= 0) return 'dnes po termínu';
+  return `${days} ${plural(days, 'den', 'dny', 'dní')} po termínu`;
+}
+
+function resolutionText(r: MissingRow, reasons: Record<string, string>): string {
+  const x = r.resolution!;
+  return `Uzavřeno: ${reasons[x.reason] ?? x.reason} · ${x.actorName ?? x.actorEmail} · ${fmtDateTime(x.createdAt)}${x.note ? ` · „${x.note}“` : ''}`;
+}
 
 /** Chybí výsledek: visits past their end without a result, who owes them, what was closed outside the app. */
 export function MvtMissingClient() {
@@ -54,7 +64,7 @@ export function MvtMissingClient() {
         </h2>
         <p className="text-xs text-gray-500">{hint}</p>
         {rows.length === 0 ? (
-          <Empty title="Nic nechybí" />
+          <Empty title="Žádné chybějící výsledky" />
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table className="min-w-full text-sm">
@@ -70,13 +80,8 @@ export function MvtMissingClient() {
                     <td className={`${pad} whitespace-nowrap`}>{r.event.people.map((p) => p.name).join(', ') || <span className="text-gray-400">bez montéra</span>}</td>
                     <td className={pad}>
                       <StateChip ev={r.event} />
-                      <p className="mt-0.5 text-xs text-gray-500">{r.ageDays} dní po termínu</p>
-                      {r.resolution && (
-                        <p className="mt-0.5 text-xs text-gray-600">
-                          Uzavřeno: {data?.closeReasons[r.resolution.reason] ?? r.resolution.reason} · {r.resolution.actorName ?? r.resolution.actorEmail} · {fmtDateTime(r.resolution.createdAt)}
-                          {r.resolution.note ? ` · „${r.resolution.note}“` : ''}
-                        </p>
-                      )}
+                      <p className="mt-0.5 text-xs text-gray-500">{ageText(r.ageDays)}</p>
+                      {r.resolution && <p className="mt-0.5 text-xs text-gray-600">{resolutionText(r, data?.closeReasons ?? {})}</p>}
                     </td>
                     <td className={`${pad} whitespace-nowrap text-right text-xs`}>
                       <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
@@ -142,28 +147,41 @@ export function MvtMissingClient() {
               <h2 className="text-lg font-semibold text-gray-900">
                 Uzavřeno mimo aplikaci <span className="text-sm font-normal text-gray-500">({data.closedOutside.count})</span>
               </h2>
-              <p className="text-xs text-gray-500">Dokončeno v ERP bez výsledku nebo uzavřeno ze zakázky. {data.closedOutside.count > data.closedOutside.rows.length ? `Zobrazeno prvních ${data.closedOutside.rows.length}.` : ''}</p>
+              <p className="text-xs text-gray-500">Dokončeno v ERP bez výsledku nebo uzavřeno ze zakázky. U každé návštěvy je stáří a případné uzavření. {data.closedOutside.count > data.closedOutside.rows.length ? `Zobrazeno prvních ${data.closedOutside.rows.length}.` : ''}</p>
               {data.closedOutside.rows.length === 0 ? (
-                <Empty title="Nic" />
+                <Empty title="Žádná návštěva nebyla uzavřena mimo aplikaci" />
               ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
                   <table className="min-w-full text-sm">
                     <tbody className="divide-y divide-gray-100">
-                      {data.closedOutside.rows.map((e: EventView) => (
-                        <tr key={e.id} className="align-top">
-                          <td className={`${pad} whitespace-nowrap tabular-nums`}>{fmtDateTime(e.startsAt)}</td>
-                          <td className={pad}><Chip tone="slate">{e.typeLabel}</Chip></td>
-                          <td className={pad}>{e.customer?.name ?? e.title ?? '—'}</td>
-                          <td className={pad}>{e.people.map((p) => p.name).join(', ') || '—'}</td>
-                          <td className={pad}><StateChip ev={e} /><ResultLine ev={e} /></td>
-                          <td className={`${pad} whitespace-nowrap text-right text-xs`}>
-                            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                              <ReopenButton ev={e} onDone={reload} />
-                              <EventLinks ev={e} />
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {data.closedOutside.rows.map((r) => {
+                        const e: EventView = r.event;
+                        return (
+                          <tr key={e.id} className={`align-top ${r.resolution ? 'bg-gray-50 text-gray-500' : ''}`}>
+                            <td className={`${pad} whitespace-nowrap tabular-nums`}>{fmtDateTime(e.startsAt)}</td>
+                            <td className={pad}><Chip tone="slate">{e.typeLabel}</Chip></td>
+                            <td className={pad}>{e.customer?.name ?? e.title ?? '—'}</td>
+                            <td className={pad}>{e.people.map((p) => p.name).join(', ') || '—'}</td>
+                            <td className={pad}>
+                              <StateChip ev={e} />
+                              <ResultLine ev={e} />
+                              <p className="mt-0.5 text-xs text-gray-500">{ageText(r.ageDays)}</p>
+                              {r.resolution && <p className="mt-0.5 text-xs text-gray-600">{resolutionText(r, data.closeReasons)}</p>}
+                            </td>
+                            <td className={`${pad} whitespace-nowrap text-right text-xs`}>
+                              <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                                {r.resolution ? (
+                                  <button type="button" className={btnSmall} onClick={() => void undo(r)}>Vrátit zpět</button>
+                                ) : (
+                                  <button type="button" className={btnSmall} onClick={() => setClosing(r)}>Uzavřít</button>
+                                )}
+                                <ReopenButton ev={e} onDone={reload} />
+                                <EventLinks ev={e} />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -33,7 +33,7 @@ export function OvtDayClient() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <PageHeader title="Přehled dne" subtitle="Zaměření a znovuzaměření vybraného dne (pražský čas), po obchodnících." />
+      <PageHeader title="Přehled dne" subtitle="Zaměření a znovuzaměření vybraného dne (pražský čas), po jednotlivých OVT." />
       <div className="space-y-4">
         <DayNav date={date} today={today} onChange={(d) => set({ date: d === today ? null : d })} />
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -55,7 +55,7 @@ export function OvtDayClient() {
           <div className={loading ? 'opacity-60 transition-opacity' : ''}>
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
               {[
-                ['Obchodníků', data.tiles.people],
+                ['OVT', data.tiles.people],
                 ['Návštěv', data.tiles.events],
                 ['Z toho uzavřeno', data.tiles.closed],
               ].map(([l, v]) => (

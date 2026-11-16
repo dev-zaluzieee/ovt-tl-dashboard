@@ -10,6 +10,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getBackendBearer } from '@/lib/auth-backend';
 import { BackendConfigError, getBackendUrl } from '@/lib/backend-url';
 import { checkCsrf } from '@/lib/csrf';
+import { getServerSession } from '@/lib/auth-server';
+import { checkCallGrant } from '@/lib/call-grant';
 
 const OK_TTL_MS = 60_000;
 const okUntil = new Map<string, number>();
@@ -93,3 +95,21 @@ export function recordingsFailure(e: unknown): NextResponse {
 }
 
 export { fail };
+
+/**
+ * The call id (path) must come with the grant `/api/calls/customer` issued to this person for it (query `grant`). Without
+ * it the id may belong to a customer outside the dashboard's scope: refused (403 CALL_NOT_GRANTED), the recordings service
+ * is not asked.
+ */
+export async function requireCallGrant(request: NextRequest, callId: string): Promise<NextResponse | null> {
+  const session = await getServerSession();
+  const email = session?.user.email ?? null;
+  const grant = request.nextUrl.searchParams.get('grant');
+  let ok = false;
+  try {
+    ok = !!email && checkCallGrant(email, callId, grant);
+  } catch {
+    return fail(500, 'Aplikace není správně nastavena.', 'BACKEND_NOT_CONFIGURED');
+  }
+  return ok ? null : fail(403, 'K tomuto hovoru nemáte přístup (otevřete ho ze stránky hovorů zákazníka).', 'CALL_NOT_GRANTED');
+}

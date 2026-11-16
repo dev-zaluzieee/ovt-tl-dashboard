@@ -54,12 +54,15 @@ interface Props {
   targets: Target[];
   usage: Map<number, TargetUsage>;
   busy: string | null;
+  /** The backend's refusal of the last save (shown right at the form). */
+  formError?: string | null;
+  onClearError?: () => void;
   onSave: (id: number | null, form: typeof EMPTY_FORM) => Promise<boolean>;
   onDelete: (t: Target) => Promise<void>;
 }
 
 /** Catalogue of review pages; the QR is rendered from the URL, nothing is stored as an image. */
-export function TargetsSection({ targets, usage, busy, onSave, onDelete }: Props) {
+export function TargetsSection({ targets, usage, busy, formError, onClearError, onSave, onDelete }: Props) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
@@ -184,7 +187,12 @@ export function TargetsSection({ targets, usage, busy, onSave, onDelete }: Props
       {(
         <div className="rounded-lg border border-gray-200 bg-white p-3">
           <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">{editingId ? "Upravit QR cíl" : "Nový QR cíl"}</p>
-          <div className="flex flex-wrap items-end gap-2">
+          {formError && (
+            <div role="alert" className="mb-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+              {formError}
+            </div>
+          )}
+          <div className="flex flex-wrap items-end gap-2" onChange={() => onClearError?.()}>
             <label className="text-xs text-gray-600">
               Název
               <br />

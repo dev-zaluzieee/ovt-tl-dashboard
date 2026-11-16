@@ -3,21 +3,20 @@
   "data": {
     "from": "2026-11-01",
     "to": "2026-11-16",
-    "total": 9,
     "rows": [
       {
         "person": {
-          "id": 1,
+          "id": 5,
           "name": "Ovt Alfa"
         },
-        "total": 5,
+        "total": 6,
         "buckets": {
-          "order": 2,
+          "order": 4,
           "retence": 0,
           "nedopadlo": 2,
           "nezastizen": 0,
           "closed_no_result": 0,
-          "no_result": 1,
+          "no_result": 0,
           "reopened": 0,
           "other": 0
         },
@@ -25,43 +24,20 @@
           {
             "reason": "vysoka_cena",
             "label": "Vysoká cena",
-            "count": 1
-          },
-          {
-            "reason": "nema_zajem",
-            "label": "Nemá zájem",
-            "count": 1
+            "count": 2
           }
         ]
       },
       {
-        "person": {
-          "id": 2,
-          "name": "Ovt Beta"
-        },
-        "total": 3,
-        "buckets": {
-          "order": 1,
-          "retence": 1,
-          "nedopadlo": 0,
-          "nezastizen": 1,
-          "closed_no_result": 0,
-          "no_result": 0,
-          "reopened": 0,
-          "other": 0
-        },
-        "nedopadloReasons": []
-      },
-      {
         "person": null,
-        "total": 1,
+        "total": 3,
         "buckets": {
           "order": 0,
           "retence": 0,
           "nedopadlo": 0,
           "nezastizen": 0,
-          "closed_no_result": 1,
-          "no_result": 0,
+          "closed_no_result": 0,
+          "no_result": 3,
           "reopened": 0,
           "other": 0
         },
@@ -69,25 +45,26 @@
       }
     ],
     "totals": {
-      "order": 3,
-      "retence": 1,
+      "order": 4,
+      "retence": 0,
       "nedopadlo": 2,
-      "nezastizen": 1,
-      "closed_no_result": 1,
-      "no_result": 1,
+      "nezastizen": 0,
+      "closed_no_result": 0,
+      "no_result": 3,
       "reopened": 0,
       "other": 0
     },
+    "total": 9,
     "bucketLabels": {
       "order": "Objednávka",
-      "retence": "Retence",
+      "retence": "Odesláno na retence",
       "nedopadlo": "Nedopadlo",
       "nezastizen": "Nezastižen",
       "closed_no_result": "Uzavřeno bez výsledku",
       "no_result": "Bez výsledku",
       "reopened": "Otevřeno k opravě",
-      "other": "Jiné"
+      "other": "Jiný výsledek"
     },
-    "note": "Bez hodnoty zakázek (v novém dashboardu se hodnota nepočítá)."
+    "note": "Počty návštěv podle dne návštěvy; hodnota v Kč se nezobrazuje. Návštěvy, které ještě neskončily, se nepočítají."
   }
 }

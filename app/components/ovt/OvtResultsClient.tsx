@@ -89,7 +89,7 @@ export function OvtResultsClient() {
   ];
 
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8">
+    <main className="container mx-auto px-4 py-8">
       <PageHeader title="Výsledky" subtitle="Zaměření, která skončila, podle výsledku návštěvy. Období = den návštěvy (pražský čas). Počty, bez hodnoty zakázek." />
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -112,7 +112,7 @@ export function OvtResultsClient() {
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                   <tr>
-                    <th className="px-3 py-2 text-left">Obchodník</th>
+                    <th className="px-3 py-2 text-left">OVT</th>
                     <th className="px-3 py-2">Celkem</th>
                     {buckets.map((b) => (
                       <th key={b} className="px-3 py-2">{data.bucketLabels[b] ?? b}</th>

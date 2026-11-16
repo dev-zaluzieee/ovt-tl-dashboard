@@ -56,7 +56,7 @@ export function OvtProblemsClient() {
   );
 
   const vocab = meta?.vocabulary;
-  const evUrl = (r: ProblemRow) => (r.eventId ? erpEventUrl(meta?.erpWebBaseUrl, r.eventId, pragueYmd(r.at)) : null);
+  const evUrl = (r: ProblemRow) => (r.eventId && r.at ? erpEventUrl(meta?.erpWebBaseUrl, r.eventId, pragueYmd(r.at)) : null);
   const cell = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
   function toggleKind(k: string) {
@@ -239,7 +239,7 @@ export function OvtProblemsClient() {
       {dialog?.type === 'nedopadlo' && vocab && (
         <ReasonDialog
           title="Označit jako nedopadlo"
-          intro={<><p>Do ERP se zapíše (pod vaším jménem): zakázka dopadlo = ne s důvodem, stav zakázky „nedopadlo“, štítky (důvod a ZKONTROLOVÁNO), komentář u zakázky a výsledek návštěvy nedopadlo.</p><p className="mt-2 text-amber-900">Pozor: označení z dashboardu nejde vrátit zpět na tabletu. Cesta zpět je „Otevřít k opravě“ na návštěvě a přesun zakázky kanceláří.</p></>}
+          intro={<><p>Do ERP se zapíše (pod vaším jménem): zakázka dopadlo = ne s důvodem, stav zakázky „nedopadlo“, štítky (důvod a ZKONTROLOVÁNO), komentář u zakázky a výsledek návštěvy nedopadlo.</p><p className="mt-2 text-amber-900">Pozor: označení z dashboardu nejde vrátit zpět na tabletu. Cesta zpět je „Otevřít k opravě“ na návštěvě a přesun zakázky kanceláří.</p><p className="mt-2 text-gray-700">Po zápisu se návštěva přesune mezi „Nedopadlo“. V režimu „Současné“ se tam ukazuje jen posledních 2 pracovních dnů, starší návštěvu najdete po výběru období.</p></>}
           reasons={vocab.nedopadloReasons}
           noteLabel="Poznámka (max. 500 znaků)"
           submitLabel="Označit jako nedopadlo"

@@ -7,65 +7,21 @@
         "id": 1,
         "erpOrderId": 10000011,
         "ovtEmail": "alfa@example.cz",
-        "ovtName": "Ovt Alfa",
-        "customerName": "Jana Svobodová",
+        "ovtName": null,
+        "customerName": "Zákazník ERP",
         "targetId": 1,
         "targetLabel": "Brno",
         "targetPlatform": "firmy",
         "slot": "primary",
         "region": "Jihomoravský kraj",
         "targetSource": "region",
-        "shownAt": "2026-11-15T10:00:00.000Z",
+        "shownAt": "2026-11-10 10:00:00+01",
         "outcome": "written",
-        "reason": null,
-        "closedAt": "2026-11-15T10:05:00.000Z"
-      },
-      {
-        "id": 2,
-        "erpOrderId": 10000012,
-        "ovtEmail": "beta@example.cz",
-        "ovtName": "Ovt Beta",
-        "customerName": "Petr Dvořák",
-        "targetId": 2,
-        "targetLabel": "Brno",
-        "targetPlatform": "google",
-        "slot": "secondary",
-        "region": null,
-        "targetSource": "default",
-        "shownAt": "2026-11-14T10:00:00.000Z",
-        "outcome": null,
         "reason": null,
         "closedAt": null
       }
     ],
-    "statsByOvt": [
-      {
-        "key": "alfa@example.cz",
-        "ovtName": "Ovt Alfa",
-        "shown": 5,
-        "written": 3,
-        "not_shown": 0,
-        "refused": 1,
-        "unanswered": 1
-      }
-    ],
-    "statsByRegion": [
-      {
-        "key": "Jihomoravský kraj",
-        "shown": 5,
-        "written": 3,
-        "not_shown": 0,
-        "refused": 1,
-        "unanswered": 1
-      },
-      {
-        "key": null,
-        "shown": 1,
-        "written": 0,
-        "not_shown": 0,
-        "refused": 0,
-        "unanswered": 1
-      }
-    ]
+    "statsByOvt": [],
+    "statsByRegion": []
   }
 }

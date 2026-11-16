@@ -1,16 +1,19 @@
 'use client';
 
 /**
- * Customer call history: Daktela recordings for an ERP customer (or one order), filtered by the phones of the customer
+ * Customer call history: recordings for an ERP customer (or one order), filtered by the phones of the customer
  * and of all his orders (from the backend). Native <audio> playback via a short-lived presigned URL. Every call goes
  * through /api/calls/*, which checks the session first.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLoad } from '@/app/components/ui/useLoad';
 import Link from 'next/link';
 import { callsGet, callsSend, errorText } from '@/lib/tl-api';
 import { parseCustomerPhones } from '@/lib/tl-parse';
+import { shiftYmd } from '@/lib/format';
+import { useMeta } from '@/app/components/shell/MetaContext';
+import { btnGhost, btnSmall, inputCls, Modal } from '@/app/components/ui/kit';
 import type { CustomerPhones } from '@/lib/types';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
 import { useListDensity } from '@/app/components/retention/listDensity';
@@ -28,6 +31,8 @@ interface CallRow {
   hasS3Recording: boolean;
   recordingStatus: 'available' | 'missing' | 'error';
   canPlay: boolean;
+  /** Permission to play / analyse this call (issued with the lookup, see lib/call-grant.ts). */
+  grant: string;
 }
 
 function formatDateTimeCs(iso: string): string {
@@ -67,11 +72,19 @@ interface CallAnalysis {
   completedAt: string | null;
 }
 
-export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; id: number }) {
+export function CustomerCallsClient({ kind, id, q }: { kind: 'customer' | 'order'; id: number; q?: string }) {
+  const { meta } = useMeta();
+  // same default period as the list of orders with calls: the last 365 days; clearing the dates shows the whole history
   const [from, setFrom] = useState<string>('');
+  const presetDone = useRef(false);
+  useEffect(() => {
+    if (presetDone.current || !meta?.today) return;
+    presetDone.current = true;
+    setFrom(shiftYmd(meta.today, -365));
+  }, [meta?.today]);
   const [to, setTo] = useState<string>('');
-  const loaded = useLoad<{ info: CustomerPhones; calls: CallRow[] }>(`customer-calls-${kind}-${id}-${from}-${to}`, async (signal) => {
-    const data = (await callsGet('customer', { [kind === 'customer' ? 'customerId' : 'orderId']: id, from, to }, signal)) as { calls?: CallRow[] };
+  const loaded = useLoad<{ info: CustomerPhones; calls: CallRow[] }>(`customer-calls-${kind}-${id}-${from}-${to}-${q ?? ''}`, async (signal) => {
+    const data = (await callsGet('customer', { [kind === 'customer' ? 'customerId' : 'orderId']: id, from, to, q }, signal)) as { calls?: CallRow[] };
     return { info: parseCustomerPhones(data), calls: Array.isArray(data.calls) ? data.calls : [] };
   });
   const info = loaded.data?.info ?? null;
@@ -94,7 +107,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
   const [loadingPlayId, setLoadingPlayId] = useState<string | null>(null);
   const [playError, setPlayError] = useState<string | null>(null);
 
-  const [analysisCall, setAnalysisCall] = useState<{ id: string; label: string } | null>(
+  const [analysisCall, setAnalysisCall] = useState<{ id: string; label: string; grant: string } | null>(
     null
   );
 
@@ -127,12 +140,12 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
     setLoadingPlayId(c.id);
     setPlayError(null);
     try {
-      const data = (await callsGet(`play/${encodeURIComponent(c.id)}`)) as { url?: string };
+      const data = (await callsGet(`play/${encodeURIComponent(c.id)}`, { grant: c.grant })) as { url?: string };
       if (!data.url) {
         setPlayError('Nepodařilo se získat odkaz na nahrávku.');
         return;
       }
-      const label = `${formatDateTimeCs(c.callTime)} · ${c.agent ?? 'agent?'}${
+      const label = `${formatDateTimeCs(c.callTime)} · ${c.agent ?? 'agent neznámý'}${
         c.customerName ? ` · ${c.customerName}` : ''
       }`;
       setPlaying({ id: c.id, url: data.url, label });
@@ -155,12 +168,13 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
             {info?.customerName ? `${info.customerName}. ` : ''}Napárováno podle telefonních čísel zákazníka a jeho zakázek v ERP (posledních 9 číslic).
           </p>
         </div>
-        <Link href="/objednavky-s-hovory" className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <Link href="/objednavky-s-hovory" className={btnGhost}>
           ← Zpět na objednávky s hovory
         </Link>
       </div>
 
       {/* ── Phones list ────────────────────────────────────────── */}
+      {!error && (
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
           Telefonní čísla zákazníka a zakázek
@@ -183,6 +197,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
           </div>
         )}
       </div>
+      )}
 
       {/* ── Toolbar ────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
@@ -195,7 +210,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+            className={inputCls}
           />
           <label className="text-sm font-medium text-gray-700" htmlFor="to">
             Do:
@@ -205,7 +220,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+            className={inputCls}
           />
           {(from || to) && (
             <button
@@ -214,7 +229,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
                 setFrom('');
                 setTo('');
               }}
-              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              className={btnSmall}
             >
               Vymazat
             </button>
@@ -224,9 +239,9 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
           <select
             value={agentFilter}
             onChange={(e) => setAgentFilter(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
+            className={inputCls}
           >
-            <option value="">Agent: všichni</option>
+            <option value="">Operátor: všichni</option>
             {agents.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -236,7 +251,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
           <select
             value={queueFilter}
             onChange={(e) => setQueueFilter(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
+            className={inputCls}
           >
             <option value="">Fronta: všechny</option>
             {queues.map((q) => (
@@ -250,7 +265,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className={btnSmall}
           >
             {loading ? 'Načítání…' : 'Obnovit'}
           </button>
@@ -283,13 +298,13 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
         </div>
       )}
 
-      {!loading && filteredCalls.length === 0 && (
+      {!loading && !error && filteredCalls.length === 0 && (
         <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-600 shadow-sm">
           <p className="font-medium text-gray-900">Žádné hovory</p>
           <p className="mt-2 text-sm">
             {phones.length === 0
               ? 'Zákazník nemá žádné telefonní číslo.'
-              : 'Na tato čísla nemáme v Daktele žádné odpovídající hovory (v tomto rozsahu).'}
+              : 'Na tato čísla nemáme v záznamech hovorů žádné odpovídající hovory (v tomto období).'}
           </p>
         </div>
       )}
@@ -302,7 +317,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
                 <tr>
                   <th className={cellPad}>Datum</th>
                   <th className={cellPad}>Telefon</th>
-                  <th className={cellPad}>Agent</th>
+                  <th className={cellPad}>Operátor</th>
                   <th className={cellPad}>Fronta</th>
                   <th className={cellPad}>Nahrávka</th>
                   <th className={`${cellPad} text-right`}>Akce</th>
@@ -334,12 +349,12 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
                           type="button"
                           onClick={() => void handlePlay(c)}
                           disabled={!isPlayable(c) || loadingPlayId === c.id}
-                          className="rounded-md bg-[#1565C0] px-3 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-md bg-[#1E8449] px-3 py-1 text-xs font-semibold text-white hover:bg-[#166d3b] disabled:cursor-not-allowed disabled:opacity-40"
                           title={
                             !c.hasS3Recording
-                              ? 'Nahrávka zatím není v S3 (běží sync).'
+                              ? 'Nahrávka se ještě zpracovává.'
                               : !c.canPlay
-                                ? 'Nemáte oprávnění přehrávat.'
+                                ? 'Tuto nahrávku nelze přehrát.'
                                 : 'Přehrát'
                           }
                         >
@@ -351,13 +366,14 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
                             onClick={() =>
                               setAnalysisCall({
                                 id: c.id,
-                                label: `${formatDateTimeCs(c.callTime)} · ${c.agent ?? 'agent?'}${
+                                grant: c.grant,
+                                label: `${formatDateTimeCs(c.callTime)} · ${c.agent ?? 'agent neznámý'}${
                                   c.customerName ? ` · ${c.customerName}` : ''
                                 }`,
                               })
                             }
                             className="rounded-md border border-[#1E8449] px-3 py-1 text-xs font-semibold text-[#1E8449] hover:bg-[#1E8449]/10"
-                            title="Přepis, shrnutí a sentiment hovoru (AI, PoC)"
+                            title="Přepis, shrnutí a nálada hovoru (automatická analýza, zkušební funkce)"
                           >
                             Analýza
                           </button>
@@ -383,6 +399,7 @@ export function CustomerCallsClient({ kind, id }: { kind: 'customer' | 'order'; 
       {analysisCall && (
         <AnalysisModal
           callId={analysisCall.id}
+          grant={analysisCall.grant}
           label={analysisCall.label}
           onClose={() => setAnalysisCall(null)}
         />
@@ -409,7 +426,7 @@ function RecordingStatus({ call }: { call: CallRow }) {
   if (!call.hasS3Recording) {
     return (
       <span className="rounded-md border border-amber-400 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
-        Čeká na sync
+        Zpracovává se
       </span>
     );
   }
@@ -420,49 +437,13 @@ function RecordingStatus({ call }: { call: CallRow }) {
   );
 }
 
-function PlaybackModal({
-  url,
-  label,
-  onClose,
-}: {
-  url: string;
-  label: string;
-  onClose: () => void;
-}) {
+function PlaybackModal({ url, label, onClose }: { url: string; label: string; onClose: () => void }) {
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-gray-900">Přehrát hovor</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-          >
-            Zavřít
-          </button>
-        </div>
-        <p className="mb-3 text-sm text-gray-700">{label}</p>
-        <audio
-          key={url}
-          controls
-          autoPlay
-          src={url}
-          className="w-full"
-        />
-        <p className="mt-2 text-[10px] text-gray-400">
-          Odkaz je krátkodobý (S3 presigned). Po zavření znovu klikni Přehrát.
-        </p>
-      </div>
-    </div>
+    <Modal title="Přehrát hovor" onClose={onClose}>
+      <p className="mb-3 text-sm text-gray-700">{label}</p>
+      <audio key={url} controls autoPlay src={url} className="w-full" />
+      <p className="mt-2 text-xs text-gray-500">Odkaz na nahrávku je krátkodobý. Po zavření okna klikněte na Přehrát znovu.</p>
+    </Modal>
   );
 }
 
@@ -480,10 +461,12 @@ const SENTIMENT_CLASSES = {
 
 function AnalysisModal({
   callId,
+  grant,
   label,
   onClose,
 }: {
   callId: string;
+  grant: string;
   label: string;
   onClose: () => void;
 }) {
@@ -498,7 +481,7 @@ function AnalysisModal({
 
     async function poll() {
       try {
-        const data = (await callsGet(base)) as CallAnalysis;
+        const data = (await callsGet(base, { grant })) as CallAnalysis;
         if (cancelled) return;
         setAnalysis(data);
         if (data.status === 'processing' || data.status === 'pending') {
@@ -512,7 +495,7 @@ function AnalysisModal({
     async function start() {
       setError(null);
       try {
-        const data = (await callsSend('POST', base, attempt > 0 ? { force: 'true' } : undefined)) as CallAnalysis;
+        const data = (await callsSend('POST', base, attempt > 0 ? { grant, force: 'true' } : { grant })) as CallAnalysis;
         if (cancelled) return;
         setAnalysis(data);
         if (data.status === 'processing' || data.status === 'pending') {
@@ -529,33 +512,12 @@ function AnalysisModal({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [callId, attempt]);
+  }, [callId, grant, attempt]);
 
   const isBusy = !error && (!analysis || analysis.status === 'processing' || analysis.status === 'pending');
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            Analýza hovoru <span className="font-normal text-gray-500">(PoC)</span>
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-          >
-            Zavřít
-          </button>
-        </div>
+    <Modal title="Analýza hovoru (zkušební funkce)" onClose={onClose} wide>
         <p className="mb-4 text-sm text-gray-700">{label}</p>
 
         {error && (
@@ -587,7 +549,7 @@ function AnalysisModal({
         {!error && isBusy && (
           <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-700">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#1E8449]" />
-            Zpracovávám (přepis → shrnutí)… může trvat desítky sekund.
+            Zpracovávám (přepis, pak shrnutí)… může to trvat desítky sekund.
           </div>
         )}
 
@@ -595,7 +557,7 @@ function AnalysisModal({
           <div className="space-y-4">
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Sentiment
+                Nálada
               </p>
               {analysis.sentiment && (
                 <span
@@ -631,7 +593,6 @@ function AnalysisModal({
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

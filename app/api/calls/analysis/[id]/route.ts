@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { fail, recordingsFailure, requireCallsAccess } from '@/lib/calls-guard';
+import { fail, recordingsFailure, requireCallGrant, requireCallsAccess } from '@/lib/calls-guard';
 import { fetchCallAnalysis, triggerCallAnalysis } from '@/lib/playerBackend';
 
 /**
@@ -17,6 +17,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   if (!access.ok) return access.response;
   const { id } = await context.params;
   if (!ID_RE.test(id)) return fail(400, 'Neplatné ID hovoru.', 'INVALID_ID');
+  const denied = await requireCallGrant(request, id);
+  if (denied) return denied;
   try {
     return NextResponse.json({ success: true, data: await fetchCallAnalysis(id) }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
@@ -29,6 +31,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (!access.ok) return access.response;
   const { id } = await context.params;
   if (!ID_RE.test(id)) return fail(400, 'Neplatné ID hovoru.', 'INVALID_ID');
+  const denied = await requireCallGrant(request, id);
+  if (denied) return denied;
   try {
     return NextResponse.json({ success: true, data: await triggerCallAnalysis(id, request.nextUrl.searchParams.get('force') === 'true') }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {

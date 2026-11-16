@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { tlGet } from '@/lib/tl-api';
 import { parseSubmissionDetail, parseSubmissionList } from '@/lib/tl-parse';
 import type { SubmissionDetail, SubmissionList } from '@/lib/types';
-import { fmtDateTime, fmtKc, isYmd } from '@/lib/format';
+import { fmtDateTime, fmtKc, humanizeTimestamps, isYmd } from '@/lib/format';
 import { useMeta } from '@/app/components/shell/MetaContext';
 import { SearchBox, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Chip, Empty, LoadError, PageHeader, Skeleton, btnGhost, btnSmall, inputCls } from '@/app/components/ui/kit';
@@ -106,12 +106,12 @@ export function MvtSubmissionsClient() {
                       <td className={`${pad} whitespace-nowrap`}>{fmtDateTime(r.createdAt)}</td>
                       <td className={`${pad} whitespace-nowrap`}>{r.fitterName ?? '—'}</td>
                       <td className={`${pad} whitespace-nowrap text-xs`}>#{r.eventId}{r.erpOrderId ? ` · zakázka ${r.erpOrderId}` : ''}</td>
-                      <td className={pad}>{r.outcome ? OUTCOMES[r.outcome] ?? r.outcome : '—'}</td>
+                      <td className={pad}>{r.outcomeLabel ?? (r.outcome ? OUTCOMES[r.outcome] ?? r.outcome : '—')}</td>
                       <td className={pad}><Chip tone={STATUS_TONE[r.status] ?? 'gray'}>{r.statusLabel}</Chip></td>
                       <td className={`${pad} whitespace-nowrap text-right text-xs`}>
                         {r.stepCount}{r.failedSteps ? <span className="font-semibold text-red-700"> · {r.failedSteps} selhalo</span> : null}{r.warningCount ? <span className="text-amber-700"> · {r.warningCount} upoz.</span> : null}
                       </td>
-                      <td className={`${pad} whitespace-nowrap text-right tabular-nums`}>{r.collected !== null ? `${fmtKc(r.collected)}${r.method ? ` · ${r.method}` : ''}` : '—'}</td>
+                      <td className={`${pad} whitespace-nowrap text-right tabular-nums`}>{r.collected !== null ? `${fmtKc(r.collected)}${r.methodLabel ?? r.method ? ` · ${r.methodLabel ?? r.method}` : ''}` : '—'}</td>
                       <td className={`${pad} text-right`}><Link href={`/mvt/zapisy/${r.id}`} className="text-blue-600 hover:underline">Detail</Link></td>
                     </tr>
                   ))}
@@ -133,12 +133,19 @@ export function MvtSubmissionsClient() {
   );
 }
 
+function inputValue(key: string, v: unknown, methods: Record<string, string>, outcomeLabel: string | null): string {
+  if (typeof v === 'boolean') return v ? 'ano' : 'ne';
+  if (key === 'outcome' && outcomeLabel) return outcomeLabel;
+  if (key === 'zpusobUhrady' && typeof v === 'string') return methods[v.toLowerCase()] ?? v;
+  return String(v);
+}
+
 export function MvtSubmissionDetail({ id }: { id: number }) {
   const { meta } = useMeta();
   const { data, error, reload } = useLoad<SubmissionDetail>(`sub-${id}`, async (signal) => parseSubmissionDetail(await tlGet(`mvt/submissions/${id}`, undefined, signal)));
   const stepTone = (s: string) => (s === 'failed' ? 'text-red-700 font-semibold' : s === 'ok' ? 'text-emerald-700' : s === 'skipped' ? 'text-gray-400' : 'text-amber-700');
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-8">
+    <main className="container mx-auto px-4 py-8">
       <PageHeader title={`Zápis #${id}`} subtitle={<Link href="/mvt/zapisy" className="text-blue-600 hover:underline">← Zpět na zápisy</Link>} />
       {error && <LoadError error={error} onRetry={reload} />}
       {!data && !error && <Skeleton />}
@@ -148,7 +155,7 @@ export function MvtSubmissionDetail({ id }: { id: number }) {
             <dt className="text-gray-500">Stav</dt><dd><Chip tone={STATUS_TONE[data.status] ?? 'gray'}>{data.statusLabel}</Chip></dd>
             <dt className="text-gray-500">Montér</dt><dd>{data.fitterName ?? '—'}</dd>
             <dt className="text-gray-500">Událost</dt><dd><Link href={`/mvt/zapisy?eventId=${data.eventId}`} className="text-blue-600 hover:underline">#{data.eventId}</Link>{data.erpOrderId ? ` · zakázka ${data.erpOrderId}` : ''}</dd>
-            <dt className="text-gray-500">Výsledek</dt><dd>{data.outcome ? OUTCOMES[data.outcome] ?? data.outcome : '—'}</dd>
+            <dt className="text-gray-500">Výsledek</dt><dd>{data.outcomeLabel ?? (data.outcome ? OUTCOMES[data.outcome] ?? data.outcome : '—')}</dd>
             <dt className="text-gray-500">Odesláno</dt><dd>{fmtDateTime(data.createdAt)}</dd>
             <dt className="text-gray-500">Dokončeno</dt><dd>{fmtDateTime(data.completedAt)}</dd>
             <dt className="text-gray-500">Přílohy</dt><dd>{data.uploads.length}</dd>
@@ -163,7 +170,7 @@ export function MvtSubmissionDetail({ id }: { id: number }) {
                     <tr key={s.name} className="align-top">
                       <td className="px-3 py-1.5 text-gray-800">{meta?.vocabulary.stepNames[s.name] ?? s.label}</td>
                       <td className={`px-3 py-1.5 ${stepTone(s.status)}`}>{s.statusLabel}</td>
-                      <td className="px-3 py-1.5 text-gray-600">{s.detail ?? ''}{s.code ? <span className="ml-1 text-xs text-gray-400">[{s.code}]</span> : null}</td>
+                      <td className="px-3 py-1.5 text-gray-600"><span title={s.code ?? undefined}>{s.detail ? humanizeTimestamps(s.detail) : ''}</span></td>
                     </tr>
                   ))}
                   {data.steps.length === 0 && <tr><td className="px-3 py-3 text-gray-500">Zápis zatím nemá žádné kroky.</td></tr>}
@@ -171,12 +178,12 @@ export function MvtSubmissionDetail({ id }: { id: number }) {
               </table>
             </div>
           </section>
-          {data.input && (
+          {data.inputFields.length > 0 && (
             <section>
               <h2 className="mb-2 text-lg font-semibold text-gray-900">Co montér zadal</h2>
-              <dl className="grid grid-cols-[9rem_1fr] gap-x-3 gap-y-1 rounded-xl border border-gray-200 bg-white p-4 text-sm">
-                {Object.entries(data.input).filter(([, v]) => v !== null && v !== '' && typeof v !== 'object').map(([k, v]) => (
-                  <div key={k} className="contents"><dt className="text-gray-500">{k}</dt><dd className="break-words text-gray-800">{String(v)}</dd></div>
+              <dl className="grid grid-cols-[12rem_1fr] gap-x-3 gap-y-1 rounded-xl border border-gray-200 bg-white p-4 text-sm">
+                {data.inputFields.filter((f) => typeof f.value !== 'object').map((f) => (
+                  <div key={f.key} className="contents"><dt className="text-gray-500">{f.label}</dt><dd className="break-words text-gray-800">{inputValue(f.key, f.value, meta?.vocabulary.paymentMethods ?? {}, data.outcomeLabel)}</dd></div>
                 ))}
               </dl>
             </section>

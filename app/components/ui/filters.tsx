@@ -37,7 +37,7 @@ export function PersonSelect({ side, value, onChange }: { side: Side; value: str
   const people = data ?? [];
   return (
     <label className="flex items-center gap-2 text-sm">
-      <span className="font-medium text-gray-700">{side === 'ovt' ? 'Obchodník' : 'Montér'}</span>
+      <span className="font-medium text-gray-700">{side === 'ovt' ? 'OVT' : 'Montér'}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} className={`${inputCls} min-w-[11rem]`}>
         <option value="">všichni</option>
         {people.map((p) => (
@@ -79,7 +79,7 @@ export function SearchBox({ value, onChange, placeholder, ignored }: { value: st
         placeholder={placeholder}
         className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm placeholder:text-gray-400 focus:border-[#1E8449] focus:outline-none focus:ring-1 focus:ring-[#1E8449]"
       />
-      {text.trim().length > 0 && text.trim().length < 3 && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">min. 3 znaky</span>}
+      {text.trim().length > 0 && text.trim().length < 3 && <span className="absolute left-0 top-full mt-0.5 text-[11px] text-gray-500">Hledání začne od 3 znaků.</span>}
       {ignored && <span className="absolute left-0 top-full mt-0.5 text-[11px] text-amber-700">Hledaný text se nepoužil (je kratší než 3 znaky), zobrazuje se vše.</span>}
     </div>
   );

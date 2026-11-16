@@ -39,7 +39,7 @@ export function DayList({ groups, density, onChanged }: { groups: DayGroup[]; de
                     <td className={`${pad} whitespace-nowrap text-xs text-gray-600`}>{e.orderId ? `#${e.orderId}${e.orderStatusLabel ? ` · ${e.orderStatusLabel}` : ''}` : 'bez zakázky'}</td>
                     <td className={pad}>
                       <StateChip ev={e} />
-                      {e.tabletDraft && e.state.code !== 'tablet_in_progress' && <span className="ml-1 text-xs text-sky-700">koncept v tabletu</span>}
+                      {e.tabletDraft && e.state.code !== 'tablet_in_progress' && !e.state.closed && <span className="ml-1 text-xs text-sky-700">v tabletu je rozpracovaný koncept</span>}
                       {e.result && (
                         <p className="mt-0.5 text-xs text-gray-600">
                           {e.result.outcomeLabel}

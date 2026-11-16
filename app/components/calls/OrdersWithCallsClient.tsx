@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { callsGet, tlGet } from '@/lib/tl-api';
 import { parseCallsOrders } from '@/lib/tl-parse';
 import type { CallsOrder } from '@/lib/types';
-import { fmtDateTime } from '@/lib/format';
+import { fmtDateTime, shiftYmd } from '@/lib/format';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
 import { useListDensity } from '@/app/components/retention/listDensity';
 import { Alert, Empty, ErpOrderLink, LoadError, PageHeader, Skeleton, btnSmall, inputCls } from '@/app/components/ui/kit';
@@ -13,21 +13,32 @@ import { useLoad } from '@/app/components/ui/useLoad';
 import { useMeta } from '@/app/components/shell/MetaContext';
 import { erpCustomerUrl } from '@/lib/links';
 
+const btnPrimarySmall = 'rounded-md bg-[#1E8449] px-3 py-1 text-xs font-semibold text-white hover:bg-[#166d3b]';
+
 interface Row extends CallsOrder {
   callCount: number;
   lastCallTime: string | null;
   agents: string[];
 }
 
-function hovoryHref(o: CallsOrder): string {
-  return o.customerId ? `/zakaznik/${o.customerId}/hovory` : `/zakazka/${o.orderId}/hovory`;
+/** `q` = the search text that found a customer outside the dashboard's scope (the backend allows the calls only with it). */
+function hovoryHref(o: CallsOrder, q?: string): string {
+  const base = o.customerId ? `/zakaznik/${o.customerId}/hovory` : `/zakazka/${o.orderId}/hovory`;
+  return q ? `${base}?q=${encodeURIComponent(q)}` : base;
 }
 
 /** Objednávky s hovory: orders of the dashboard's universe with recorded calls, plus a search over every ERP order. */
 export function OrdersWithCallsClient() {
   const { meta } = useMeta();
   const [density, setDensity] = useListDensity();
+  // same default as elsewhere in the dashboard: a period is preset (the last 30 days); clearing the dates shows everything
   const [from, setFrom] = useState('');
+  const presetDone = useRef(false);
+  useEffect(() => {
+    if (presetDone.current || !meta?.today) return;
+    presetDone.current = true;
+    setFrom(shiftYmd(meta.today, -30));
+  }, [meta?.today]);
   const [to, setTo] = useState('');
   const [q, setQ] = useState('');
   const [owner, setOwner] = useState('');
@@ -61,7 +72,7 @@ export function OrdersWithCallsClient() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <PageHeader title="Hovory" subtitle="Zakázky, ke kterým existují nahrané hovory z Daktely (shoda na posledních 9 číslicích telefonu zákazníka nebo zakázky)." />
+      <PageHeader title="Hovory" subtitle="Zakázky, ke kterým existují nahrané hovory (shoda na posledních 9 číslicích telefonu zákazníka nebo zakázky)." />
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700">Od: <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inputCls} /></label>
@@ -72,7 +83,7 @@ export function OrdersWithCallsClient() {
             {owners.map(([id, name]) => <option key={id} value={String(id)}>{name}</option>)}
           </select>
           <select value={agent} onChange={(e) => setAgent(e.target.value)} className={inputCls}>
-            <option value="">Agent: všichni</option>
+            <option value="">Operátor: všichni</option>
             {agents.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
           <DensityToggle density={density} onChange={setDensity} />
@@ -98,7 +109,7 @@ export function OrdersWithCallsClient() {
                     <tr key={r.orderId} className="align-top">
                       <td className={cell}>
                         <div className="font-medium text-gray-900">{r.customerName ?? `Zakázka #${r.orderId}`}</div>
-                        {density === 'standard' && r.agents.length > 0 && <div className="text-xs text-gray-400">Agent: {r.agents.slice(0, 2).join(', ')}{r.agents.length > 2 ? '…' : ''}</div>}
+                        {density === 'standard' && r.agents.length > 0 && <div className="text-xs text-gray-400">Operátor: {r.agents.slice(0, 2).join(', ')}{r.agents.length > 2 ? '…' : ''}</div>}
                       </td>
                       <td className={`${cell} whitespace-nowrap font-mono text-gray-800`}>{r.phones.map((p) => p.phone).join(', ') || '—'}</td>
                       <td className={`${cell} whitespace-nowrap text-gray-700`}>{r.owner?.name ?? '—'}</td>
@@ -106,7 +117,7 @@ export function OrdersWithCallsClient() {
                       <td className={`${cell} whitespace-nowrap text-gray-600`}>{fmtDateTime(r.lastCallTime)}</td>
                       <td className={`${cell} whitespace-nowrap text-gray-600`}><ErpOrderLink orderId={r.orderId} />{r.statusLabel && density === 'standard' && <div className="text-xs text-gray-400">{r.statusLabel}</div>}</td>
                       <td className={`${cell} whitespace-nowrap text-right`}>
-                        <Link href={hovoryHref(r)} className="rounded-md bg-[#1565C0] px-3 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c]">→ Hovory</Link>
+                        <Link href={hovoryHref(r)} className={btnPrimarySmall}>→ Hovory</Link>
                         {r.customerId && erpCustomerUrl(meta?.erpWebBaseUrl, r.customerId) && (
                           <a href={erpCustomerUrl(meta?.erpWebBaseUrl, r.customerId) ?? '#'} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-blue-600 hover:underline">Zákazník v ERP</a>
                         )}
@@ -132,7 +143,7 @@ export function OrdersWithCallsClient() {
               {found.data.orders.map((o) => (
                 <li key={o.orderId} className="flex items-center justify-between gap-3 px-3 py-2">
                   <span><b>{o.customerName ?? '—'}</b> · zakázka #{o.orderId}{o.statusLabel ? ` · ${o.statusLabel}` : ''}<span className="ml-2 font-mono text-xs text-gray-500">{o.phones.map((p) => p.phone).join(', ')}</span></span>
-                  <Link href={hovoryHref(o)} className="rounded-md bg-[#1565C0] px-3 py-1 text-xs font-semibold text-white hover:bg-[#0d4f9c]">→ Hovory</Link>
+                  <Link href={hovoryHref(o, searchKey)} className={btnPrimarySmall}>→ Hovory</Link>
                 </li>
               ))}
             </ul>

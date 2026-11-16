@@ -19,7 +19,7 @@ const load = async (rel) => {
   fs.writeFileSync(path.join(tmp, `${name}.mjs`), code);
   return name;
 };
-const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid'];
+const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant'];
 for (const n of names) await load(`lib/${n}.ts`);
 const imp = (n) => import(pathToFileURL(path.join(tmp, `${n}.mjs`)).href);
 const P = await imp('tl-parse');
@@ -31,6 +31,8 @@ const { checkCsrf } = await imp('csrf');
 const L = await imp('links');
 const F = await imp('format');
 const G = await imp('dayGrid');
+process.env.NEXTAUTH_SECRET = 'contract-check-secret';
+const CG = await imp('call-grant');
 
 let failed = 0;
 const check = (name, fn) => {
@@ -47,28 +49,40 @@ const data = (n) => { const j = fx(n); if (j.success !== true) throw new Error('
 const throws = (fn, what) => { let t = false; try { fn(); } catch { t = true; } if (!t) throw new Error(`${what}: accepted`); };
 
 // ---- recorded answers -----------------------------------------------------------------------------------------------
-check('meta', () => { const m = P.parseMeta(data('meta')); eq(m.today, '2026-11-16', 'today'); eq(m.erpWebBaseUrl, 'https://erp.example.cz', 'erp base'); eq(m.vocabulary.ovtCloseReasons.jine.includes('Jiné'), true, 'reasons'); eq(m.vocabulary.quietStates.length, 3, 'quiet'); });
-check('people', () => { eq(P.parsePeople(data('people-ovt')).length, 3, 'people'); eq(P.parsePeople(data('people-ovt'))[2].active, false, 'inactive'); });
-check('ovt day: events, groups (no owner last), tiles', () => { const d = P.parseOvtDay(data('ovt-day')); eq(d.events.length, 7, 'events'); eq(d.groups.at(-1).person, null, 'no owner last'); eq(d.tiles.closed, 3, 'closed'); eq(d.qIgnored, false, 'qIgnored default'); eq(d.events[1].b2b, true, 'b2b'); eq(d.events[4].tabletDraft, true, 'draft'); });
-check('mvt day: state counts, assignment source, app state', () => { const d = P.parseMvtDay(data('mvt-day')); eq(d.stateCounts.overdue, 1, 'overdue'); eq(d.events[0].app.status, 'success', 'app'); eq(d.events.find((e) => e.id === 24).people[0].source, 'assignment', 'assignment'); eq(d.events.find((e) => e.id === 25).result.current, false, 'old result'); });
-check('problems: kinds, closed row carries resolution', () => { const d = P.parseProblems(data('ovt-problems')); eq(d.rows.length, 5, 'rows'); eq(d.rows[4].resolution.reason, 'zkontrolovano', 'resolution'); eq(d.counts.bez_vysledku, 2, 'counts'); eq(d.rows[1].subState.code, 'ovt_opravil', 'subState'); eq(d.truncated, true, 'truncated'); eq(d.qIgnored, true, 'qIgnored'); eq(d.rows[3].valueSDph, null, 'no ADMF value'); });
-check('results + drill-down', () => { const d = P.parseResults(data('ovt-results')); eq(d.rows[2].person, null, 'no owner row'); eq(d.rows[0].nedopadloReasons[0].reason, 'vysoka_cena', 'reason'); eq(d.bucketLabels.closed_no_result, 'Uzavřeno bez výsledku', 'label'); eq(P.parseVisits(data('ovt-results-visits')).visits.length, 1, 'visits'); });
-check('missing', () => { const d = P.parseMissing(data('mvt-missing')); eq(d.owing[0].count, 2, 'owing'); eq(d.recent[1].resolution.reason, 'pripomenuto', 'handled'); eq(d.closedOutside.count, 12, 'closedOutside'); eq(d.closeReasons.netyka_se, 'Netýká se', 'reasons'); });
-check('reopens: before and after', () => { const d = P.parseReopens(data('mvt-reopens')); eq(d.rows[0].after, null, 'open'); eq(d.rows[1].after.paymentMethodLabel, 'Fakturou', 'after'); eq(d.rows[1].changes.length, 2, 'changes'); });
-check('doplatek', () => { const d = P.parseDoplatek(data('mvt-doplatek')); eq(d.rows[1].invoice, true, 'invoice'); eq(d.rows[1].invoiceCheck, 'disabled', 'check'); eq(d.rows[2].resolution.note, 'Sleva domluvena', 'resolution'); eq(d.invoiceCheckEnabled, false, 'flag'); eq(d.rows[0].orderCreatedAt, '2026-10-28T08:15:00.000Z', 'orderCreatedAt'); });
-check('rescues, montaz claims', () => { eq(P.parseRescues(data('mvt-rescues')).summary.claimed, 1, 'claimed'); const c = P.parseMontazClaims(data('mvt-montaz-claims')); eq(c.rows[2].followUp.id, 500, 'followUp'); eq(c.rows[1].claim, null, 'no claim'); });
-check('submissions list + detail', () => { eq(P.parseSubmissionList(data('mvt-submissions')).total, 3, 'total'); const d = P.parseSubmissionDetail(data('mvt-submission-detail')); eq(d.steps[1].code, 'ORDER_LOCKED', 'step code'); eq(d.warnings.length, 1, 'warnings'); });
-check('overview', () => { const d = P.parseOverview(data('mvt-overview')); eq(d.missing.owing.length, 2, 'owing'); eq(d.submissionProblems.count, 2, 'problems'); });
+check('meta', () => { const m = P.parseMeta(data('meta')); eq(m.today, '2026-11-16', 'today'); eq(m.erpWebBaseUrl, null, 'erp base (not configured in the fixture run)'); eq(m.vocabulary.ovtCloseReasons.jine.includes('Jiné'), true, 'reasons'); eq(m.vocabulary.quietStates.length, 3, 'quiet'); });
+check('people', () => { eq(P.parsePeople(data('people-ovt')).length, 2, 'people'); eq(P.parsePeople(data('people-ovt'))[1].active, false, 'inactive'); });
+check('ovt day: events, groups (no owner last), tiles', () => { const d = P.parseOvtDay(data('ovt-day')); eq(d.events.length, 2, 'events'); eq(d.groups.at(-1).person, null, 'no owner last'); eq(d.tiles.closed, 1, 'closed'); eq(d.qIgnored, false, 'qIgnored default'); eq(d.events[0].b2b, true, 'b2b'); eq(d.events[1].tabletDraft, true, 'draft'); });
+check('mvt day: state counts, claim id and label of a claim visit', () => { const d = P.parseMvtDay(data('mvt-day')); eq(d.stateCounts.past_end, 1, 'past_end'); const c = d.events.find((e) => e.id === 21).claim; eq(c.id, 4, 'claim id'); eq(c.statusLabel, 'Nová', 'claim label'); eq(d.events.find((e) => e.id === 22).claim, null, 'no claim'); });
+check('problems: kinds, closed row carries resolution, a returned order may have no date', () => { const d = P.parseProblems(data('ovt-problems')); eq(d.rows.length, 3, 'rows'); eq(d.rows[0].resolution.reason, 'zkontrolovano', 'resolution'); eq(d.counts.bez_vysledku, 1, 'counts'); eq(d.rows[1].subState.code, 'ceka_na_ovt', 'subState'); eq(d.rows[1].at, null, 'at may be null'); eq(d.rows[2].valueSDph, 25000, 'ADMF value'); });
+check('results + drill-down', () => { const d = P.parseResults(data('ovt-results')); eq(d.rows[1].person, null, 'no owner row'); eq(d.rows[0].nedopadloReasons[0].reason, 'vysoka_cena', 'reason'); eq(d.bucketLabels.closed_no_result, 'Uzavřeno bez výsledku', 'label'); eq(P.parseVisits(data('ovt-results-visits')).visits.length, 1, 'visits'); });
+check('missing: recent, backlog, closed outside the app (rows carry the visit, age and decision)', () => { const d = P.parseMissing(data('mvt-missing')); eq(d.owing[0].count, 2, 'owing'); eq(d.recent.length, 1, 'recent'); eq(d.backlog[0].event.id, 2, 'backlog row'); eq(d.backlog[0].ageDays > 7, true, 'backlog age'); eq(d.closedOutside.count, 2, 'closedOutside'); eq(d.closedOutside.rows[0].event.id, 3, 'closed outside: the visit'); eq(typeof d.closedOutside.rows[0].ageDays, 'number', 'closed outside: age'); eq(d.closedOutside.rows[0].resolution, null, 'closed outside: no decision'); eq(d.closeReasons.netyka_se, 'Netýká se', 'reasons'); eq(d.recent[0].resolution.reason, 'pripomenuto', 'handled row'); });
+check('reopens: before, after and the changed fields as {field,label,before,after}', () => { const d = P.parseReopens(data('mvt-reopens')); eq(d.rows[0].after, null, 'open'); eq(d.rows[1].after.paymentMethodLabel, 'Fakturou', 'after'); eq(d.rows[1].changes.length, 2, 'changes'); eq(d.rows[1].changes[0].label, 'Vybráno', 'change label'); eq(d.rows[1].changes[0].before, 800, 'change before'); eq(d.rows[1].changes[0].after, 1200, 'change after'); });
+check('doplatek', () => { const d = P.parseDoplatek(data('mvt-doplatek')); eq(d.rows[1].invoice, true, 'invoice'); eq(d.rows[1].invoiceCheck, 'disabled', 'check'); eq(d.rows[0].severity, 'red', 'severity'); eq(d.invoiceCheckEnabled, false, 'flag'); eq(d.rows[0].orderCreatedAt, '2026-10-28T08:15:00.000Z', 'orderCreatedAt'); });
+check('rescues, montaz claims', () => { eq(P.parseRescues(data('mvt-rescues')).summary.claimed, 1, 'claimed'); const c = P.parseMontazClaims(data('mvt-montaz-claims')); eq(c.rows[0].followUp.id, 77, 'followUp'); eq(c.rows[1].claim, null, 'no claim'); });
+check('submissions list + detail (Czech labels of what the fitter entered)', () => { eq(P.parseSubmissionList(data('mvt-submissions')).total, 1, 'total'); const d = P.parseSubmissionDetail(data('mvt-submission-detail')); eq(d.steps[1].code, 'ORDER_LOCKED', 'step code'); eq(d.warnings.length, 1, 'warnings'); eq(d.warnings[0].includes('raynet'), false, 'no Raynet name'); eq(d.inputFields.find((f) => f.key === 'komentar').label, 'Komentář', 'input label'); });
+check('overview: a reopened visit is a plain event, the pending flag is a boolean', () => { const d = P.parseOverview(data('mvt-overview')); eq(d.missing.owing.length, 1, 'owing'); eq(d.missing.count, 2, 'missing counts recent and older'); eq(d.reopened.top[0].reopen.reason, 'znovu', 'reopen reason on the event'); eq(d.submissionProblems.pending, false, 'pending'); });
 check('action with steps: done, and a failure that arrives as HTTP 200', () => {
   const d = P.parseAction(data('action-done'));
   eq(d.outcome, 'done', 'done'); eq(d.steps.length, 5, 'nedopadlo has five steps (columns, status, tags, comment, visit_result)'); eq(d.steps[2].name, 'tags', 'tags step');
   const rt = P.parseAction(data('action-retry-done')); eq(rt.steps[0].detail, 'beze změny (už zapsáno předchozím pokusem)', 'retry detail kept'); eq(rt.steps.every((x) => x.status === 'ok'), true, 'retry steps ok');
   const pt = P.parseAction(data('action-partial')); eq(pt.outcome, 'partial', 'partial'); eq(pt.steps[2].status, 'failed', 'non-stopping step failed');
   const f = P.parseAction(data('action-failed-locked'));
-  eq(f.outcome, 'failed', 'failed'); eq(f.steps[0].code, 'ORDER_LOCKED', 'code'); eq(f.steps[1].status, 'pending', 'pending after a stopping step'); eq(f.steps.length, 5, 'five steps');
+  eq(f.outcome, 'failed', 'failed'); eq(typeof f.steps[0].code, 'string', 'code'); eq(f.steps[1].status, 'pending', 'pending after a stopping step'); eq(f.steps.length, 5, 'five steps');
 });
 check('calls lookup + customer phones', () => { const o = P.parseCallsOrders(data('calls-lookup')); eq(o[0].phones[1].key, '603333444', 'key'); eq(o[0].customerId, 201, 'customerId'); eq(P.parseCustomerPhones(data('customer-phones')).orders.length, 1, 'orders'); });
-check('review-qr + prompts', () => { const d = P.parseReviewQr(data('review-qr')); eq(d.regions.length, 3, 'regions'); eq(d.regions[0].ovts[0].userId, 1, 'ovt'); eq(d.outsideRegions[0].reason, 'no_home_kraj', 'outside'); eq(d.targets[2].active, false, 'inactive target'); const p = P.parsePrompts(data('review-qr-prompts')); eq(p.prompts[0].erpOrderId, 10000011, 'erp order'); eq(p.statsByRegion[1].key, null, 'no region'); });
+check('review-qr + prompts', () => { const d = P.parseReviewQr(data('review-qr')); eq(d.regions.length, 14, 'regions'); eq(d.regions.find((r) => r.ovts.length).ovts[0].userId, 5, 'ovt'); eq(d.outsideRegions[0].reason, 'no_home_kraj', 'outside'); eq(d.targets[1].active, false, 'inactive target'); const p = P.parsePrompts(data('review-qr-prompts')); eq(p.prompts[0].erpOrderId, 10000011, 'erp order'); });
+
+check('call grant: only for the person and the call it was issued for, and not after it expires', () => {
+  const g = CG.issueCallGrant('tl@example.cz', 'abc123');
+  eq(CG.checkCallGrant('tl@example.cz', 'abc123', g), true, 'valid');
+  eq(CG.checkCallGrant('TL@example.cz', 'abc123', g), true, 'e-mail case');
+  eq(CG.checkCallGrant('other@example.cz', 'abc123', g), false, 'other person');
+  eq(CG.checkCallGrant('tl@example.cz', 'abc124', g), false, 'other call');
+  eq(CG.checkCallGrant('tl@example.cz', 'abc123', null), false, 'no grant');
+  eq(CG.checkCallGrant('tl@example.cz', 'abc123', g.replace(/.$/, (c) => (c === 'A' ? 'B' : 'A'))), false, 'tampered');
+  eq(CG.checkCallGrant('tl@example.cz', 'abc123', g, Date.now() + CG.GRANT_TTL_MS + 1000), false, 'expired');
+});
+check('timestamps inside a text are shown as Prague time', () => { eq(F.humanizeTimestamps('Zamčeno (2026-11-16T15:44:04.706Z).'), 'Zamčeno (16. 11. 2026 16:44).', 'iso'); });
 
 check('wrong shapes are refused (named field)', () => {
   const bad = fx('ovt-day').data; delete bad.tiles; throws(() => P.parseOvtDay(bad), 'no tiles');

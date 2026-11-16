@@ -1,60 +1,76 @@
 {
   "success": true,
   "data": {
-    "id": 6,
-    "eventId": 21,
-    "erpOrderId": 10000021,
-    "fitterName": "Montér Karel",
+    "id": 4,
+    "eventId": 7,
+    "erpOrderId": 9,
+    "fitterName": "Karel",
     "outcome": "happy",
     "status": "partial",
-    "statusLabel": "Částečně zapsáno",
-    "createdAt": "2026-11-16T09:00:00.000Z",
-    "completedAt": "2026-11-16T09:00:05.000Z",
-    "stepCount": 5,
+    "createdAt": "2026-11-10T08:00:00.000Z",
+    "completedAt": null,
+    "stepCount": 2,
     "failedSteps": 1,
     "warningCount": 1,
-    "collected": 5000,
+    "collected": 10,
     "method": "hotove",
     "steps": [
       {
-        "name": "visit_result",
-        "label": "Výsledek návštěvy",
-        "status": "ok",
-        "statusLabel": "Zapsáno",
-        "detail": null,
-        "code": null
-      },
-      {
         "name": "columns",
+        "status": "ok",
+        "detail": null,
+        "code": null,
         "label": "Sloupce zakázky",
-        "status": "failed",
-        "statusLabel": "Selhalo",
-        "detail": "Zakázku právě upravuje Alena (zamčeno)",
-        "code": "ORDER_LOCKED"
+        "statusLabel": "Zapsáno"
       },
       {
-        "name": "cash",
-        "label": "Hotovost",
-        "status": "skipped",
-        "statusLabel": "Přeskočeno",
-        "detail": null,
-        "code": null
+        "name": "document",
+        "status": "failed",
+        "detail": "Zakázka je zamčená (2026-11-16T15:44:04.706Z).",
+        "code": "ORDER_LOCKED",
+        "label": "Uzávěrka montáže (dokument)",
+        "statusLabel": "Selhalo"
       }
     ],
     "warnings": [
-      "Příloha předávacího protokolu chybí."
+      "Sloupec „Montér“ v ERP neexistuje, vynechán."
     ],
     "input": {
       "outcome": "happy",
-      "collected": 5000,
-      "method": "hotove",
-      "discount": null,
-      "fitter": "Montér Karel"
+      "vybranoKolik": 10,
+      "zpusobUhrady": "hotove",
+      "komentar": "ok",
+      "monter": "Karel"
     },
-    "uploads": [
+    "uploads": [],
+    "statusLabel": "Částečně",
+    "outcomeLabel": "Dokončeno",
+    "methodLabel": "Hotově",
+    "inputFields": [
       {
-        "id": 1,
-        "kind": "predavak"
+        "key": "outcome",
+        "label": "Výsledek",
+        "value": "happy"
+      },
+      {
+        "key": "vybranoKolik",
+        "label": "Vybráno (Kč)",
+        "value": 10
+      },
+      {
+        "key": "zpusobUhrady",
+        "label": "Způsob úhrady",
+        "value": "hotove"
+      },
+      {
+        "key": "komentar",
+        "label": "Komentář",
+        "value": "ok"
+      },
+      {
+        "key": "monter",
+        "label": "Montér",
+        "value": "Karel"
       }
     ]
   }

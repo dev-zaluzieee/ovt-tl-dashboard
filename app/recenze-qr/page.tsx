@@ -5,7 +5,7 @@ import { ReviewQrClient } from '@/app/components/review-qr/ReviewQrClient';
 export default function Page() {
   return (
     <AppLayout>
-      <main className="container mx-auto max-w-6xl px-4 py-8">
+      <main className="container mx-auto px-4 py-8">
         <PageHeader title="Recenze QR" subtitle="QR na recenzi, který tablet ukáže po uzavření zakázky na místě." />
         <ReviewQrClient />
       </main>

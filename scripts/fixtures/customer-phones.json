@@ -2,22 +2,22 @@
   "success": true,
   "data": {
     "customerId": 201,
-    "customerName": "Jana Svobodová",
+    "customerName": "Zákazník Jedna",
     "phones": [
       {
-        "phone": "+420 777 111 222",
-        "key": "777111222",
-        "source": "order"
-      },
-      {
-        "phone": "603 333 444",
+        "phone": "603333444",
         "key": "603333444",
         "source": "customer"
+      },
+      {
+        "phone": "602111222",
+        "key": "602111222",
+        "source": "order"
       }
     ],
     "orders": [
       {
-        "orderId": 10000011,
+        "orderId": 10000001,
         "statusLabel": "Zaměření"
       }
     ]

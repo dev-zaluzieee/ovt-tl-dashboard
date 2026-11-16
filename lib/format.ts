@@ -95,3 +95,8 @@ export function plural(n: number, one: string, few: string, many: string): strin
   if (n >= 2 && n <= 4) return few;
   return many;
 }
+
+/** Replaces ISO instants inside a text (`2026-11-16T15:44:04.706Z`) by Prague date and time, so no raw timestamp reaches the screen. */
+export function humanizeTimestamps(text: string): string {
+  return text.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/g, (m) => fmtDateTime(m));
+}

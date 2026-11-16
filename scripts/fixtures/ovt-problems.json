@@ -3,120 +3,100 @@
   "data": {
     "rows": [
       {
-        "key": "event:12",
+        "key": "event:30",
         "kind": "nedopadlo",
         "kindLabel": "Nedopadlo",
         "severity": 0,
-        "eventId": 12,
-        "orderId": 10000012,
+        "eventId": 30,
+        "orderId": 10000030,
         "eventType": "zamereni",
         "customer": {
-          "name": "Zákazník 12",
-          "phone": "+420 777 100 012",
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
           "city": "Brno"
         },
         "owner": {
-          "id": 1,
+          "id": 5,
           "name": "Ovt Alfa"
         },
-        "at": "2026-11-11T14:35:32.466Z",
-        "endsAt": null,
-        "reason": "vysoka_cena",
-        "reasonLabel": "Vysoká cena",
+        "at": "2026-11-15T08:00:00.000Z",
+        "endsAt": "2026-11-15T09:00:00.000Z",
+        "reason": "nemozna_realizace",
+        "reasonLabel": "Nemožná realizace",
         "note": null,
         "subState": null,
         "ageWorkingDays": 1,
-        "valueSDph": 25000,
+        "valueSDph": null,
         "b2b": null,
         "orderStatus": "zamereni",
         "orderStatusLabel": "Zaměření",
-        "resolution": null
+        "resolution": {
+          "id": 1,
+          "kind": "ovt_nedopadlo",
+          "itemKey": "30",
+          "reason": "zkontrolovano",
+          "note": "Volal jsem",
+          "actorEmail": "tl@example.cz",
+          "actorName": "Team Leader",
+          "createdAt": "2026-11-16T09:00:00.000Z",
+          "undoneAt": null,
+          "undoneBy": null,
+          "erpWrittenAt": null,
+          "erpWriteNote": null
+        }
       },
       {
-        "key": "order:10000020",
+        "key": "order:10000040",
         "kind": "vraceno_ovt",
         "kindLabel": "Vráceno OVT k dořešení",
         "severity": 1,
-        "eventId": null,
-        "orderId": 10000020,
-        "eventType": "zamereni",
+        "eventId": 99,
+        "orderId": 10000040,
+        "eventType": null,
         "customer": {
-          "name": "Marie Nováková",
-          "phone": "+420 602 111 222",
-          "city": "Praha"
-        },
-        "owner": {
-          "id": 2,
-          "name": "Ovt Beta"
-        },
-        "at": "2026-11-11T14:35:32.466Z",
-        "endsAt": null,
-        "reason": null,
-        "reasonLabel": null,
-        "note": "Chybí zaměření oken v ložnici",
-        "subState": {
-          "code": "ovt_opravil",
-          "label": "OVT opravil"
-        },
-        "ageWorkingDays": null,
-        "valueSDph": 48200,
-        "b2b": true,
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "resolution": null
-      },
-      {
-        "key": "event:3",
-        "kind": "bez_vysledku",
-        "kindLabel": "Zaměření bez výsledku",
-        "severity": 2,
-        "eventId": 3,
-        "orderId": 10000003,
-        "eventType": "zamereni",
-        "customer": {
-          "name": "Druhý Bezvýsledku",
-          "phone": "+420 777 100 003",
+          "name": "Vrácený",
+          "phone": "602111222",
           "city": "Brno"
         },
         "owner": {
-          "id": 2,
-          "name": "Ovt Beta"
+          "id": 5,
+          "name": "Ovt Alfa"
         },
-        "at": "2026-11-11T14:35:32.466Z",
+        "at": null,
         "endsAt": null,
         "reason": null,
         "reasonLabel": null,
-        "note": null,
+        "note": "Chybí rozměry",
         "subState": {
-          "code": "tablet_not_started",
-          "label": "Tablet nerozpracován"
+          "code": "ceka_na_ovt",
+          "label": "Čeká na OVT"
         },
-        "ageWorkingDays": 3,
-        "valueSDph": 25000,
-        "b2b": null,
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
+        "ageWorkingDays": null,
+        "valueSDph": null,
+        "b2b": false,
+        "orderStatus": "objednavky-k-doreseni-ovt",
+        "orderStatusLabel": "K dořešení - OVT",
         "resolution": null
       },
       {
-        "key": "event:4",
+        "key": "event:10",
         "kind": "bez_vysledku",
         "kindLabel": "Zaměření bez výsledku",
         "severity": 2,
-        "eventId": 4,
-        "orderId": 10000004,
+        "eventId": 10,
+        "orderId": 10000010,
         "eventType": "zamereni",
         "customer": {
-          "name": "Karel Rozpracovaný",
-          "phone": "+420 777 100 004",
-          "city": "Olomouc"
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
+          "city": "Brno"
         },
         "owner": {
-          "id": 2,
-          "name": "Ovt Beta"
+          "id": 5,
+          "name": "Ovt Alfa"
         },
-        "at": "2026-11-11T14:35:32.466Z",
-        "endsAt": null,
+        "at": "2026-11-10T08:00:00.000Z",
+        "endsAt": "2026-11-10T09:00:00.000Z",
         "reason": null,
         "reasonLabel": null,
         "note": null,
@@ -124,71 +104,25 @@
           "code": "tablet_in_progress",
           "label": "Rozpracováno v tabletu"
         },
-        "ageWorkingDays": 5,
-        "valueSDph": null,
-        "b2b": null,
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "resolution": null
-      },
-      {
-        "key": "event:6",
-        "kind": "bez_vysledku",
-        "kindLabel": "Zaměření bez výsledku",
-        "severity": 2,
-        "eventId": 6,
-        "orderId": 10000006,
-        "eventType": "zamereni",
-        "customer": {
-          "name": "Uzavřený Řádek",
-          "phone": "+420 777 100 006",
-          "city": "Zlín"
-        },
-        "owner": {
-          "id": 2,
-          "name": "Ovt Beta"
-        },
-        "at": "2026-11-11T14:35:32.466Z",
-        "endsAt": null,
-        "reason": null,
-        "reasonLabel": null,
-        "note": null,
-        "subState": {
-          "code": "tablet_not_started",
-          "label": "Tablet nerozpracován"
-        },
-        "ageWorkingDays": 3,
+        "ageWorkingDays": 4,
         "valueSDph": 25000,
         "b2b": null,
         "orderStatus": "zamereni",
         "orderStatusLabel": "Zaměření",
-        "resolution": {
-          "id": 5,
-          "kind": "ovt_bez_vysledku",
-          "itemKey": "event:3",
-          "reason": "zkontrolovano",
-          "note": "Volal jsem OVT",
-          "actorEmail": "tl@example.cz",
-          "actorName": "Karel Testovací",
-          "createdAt": "2026-11-16T09:00:00.000Z",
-          "undoneAt": null,
-          "undoneBy": null,
-          "erpWrittenAt": null,
-          "erpWriteNote": null
-        }
+        "resolution": null
       }
     ],
     "counts": {
-      "bez_vysledku": 2,
-      "nedopadlo": 1,
+      "bez_vysledku": 1,
+      "nedopadlo": 0,
       "vraceno_ovt": 1
     },
     "closedCount": 1,
-    "truncated": true,
+    "truncated": false,
+    "qIgnored": false,
     "warnings": [],
-    "qIgnored": true,
     "maxRangeDays": 92,
-    "today": "2026-11-16",
-    "now": "2026-11-16T10:30:00.000Z"
+    "now": "2026-11-16T10:00:00.000Z",
+    "today": "2026-11-16"
   }
 }

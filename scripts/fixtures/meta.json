@@ -2,15 +2,15 @@
   "success": true,
   "data": {
     "user": {
-      "name": "Karel Testovací",
+      "name": "Team Leader",
       "email": "tl@example.cz",
-      "erpUserId": 99
+      "erpUserId": 5
     },
-    "now": "2026-11-16T10:30:00.000Z",
+    "now": "2026-11-16T10:00:00.000Z",
     "today": "2026-11-16",
-    "startAt": "2026-11-10T00:00:00.000Z",
-    "testMode": true,
-    "erpWebBaseUrl": "https://erp.example.cz",
+    "startAt": "2026-11-01T00:00:00.000Z",
+    "testMode": false,
+    "erpWebBaseUrl": null,
     "invoicingCheck": false,
     "limits": {
       "maxRangeDays": 92,
@@ -27,13 +27,13 @@
         "placena_oprava": "Placená oprava"
       },
       "states": {
-        "cancelled": "Zrušeno",
         "reopened": "Otevřeno k opravě",
         "closed": "Uzavřeno",
-        "app_failed": "Zápis z aplikace selhal",
-        "app_partial": "Zápis z aplikace je částečný",
         "closed_from_order": "Uzavřeno (ze zakázky)",
         "closed_no_result": "Uzavřeno bez výsledku",
+        "app_failed": "Zápis z aplikace selhal",
+        "app_partial": "Zápis z aplikace je částečný",
+        "cancelled": "Zrušeno",
         "no_owner": "Bez vlastníka",
         "tablet_in_progress": "Rozpracováno v tabletu",
         "overdue": "Po termínu bez výsledku",
@@ -47,30 +47,50 @@
         "no_owner"
       ],
       "outcomes": {
-        "order": "Objednávka",
+        "order": "Zaměřeno, objednávka",
         "nedopadlo": "Nedopadlo",
-        "nezastizen": "Nezastižen",
-        "retence": "Retence"
+        "nezastizen": "Zákazník nezastižen",
+        "retence": "Odesláno na retence",
+        "done": "Dokončeno",
+        "done_rescue": "Dokončeno se záchranou",
+        "not_done": "Nedokončeno, reklamace"
       },
       "montazOutcomes": {
         "done": "Montáž dokončena",
-        "done_rescue": "Dokončena se záchranou",
-        "not_done": "Nedokončena"
+        "done_rescue": "Montáž dokončena se záchranou",
+        "not_done": "Montáž nedokončena, reklamace"
       },
       "nedopadloReasons": {
         "vysoka_cena": "Vysoká cena",
         "nema_zajem": "Nemá zájem",
         "nemozna_realizace": "Nemožná realizace"
       },
-      "visitReasons": {},
+      "visitReasons": {
+        "chyba_zamereni": "Chyba zaměření",
+        "chyba_vyroby": "Chyba výroby",
+        "posunuti_terminu": "Posunutí termínu",
+        "poskozeni_produktu": "Poškození produktu",
+        "jiny_produkt": "Jiný produkt",
+        "spatna_barva": "Špatná barva",
+        "chybi_zbozi": "Chybí zboží",
+        "chybi_komponenty": "Chybí komponenty",
+        "zak_nezastizen": "Zák. nezastižen",
+        "bude_preplanovano": "Bude přeplánováno",
+        "nestihl_dokoncit": "Nestihl dokončit – bude přeplánováno",
+        "listy": "Lišty"
+      },
       "paymentMethods": {
         "hotove": "Hotově",
-        "fakturou": "Fakturou"
+        "terminalem": "Terminálem",
+        "qr": "QR",
+        "fakturou": "Fakturou",
+        "jine": "Jiné",
+        "prevodem": "Převodem"
       },
       "ovtProblemKinds": {
-        "bez_vysledku": "Zaměření bez výsledku",
         "nedopadlo": "Nedopadlo",
-        "vraceno_ovt": "Vráceno OVT k dořešení"
+        "vraceno_ovt": "Vráceno OVT k dořešení",
+        "bez_vysledku": "Zaměření bez výsledku"
       },
       "ovtCloseReasons": {
         "vyreseno_mimo_erp": "Vyřešeno mimo ERP",
@@ -91,21 +111,21 @@
       "doplatekSeverities": {
         "red": "Nesedí (dokončená montáž)",
         "amber": "Nesedí",
-        "invoice": "Faktura",
-        "low": "Rozdíl je sleva",
-        "info": "Info",
-        "ok": "Faktura uhrazena"
+        "invoice": "Platba fakturou – zkontrolovat",
+        "low": "Rozdíl odpovídá slevě",
+        "info": "K informaci",
+        "ok": "Ověřeno – lze uzavřít"
       },
       "montazClaimStates": {
         "vyreseno": "Vyřešeno",
-        "naplanovano": "Naplánováno",
-        "ceka": "Čeká",
-        "bez_reklamace": "Bez reklamace"
+        "naplanovano": "Naplánována návštěva",
+        "ceka": "Čeká na naplánování",
+        "bez_reklamace": "Reklamace v ERP nenalezena"
       },
       "submissionStatuses": {
-        "running": "Zapisuje se",
-        "success": "Zapsáno",
-        "partial": "Částečně zapsáno",
+        "running": "Probíhá",
+        "success": "Hotovo",
+        "partial": "Částečně",
         "failed": "Selhalo",
         "superseded": "Nahrazeno opravou"
       },
@@ -117,11 +137,15 @@
         "dry": "Zkušební běh"
       },
       "stepNames": {
+        "claim": "Nová reklamace v ERP",
         "columns": "Sloupce zakázky",
+        "columns_extra": "Doplňující sloupce",
         "status": "Stav zakázky",
-        "visit_result": "Výsledek návštěvy",
-        "erp_complete": "Dokončení v ERP",
-        "cash": "Hotovost"
+        "assignment": "Přiřazení montérů",
+        "document": "Uzávěrka montáže (dokument)",
+        "comment": "Komentář v zakázce",
+        "event": "Výsledek na události",
+        "uploads": "Přílohy"
       }
     }
   }

@@ -118,10 +118,10 @@ export function MvtDayClient() {
                                   {partners.length > 0 && <p className="text-xs text-sky-700">ve dvou s {partners.map((p) => p.name).join(' a ')}</p>}
                                 </td>
                                 <td className={`${pad} text-xs text-gray-600`}>
-                                  {e.orderId ? `#${e.orderId}${e.orderStatusLabel ? ` · ${e.orderStatusLabel}` : ''}` : e.link === 'bez_zakazky' ? <span className="text-amber-700">montáž bez zakázky</span> : '—'}
+                                  {e.orderId ? `#${e.orderId}${e.orderStatusLabel ? ` · ${e.orderStatusLabel}` : ''}` : e.link?.code === 'bez_zakazky' ? <span className="text-amber-700">montáž bez zakázky</span> : '—'}
                                   {e.claim && <p>Reklamace #{e.claim.id}{e.claim.statusLabel ? ` · ${e.claim.statusLabel}` : ''}</p>}
-                                  {e.link === 'bez_reklamace' && <p className="text-amber-700">návštěva bez reklamace</p>}
-                                  {e.link === 'servis_ze_zakazky' && <p className="text-gray-500">servis ze zakázky: uzavírá kancelář</p>}
+                                  {e.link?.code === 'bez_reklamace' && <p className="text-amber-700">návštěva bez reklamace</p>}
+                                  {e.link?.code === 'servis_ze_zakazky' && <p className="text-gray-500">servis ze zakázky: uzavírá kancelář</p>}
                                 </td>
                                 <td className={pad}>
                                   <StateChip ev={e} />

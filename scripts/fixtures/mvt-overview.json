@@ -2,53 +2,42 @@
   "success": true,
   "data": {
     "missing": {
-      "count": 3,
+      "count": 2,
+      "recent": 1,
       "backlog": 1,
       "owing": [
         {
           "person": {
-            "id": 3,
-            "name": "Montér Karel"
-          },
-          "count": 2
-        },
-        {
-          "person": {
-            "id": 4,
+            "id": 6,
             "name": "Montér Petr"
           },
-          "count": 1
+          "count": 2
         }
       ],
       "top": [
         {
           "event": {
-            "id": 22,
+            "id": 11,
             "type": "montaz",
             "typeLabel": "Montáž",
-            "title": null,
+            "title": "T",
             "status": "scheduled",
             "origin": null,
-            "startsAt": "2026-11-16T09:00:00.000Z",
-            "endsAt": "2026-11-16T11:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000022,
+            "startsAt": "2026-11-14T08:00:00.000Z",
+            "endsAt": "2026-11-14T09:00:00.000Z",
+            "day": "2026-11-14",
+            "orderId": 10000001,
             "complaintId": null,
             "customer": {
-              "name": "Zákazník 22",
-              "phone": "+420 777 100 022",
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
               "city": "Brno"
             },
-            "orderStatus": "montaz",
-            "orderStatusLabel": "Montáž",
+            "orderStatus": "zamereni",
+            "orderStatusLabel": "Zaměření",
             "people": [
               {
-                "id": 3,
-                "name": "Montér Karel",
-                "source": "owner"
-              },
-              {
-                "id": 4,
+                "id": 6,
                 "name": "Montér Petr",
                 "source": "owner"
               }
@@ -68,52 +57,7 @@
             "amountDue": null,
             "link": null
           },
-          "ageDays": 0,
-          "resolution": null
-        },
-        {
-          "event": {
-            "id": 31,
-            "type": "montaz",
-            "typeLabel": "Montáž",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-13T08:00:00.000Z",
-            "endsAt": "2026-11-13T10:00:00.000Z",
-            "day": "2026-11-13",
-            "orderId": 10000031,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 31",
-              "phone": "+420 777 100 031",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 3,
-                "name": "Montér Karel",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "overdue",
-              "label": "Po termínu bez výsledku",
-              "closed": false,
-              "open": true
-            },
-            "result": null,
-            "reopen": null,
-            "tabletDraft": false,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          },
-          "ageDays": 3,
+          "ageDays": 2,
           "resolution": null
         }
       ]
@@ -122,202 +66,96 @@
       "count": 1,
       "top": [
         {
-          "id": 1,
-          "event": {
-            "id": 25,
-            "type": "montaz",
-            "typeLabel": "Montáž",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-16T10:00:00.000Z",
-            "endsAt": "2026-11-16T12:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000025,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 25",
-              "phone": "+420 777 100 025",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 3,
-                "name": "Montér Karel",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "reopened",
-              "label": "Otevřeno k opravě",
-              "closed": false,
-              "open": true
-            },
-            "result": {
-              "outcome": "done",
-              "outcomeLabel": "Montáž dokončena",
-              "reason": null,
-              "reasonLabel": null,
-              "collectedAmount": 800,
-              "paymentMethod": "hotove",
-              "paymentMethodLabel": "Hotově",
-              "discountAmount": null,
-              "discountNote": null,
-              "rescueNote": null,
-              "note": null,
-              "closedByName": "Ovt Alfa",
-              "completedAt": "2026-11-16T10:00:00.000Z",
-              "current": false
-            },
-            "reopen": {
-              "reason": "Špatná částka",
-              "actorName": "Karel Testovací",
-              "at": "2026-11-16T09:40:00.000Z"
-            },
-            "tabletDraft": false,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
+          "id": 50,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-10T08:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000001,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
           },
-          "reason": "Špatná částka",
-          "reopenedBy": "Karel Testovací",
-          "at": "2026-11-16T09:40:00.000Z",
-          "stillOpen": true,
-          "before": {
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 6,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "reopened",
+            "label": "Otevřeno k opravě",
+            "closed": false,
+            "open": true
+          },
+          "result": {
             "outcome": "done",
             "outcomeLabel": "Montáž dokončena",
-            "collectedAmount": 800,
-            "paymentMethod": "hotove",
-            "paymentMethodLabel": "Hotově",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
             "discountAmount": null,
-            "closedByName": "Montér Karel",
-            "completedAt": "2026-11-16T11:00:00.000Z"
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": null,
+            "current": false
           },
-          "after": null,
-          "changes": []
+          "reopen": {
+            "reason": "znovu",
+            "actorName": "Kancl",
+            "at": "2026-11-15T08:00:00.000Z"
+          },
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
         }
       ]
     },
     "doplatek": {
-      "count": 2,
+      "count": 1,
       "counts": {
-        "red": 1,
-        "invoice": 1
+        "red": 1
       },
       "top": [
         {
           "event": {
-            "id": 21,
+            "id": 1,
             "type": "montaz",
             "typeLabel": "Montáž",
-            "title": null,
+            "title": "T",
             "status": "completed",
             "origin": null,
-            "startsAt": "2026-11-16T07:00:00.000Z",
-            "endsAt": "2026-11-16T09:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000021,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 21",
-              "phone": "+420 777 100 021",
-              "city": "Brno"
-            },
-            "orderStatus": "montaz",
-            "orderStatusLabel": "Montáž",
-            "people": [
-              {
-                "id": 3,
-                "name": "Montér Karel",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "closed",
-              "label": "Uzavřeno",
-              "closed": true,
-              "open": false
-            },
-            "result": {
-              "outcome": "done",
-              "outcomeLabel": "Montáž dokončena",
-              "reason": null,
-              "reasonLabel": null,
-              "collectedAmount": 5000,
-              "paymentMethod": "hotove",
-              "paymentMethodLabel": "Hotově",
-              "discountAmount": null,
-              "discountNote": null,
-              "rescueNote": null,
-              "note": null,
-              "closedByName": "Montér Karel",
-              "completedAt": "2026-11-16T10:00:00.000Z",
-              "current": true
-            },
-            "reopen": null,
-            "tabletDraft": false,
-            "app": {
-              "status": "success",
-              "statusLabel": "Zapsáno",
-              "outcome": "happy",
-              "outcomeLabel": "Dokončeno"
-            },
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          },
-          "expected": 5000,
-          "collected": 4000,
-          "method": "hotove",
-          "methodLabel": "Hotově",
-          "discount": null,
-          "difference": 1000,
-          "invoice": false,
-          "invoiceCheck": null,
-          "severity": "red",
-          "severityLabel": "Nesedí (dokončená montáž)",
-          "sediDoplatek": null,
-          "resolution": null,
-          "source": "dokument_uzaverky",
-          "orderCreatedAt": "2026-10-28T08:15:00.000Z"
-        }
-      ]
-    },
-    "claims": {
-      "count": 2,
-      "counts": {
-        "ceka": 1,
-        "bez_reklamace": 1
-      },
-      "top": [
-        {
-          "event": {
-            "id": 39,
-            "type": "montaz",
-            "typeLabel": "Montáž",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-10T07:00:00.000Z",
+            "startsAt": "2026-11-10T08:00:00.000Z",
             "endsAt": "2026-11-10T09:00:00.000Z",
             "day": "2026-11-10",
-            "orderId": 10000039,
+            "orderId": 10000001,
             "complaintId": null,
             "customer": {
-              "name": "Zákazník 39",
-              "phone": "+420 777 100 039",
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
               "city": "Brno"
             },
             "orderStatus": "zamereni",
             "orderStatusLabel": "Zaměření",
             "people": [
               {
-                "id": 1,
+                "id": 5,
                 "name": "Ovt Alfa",
                 "source": "owner"
               }
@@ -329,7 +167,22 @@
               "closed": true,
               "open": false
             },
-            "result": null,
+            "result": {
+              "outcome": "done",
+              "outcomeLabel": "Montáž dokončena",
+              "reason": null,
+              "reasonLabel": null,
+              "collectedAmount": null,
+              "paymentMethod": null,
+              "paymentMethodLabel": null,
+              "discountAmount": null,
+              "discountNote": null,
+              "rescueNote": null,
+              "note": null,
+              "closedByName": null,
+              "completedAt": null,
+              "current": true
+            },
             "reopen": null,
             "tabletDraft": false,
             "app": null,
@@ -337,20 +190,31 @@
             "amountDue": null,
             "link": null
           },
-          "state": "ceka",
-          "stateLabel": "Čeká",
-          "reason": "chybi_zbozi",
-          "reasonLabel": "Chybí zboží",
-          "note": null,
-          "ageDays": 6,
-          "claim": null,
-          "followUp": null
+          "expected": 12000,
+          "collected": 11000,
+          "method": "Hotově",
+          "methodLabel": "Hotově",
+          "discount": null,
+          "difference": 1000,
+          "invoice": false,
+          "invoiceCheck": null,
+          "severity": "red",
+          "severityLabel": "Nesedí (dokončená montáž)",
+          "sediDoplatek": null,
+          "orderCreatedAt": "2026-10-28T08:15:00.000Z",
+          "resolution": null,
+          "source": "dokument_uzaverky"
         }
       ]
     },
+    "claims": {
+      "count": 0,
+      "counts": {},
+      "top": []
+    },
     "submissionProblems": {
-      "count": 2,
-      "pending": 0
+      "count": 0,
+      "pending": false
     },
     "today": "2026-11-16"
   }

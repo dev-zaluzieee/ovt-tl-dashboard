@@ -61,9 +61,9 @@ export interface EventView {
   reopen: { reason: string | null; actorName: string | null; at: string | null } | null;
   tabletDraft: boolean;
   app: { status: string; statusLabel: string | null; outcome: string | null; outcomeLabel: string | null } | null;
-  claim: { id: number; status?: string | null; statusLabel?: string | null } | null;
+  claim: { id: number; status: string | null; statusLabel: string | null; druh: string | null } | null;
   amountDue: number | null;
-  link: string | null;
+  link: { code: 'bez_zakazky' | 'bez_reklamace' | 'servis_ze_zakazky'; label: string } | null;
 }
 
 export interface Meta {
@@ -152,7 +152,8 @@ export interface ProblemRow {
   eventType: string | null;
   customer: { name: string | null; phone: string | null; city: string | null } | null;
   owner: PersonRef | null;
-  at: string;
+  /** The visit's start / the order's last change (null when the ERP has none). */
+  at: string | null;
   endsAt: string | null;
   reason: string | null;
   reasonLabel: string | null;
@@ -225,7 +226,8 @@ export interface MvtMissing {
   owing: Array<{ person: PersonRef | null; count: number }>;
   recent: MissingRow[];
   backlog: MissingRow[];
-  closedOutside: { count: number; rows: EventView[] };
+  /** Visits closed in the ERP without a result of the app: each row = the visit, its age in days and the team leader's decision (if any). */
+  closedOutside: { count: number; rows: MissingRow[] };
   handledCount: number;
   thresholds: { graceHours: number; recentDays: number };
   closeReasons: Record<string, string>;
@@ -254,7 +256,14 @@ export interface ReopenRow {
   stillOpen: boolean;
   before: ResultSnapshot | null;
   after: ResultSnapshot | null;
-  changes: string[];
+  changes: ResultChange[];
+}
+
+export interface ResultChange {
+  field: string;
+  label: string;
+  before: string | number | null;
+  after: string | number | null;
 }
 
 export interface MvtReopens {
@@ -345,6 +354,8 @@ export interface SubmissionRow {
   warningCount: number;
   collected: number | null;
   method: string | null;
+  methodLabel: string | null;
+  outcomeLabel: string | null;
 }
 
 export interface SubmissionList {
@@ -368,15 +379,19 @@ export interface SubmissionDetail extends SubmissionRow {
   steps: SubmissionStep[];
   warnings: string[];
   input: Record<string, unknown> | null;
+  /** What the fitter entered, with Czech labels. */
+  inputFields: Array<{ key: string; label: string; value: unknown }>;
   uploads: Array<Record<string, unknown>>;
 }
 
 export interface MvtOverview {
-  missing: { count: number; backlog: number; owing: Array<{ person: PersonRef | null; count: number }>; top: MissingRow[] };
-  reopened: { count: number; top: ReopenRow[] };
+  missing: { count: number; recent: number; backlog: number; owing: Array<{ person: PersonRef | null; count: number }>; top: MissingRow[] };
+  /** Visits open for correction: plain events (the reason, who and when are in `event.reopen`). */
+  reopened: { count: number; top: EventView[] };
   doplatek: { count: number; counts: Record<string, number>; top: DoplatekRow[] };
   claims: { count: number; counts: Record<string, number>; top: MontazClaimRow[] };
-  submissionProblems: { count: number; pending: number };
+  /** `pending` = the fitters' app table is not in the database yet (so the count is not known). */
+  submissionProblems: { count: number; pending: boolean };
   today: string;
 }
 

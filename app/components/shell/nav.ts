@@ -18,14 +18,14 @@ export const NAV: Record<Side, NavGroup[]> = {
     {
       label: 'Den',
       items: [
-        { href: '/prehled-dne', label: 'Přehled dne', description: 'Zaměření dne po obchodnících: kalendář a seznam, stav každé návštěvy, B2B zakázky.' },
+        { href: '/prehled-dne', label: 'Přehled dne', description: 'Zaměření dne po jednotlivých OVT: kalendář a seznam, stav každé návštěvy, B2B zakázky.' },
         { href: '/problematicke-zakazky', label: 'Problematické zakázky', description: 'Zaměření bez výsledku, nedopadlo a zakázky vrácené OVT k dořešení. Uzavření s důvodem a zpět.' },
       ],
     },
     {
       label: 'Lidé',
       items: [
-        { href: '/vysledky', label: 'Výsledky', description: 'Počty zaměření podle výsledku na obchodníka a období, s rozpadem na jednotlivé návštěvy.' },
+        { href: '/vysledky', label: 'Výsledky', description: 'Počty zaměření podle výsledku na jednoho OVT a období, s rozpadem na jednotlivé návštěvy.' },
         { href: '/recenze-qr', label: 'Recenze QR', description: 'QR na recenzi, který tablet ukáže po uzavření zakázky: zapnutí, výchozí QR, QR podle krajů, cíle, odpovědi.' },
       ],
     },

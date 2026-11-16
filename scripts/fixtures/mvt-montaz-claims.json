@@ -1,31 +1,33 @@
 {
   "success": true,
   "data": {
+    "from": "2026-09-18",
+    "to": "2026-11-16",
     "rows": [
       {
         "event": {
-          "id": 39,
+          "id": 1,
           "type": "montaz",
           "typeLabel": "Montáž",
-          "title": null,
-          "status": "scheduled",
+          "title": "T",
+          "status": "completed",
           "origin": null,
-          "startsAt": "2026-11-10T07:00:00.000Z",
+          "startsAt": "2026-11-10T08:00:00.000Z",
           "endsAt": "2026-11-10T09:00:00.000Z",
           "day": "2026-11-10",
-          "orderId": 10000039,
+          "orderId": 10000001,
           "complaintId": null,
           "customer": {
-            "name": "Zákazník 39",
-            "phone": "+420 777 100 039",
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
             "city": "Brno"
           },
           "orderStatus": "zamereni",
           "orderStatusLabel": "Zaměření",
           "people": [
             {
-              "id": 3,
-              "name": "Montér Karel",
+              "id": 5,
+              "name": "Ovt Alfa",
               "source": "owner"
             }
           ],
@@ -36,118 +38,22 @@
             "closed": true,
             "open": false
           },
-          "result": null,
-          "reopen": null,
-          "tabletDraft": false,
-          "app": null,
-          "claim": null,
-          "amountDue": null,
-          "link": null
-        },
-        "state": "ceka",
-        "stateLabel": "Čeká",
-        "reason": "chybi_zbozi",
-        "reasonLabel": "Chybí zboží",
-        "note": "Nedodali boční lišty",
-        "ageDays": 6,
-        "claim": {
-          "id": 910,
-          "status": "new",
-          "statusLabel": "Nová",
-          "druh": "Chybějící zboží",
-          "uznano": null,
-          "resolvedOn": null,
-          "blocker": "výrobce",
-          "createdAt": "2026-11-10T12:00:00.000Z"
-        },
-        "followUp": null
-      },
-      {
-        "event": {
-          "id": 40,
-          "type": "montaz",
-          "typeLabel": "Montáž",
-          "title": null,
-          "status": "scheduled",
-          "origin": null,
-          "startsAt": "2026-11-09T07:00:00.000Z",
-          "endsAt": "2026-11-09T09:00:00.000Z",
-          "day": "2026-11-09",
-          "orderId": 10000040,
-          "complaintId": null,
-          "customer": {
-            "name": "Zákazník 40",
-            "phone": "+420 777 100 040",
-            "city": "Brno"
+          "result": {
+            "outcome": "not_done",
+            "outcomeLabel": "Montáž nedokončena, reklamace",
+            "reason": "chyba_vyroby",
+            "reasonLabel": "Chyba výroby",
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": "barva",
+            "closedByName": null,
+            "completedAt": "2026-11-12T09:00:00.000Z",
+            "current": true
           },
-          "orderStatus": "zamereni",
-          "orderStatusLabel": "Zaměření",
-          "people": [
-            {
-              "id": 4,
-              "name": "Montér Petr",
-              "source": "owner"
-            }
-          ],
-          "b2b": null,
-          "state": {
-            "code": "closed",
-            "label": "Uzavřeno",
-            "closed": true,
-            "open": false
-          },
-          "result": null,
-          "reopen": null,
-          "tabletDraft": false,
-          "app": null,
-          "claim": null,
-          "amountDue": null,
-          "link": null
-        },
-        "state": "bez_reklamace",
-        "stateLabel": "Bez reklamace",
-        "reason": "zakaznik_nepritomen",
-        "reasonLabel": "Zákazník nebyl doma",
-        "note": null,
-        "ageDays": 7,
-        "claim": null,
-        "followUp": null
-      },
-      {
-        "event": {
-          "id": 41,
-          "type": "montaz",
-          "typeLabel": "Montáž",
-          "title": null,
-          "status": "scheduled",
-          "origin": null,
-          "startsAt": "2026-11-06T07:00:00.000Z",
-          "endsAt": "2026-11-06T09:00:00.000Z",
-          "day": "2026-11-06",
-          "orderId": 10000041,
-          "complaintId": null,
-          "customer": {
-            "name": "Zákazník 41",
-            "phone": "+420 777 100 041",
-            "city": "Brno"
-          },
-          "orderStatus": "zamereni",
-          "orderStatusLabel": "Zaměření",
-          "people": [
-            {
-              "id": 3,
-              "name": "Montér Karel",
-              "source": "owner"
-            }
-          ],
-          "b2b": null,
-          "state": {
-            "code": "closed",
-            "label": "Uzavřeno",
-            "closed": true,
-            "open": false
-          },
-          "result": null,
           "reopen": null,
           "tabletDraft": false,
           "app": null,
@@ -156,39 +62,104 @@
           "link": null
         },
         "state": "naplanovano",
-        "stateLabel": "Naplánováno",
-        "reason": "chybi_zbozi",
-        "reasonLabel": "Chybí zboží",
-        "note": null,
-        "ageDays": 10,
+        "stateLabel": "Naplánována návštěva",
+        "reason": "chyba_vyroby",
+        "reasonLabel": "Chyba výroby",
+        "note": "barva",
+        "ageDays": 4,
         "claim": {
-          "id": 911,
-          "status": "planned",
-          "statusLabel": "Naplánována",
-          "druh": "Vada",
-          "uznano": "uznano",
+          "id": 900,
+          "status": "reklamace-nova",
+          "statusLabel": "Nová",
+          "druh": "reklamace",
+          "uznano": null,
           "resolvedOn": null,
           "blocker": null,
-          "createdAt": "2026-11-06T12:00:00.000Z"
+          "createdAt": null
         },
         "followUp": {
-          "id": 500,
-          "type": "reklamace",
+          "id": 77,
+          "type": "servis",
           "status": "scheduled",
-          "startsAt": "2026-11-19T08:00:00.000Z"
+          "startsAt": "2026-11-20T08:00:00.000Z"
         }
+      },
+      {
+        "event": {
+          "id": 2,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "completed",
+          "origin": null,
+          "startsAt": "2026-11-10T08:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000001,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 5,
+              "name": "Ovt Alfa",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": {
+            "outcome": "not_done",
+            "outcomeLabel": "Montáž nedokončena, reklamace",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": null,
+            "current": true
+          },
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "state": "bez_reklamace",
+        "stateLabel": "Reklamace v ERP nenalezena",
+        "reason": null,
+        "reasonLabel": null,
+        "note": null,
+        "ageDays": 6,
+        "claim": null,
+        "followUp": null
       }
     ],
     "counts": {
-      "ceka": 1,
-      "bez_reklamace": 1,
-      "naplanovano": 1
+      "naplanovano": 1,
+      "bez_reklamace": 1
     },
     "stateLabels": {
       "vyreseno": "Vyřešeno",
-      "naplanovano": "Naplánováno",
-      "ceka": "Čeká",
-      "bez_reklamace": "Bez reklamace"
+      "naplanovano": "Naplánována návštěva",
+      "ceka": "Čeká na naplánování",
+      "bez_reklamace": "Reklamace v ERP nenalezena"
     },
     "truncated": false
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { plural } from "@/lib/format";
 import { TargetSelect } from "./TargetSelect";
 import {
   SLOTS,
@@ -119,7 +120,7 @@ export function RegionsSection({ activeDays, krajSource, regions, outside, setti
                 <tr key={r.key} className={red ? "bg-rose-50/40" : warnings.length ? "bg-amber-50/40" : ""}>
                   <td className="px-3 py-2 align-top">
                     <div className="font-medium text-gray-900">{r.key}</div>
-                    <div className="text-xs text-gray-400">{r.ovts.length === 0 ? "žádný aktivní OVT" : `${r.ovts.length} aktivních OVT`}</div>
+                    <div className="text-xs text-gray-400">{r.ovts.length === 0 ? "žádný aktivní OVT" : `${r.ovts.length} ${plural(r.ovts.length, "aktivní OVT", "aktivní OVT", "aktivních OVT")}`}</div>
                     {warnings.map((w, i) => (
                       <div key={i} className={`mt-1 text-xs ${w.level === "red" ? "text-rose-700" : "text-amber-700"}`}>
                         {w.text}

@@ -3,14 +3,14 @@
   "data": {
     "people": [
       {
-        "id": 3,
-        "name": "Montér Karel",
+        "id": 5,
+        "name": "Ovt Alfa",
         "active": true
       },
       {
-        "id": 4,
-        "name": "Montér Petr",
-        "active": true
+        "id": 9,
+        "name": "Ovt Beta",
+        "active": false
       }
     ]
   }

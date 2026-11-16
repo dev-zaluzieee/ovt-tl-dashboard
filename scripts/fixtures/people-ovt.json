@@ -3,18 +3,13 @@
   "data": {
     "people": [
       {
-        "id": 1,
+        "id": 5,
         "name": "Ovt Alfa",
         "active": true
       },
       {
-        "id": 2,
+        "id": 9,
         "name": "Ovt Beta",
-        "active": true
-      },
-      {
-        "id": 5,
-        "name": "Ovt Starý",
         "active": false
       }
     ]

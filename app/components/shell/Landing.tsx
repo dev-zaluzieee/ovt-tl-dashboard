@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { NAV, type Side } from './nav';
 import { PageHeader } from '@/app/components/ui/kit';
 
-const TITLE: Record<Side, string> = { ovt: 'Obchodníci (OVT)', mvt: 'Montéři (MVT)' };
+const TITLE: Record<Side, string> = { ovt: 'OVT (zaměřovači)', mvt: 'Montéři (MVT)' };
 
 /** Landing page of the OVT side (the MVT side lands on its Přehled): the pages as tiles. */
 export function Landing({ side }: { side: Side }) {

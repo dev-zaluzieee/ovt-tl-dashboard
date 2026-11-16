@@ -2,87 +2,31 @@
   "success": true,
   "data": {
     "date": "2026-11-16",
-    "now": "2026-11-16T10:30:00.000Z",
+    "now": "2026-11-16T10:00:00.000Z",
     "today": "2026-11-16",
     "events": [
       {
-        "id": 11,
+        "id": 1,
         "type": "zamereni",
         "typeLabel": "Zaměření",
-        "title": null,
-        "status": "completed",
-        "origin": null,
-        "startsAt": "2026-11-16T07:00:00.000Z",
-        "endsAt": "2026-11-16T08:00:00.000Z",
-        "day": "2026-11-16",
-        "orderId": 10000011,
-        "complaintId": null,
-        "customer": {
-          "name": "Zákazník 11",
-          "phone": "+420 777 100 011",
-          "city": "Brno"
-        },
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "people": [
-          {
-            "id": 1,
-            "name": "Ovt Alfa",
-            "source": "owner"
-          }
-        ],
-        "b2b": false,
-        "state": {
-          "code": "closed",
-          "label": "Uzavřeno",
-          "closed": true,
-          "open": false
-        },
-        "result": {
-          "outcome": "order",
-          "outcomeLabel": "Objednávka",
-          "reason": null,
-          "reasonLabel": null,
-          "collectedAmount": null,
-          "paymentMethod": null,
-          "paymentMethodLabel": null,
-          "discountAmount": null,
-          "discountNote": null,
-          "rescueNote": null,
-          "note": null,
-          "closedByName": "Ovt Alfa",
-          "completedAt": "2026-11-16T10:00:00.000Z",
-          "current": true
-        },
-        "reopen": null,
-        "tabletDraft": false,
-        "app": null,
-        "claim": null,
-        "amountDue": null,
-        "link": null
-      },
-      {
-        "id": 12,
-        "type": "zamereni",
-        "typeLabel": "Zaměření",
-        "title": null,
+        "title": "T",
         "status": "completed",
         "origin": null,
         "startsAt": "2026-11-16T08:00:00.000Z",
         "endsAt": "2026-11-16T09:00:00.000Z",
         "day": "2026-11-16",
-        "orderId": 10000012,
+        "orderId": 10000001,
         "complaintId": null,
         "customer": {
-          "name": "Zákazník 12",
-          "phone": "+420 777 100 012",
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
           "city": "Brno"
         },
         "orderStatus": "zamereni",
         "orderStatusLabel": "Zaměření",
         "people": [
           {
-            "id": 1,
+            "id": 5,
             "name": "Ovt Alfa",
             "source": "owner"
           }
@@ -95,10 +39,10 @@
           "open": false
         },
         "result": {
-          "outcome": "nedopadlo",
-          "outcomeLabel": "Nedopadlo",
-          "reason": "vysoka_cena",
-          "reasonLabel": "Vysoká cena",
+          "outcome": "order",
+          "outcomeLabel": "Zaměřeno, objednávka",
+          "reason": null,
+          "reasonLabel": null,
           "collectedAmount": null,
           "paymentMethod": null,
           "paymentMethodLabel": null,
@@ -106,8 +50,8 @@
           "discountNote": null,
           "rescueNote": null,
           "note": null,
-          "closedByName": "Ovt Alfa",
-          "completedAt": "2026-11-16T10:00:00.000Z",
+          "closedByName": null,
+          "completedAt": "2026-11-16T09:00:00.000Z",
           "current": true
         },
         "reopen": null,
@@ -118,184 +62,20 @@
         "link": null
       },
       {
-        "id": 13,
+        "id": 2,
         "type": "zamereni",
         "typeLabel": "Zaměření",
-        "title": null,
-        "status": "scheduled",
-        "origin": null,
-        "startsAt": "2026-11-16T10:00:00.000Z",
-        "endsAt": "2026-11-16T11:00:00.000Z",
-        "day": "2026-11-16",
-        "orderId": 10000013,
-        "complaintId": null,
-        "customer": {
-          "name": "Zákazník 13",
-          "phone": "+420 777 100 013",
-          "city": "Brno"
-        },
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "people": [
-          {
-            "id": 1,
-            "name": "Ovt Alfa",
-            "source": "owner"
-          }
-        ],
-        "b2b": null,
-        "state": {
-          "code": "in_progress",
-          "label": "Probíhá",
-          "closed": false,
-          "open": false
-        },
-        "result": null,
-        "reopen": null,
-        "tabletDraft": false,
-        "app": null,
-        "claim": null,
-        "amountDue": null,
-        "link": null
-      },
-      {
-        "id": 14,
-        "type": "znovuzamereni",
-        "typeLabel": "Znovuzaměření",
-        "title": null,
+        "title": "T",
         "status": "scheduled",
         "origin": null,
         "startsAt": "2026-11-16T12:00:00.000Z",
         "endsAt": "2026-11-16T13:00:00.000Z",
         "day": "2026-11-16",
-        "orderId": 10000014,
+        "orderId": 10000001,
         "complaintId": null,
         "customer": {
-          "name": "Zákazník 14",
-          "phone": "+420 777 100 014",
-          "city": "Brno"
-        },
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "people": [
-          {
-            "id": 1,
-            "name": "Ovt Alfa",
-            "source": "owner"
-          }
-        ],
-        "b2b": null,
-        "state": {
-          "code": "planned",
-          "label": "Naplánováno",
-          "closed": false,
-          "open": false
-        },
-        "result": null,
-        "reopen": null,
-        "tabletDraft": false,
-        "app": null,
-        "claim": null,
-        "amountDue": null,
-        "link": null
-      },
-      {
-        "id": 15,
-        "type": "zamereni",
-        "typeLabel": "Zaměření",
-        "title": null,
-        "status": "scheduled",
-        "origin": null,
-        "startsAt": "2026-11-16T08:00:00.000Z",
-        "endsAt": "2026-11-16T10:00:00.000Z",
-        "day": "2026-11-16",
-        "orderId": 10000015,
-        "complaintId": null,
-        "customer": {
-          "name": "Zákazník 15",
-          "phone": "+420 777 100 015",
-          "city": "Brno"
-        },
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "people": [
-          {
-            "id": 2,
-            "name": "Ovt Beta",
-            "source": "owner"
-          }
-        ],
-        "b2b": null,
-        "state": {
-          "code": "tablet_in_progress",
-          "label": "Rozpracováno v tabletu",
-          "closed": false,
-          "open": true
-        },
-        "result": null,
-        "reopen": null,
-        "tabletDraft": true,
-        "app": null,
-        "claim": null,
-        "amountDue": null,
-        "link": null
-      },
-      {
-        "id": 16,
-        "type": "zamereni",
-        "typeLabel": "Zaměření",
-        "title": null,
-        "status": "scheduled",
-        "origin": null,
-        "startsAt": "2026-11-16T09:00:00.000Z",
-        "endsAt": "2026-11-16T10:00:00.000Z",
-        "day": "2026-11-16",
-        "orderId": 10000016,
-        "complaintId": null,
-        "customer": {
-          "name": "Zákazník 16",
-          "phone": "+420 777 100 016",
-          "city": "Brno"
-        },
-        "orderStatus": "zamereni",
-        "orderStatusLabel": "Zaměření",
-        "people": [
-          {
-            "id": 2,
-            "name": "Ovt Beta",
-            "source": "owner"
-          }
-        ],
-        "b2b": null,
-        "state": {
-          "code": "closed_from_order",
-          "label": "Uzavřeno (ze zakázky)",
-          "closed": true,
-          "open": false
-        },
-        "result": null,
-        "reopen": null,
-        "tabletDraft": false,
-        "app": null,
-        "claim": null,
-        "amountDue": null,
-        "link": null
-      },
-      {
-        "id": 17,
-        "type": "zamereni",
-        "typeLabel": "Zaměření",
-        "title": null,
-        "status": "scheduled",
-        "origin": null,
-        "startsAt": "2026-11-16T14:00:00.000Z",
-        "endsAt": "2026-11-16T15:00:00.000Z",
-        "day": "2026-11-16",
-        "orderId": null,
-        "complaintId": null,
-        "customer": {
-          "name": "Zákazník 17",
-          "phone": "+420 777 100 017",
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
           "city": "Brno"
         },
         "orderStatus": "zamereni",
@@ -310,7 +90,7 @@
         },
         "result": null,
         "reopen": null,
-        "tabletDraft": false,
+        "tabletDraft": true,
         "app": null,
         "claim": null,
         "amountDue": null,
@@ -320,88 +100,32 @@
     "groups": [
       {
         "person": {
-          "id": 1,
+          "id": 5,
           "name": "Ovt Alfa"
         },
         "events": [
           {
-            "id": 11,
+            "id": 1,
             "type": "zamereni",
             "typeLabel": "Zaměření",
-            "title": null,
-            "status": "completed",
-            "origin": null,
-            "startsAt": "2026-11-16T07:00:00.000Z",
-            "endsAt": "2026-11-16T08:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000011,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 11",
-              "phone": "+420 777 100 011",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 1,
-                "name": "Ovt Alfa",
-                "source": "owner"
-              }
-            ],
-            "b2b": false,
-            "state": {
-              "code": "closed",
-              "label": "Uzavřeno",
-              "closed": true,
-              "open": false
-            },
-            "result": {
-              "outcome": "order",
-              "outcomeLabel": "Objednávka",
-              "reason": null,
-              "reasonLabel": null,
-              "collectedAmount": null,
-              "paymentMethod": null,
-              "paymentMethodLabel": null,
-              "discountAmount": null,
-              "discountNote": null,
-              "rescueNote": null,
-              "note": null,
-              "closedByName": "Ovt Alfa",
-              "completedAt": "2026-11-16T10:00:00.000Z",
-              "current": true
-            },
-            "reopen": null,
-            "tabletDraft": false,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          },
-          {
-            "id": 12,
-            "type": "zamereni",
-            "typeLabel": "Zaměření",
-            "title": null,
+            "title": "T",
             "status": "completed",
             "origin": null,
             "startsAt": "2026-11-16T08:00:00.000Z",
             "endsAt": "2026-11-16T09:00:00.000Z",
             "day": "2026-11-16",
-            "orderId": 10000012,
+            "orderId": 10000001,
             "complaintId": null,
             "customer": {
-              "name": "Zákazník 12",
-              "phone": "+420 777 100 012",
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
               "city": "Brno"
             },
             "orderStatus": "zamereni",
             "orderStatusLabel": "Zaměření",
             "people": [
               {
-                "id": 1,
+                "id": 5,
                 "name": "Ovt Alfa",
                 "source": "owner"
               }
@@ -414,10 +138,10 @@
               "open": false
             },
             "result": {
-              "outcome": "nedopadlo",
-              "outcomeLabel": "Nedopadlo",
-              "reason": "vysoka_cena",
-              "reasonLabel": "Vysoká cena",
+              "outcome": "order",
+              "outcomeLabel": "Zaměřeno, objednávka",
+              "reason": null,
+              "reasonLabel": null,
               "collectedAmount": null,
               "paymentMethod": null,
               "paymentMethodLabel": null,
@@ -425,182 +149,10 @@
               "discountNote": null,
               "rescueNote": null,
               "note": null,
-              "closedByName": "Ovt Alfa",
-              "completedAt": "2026-11-16T10:00:00.000Z",
+              "closedByName": null,
+              "completedAt": "2026-11-16T09:00:00.000Z",
               "current": true
             },
-            "reopen": null,
-            "tabletDraft": false,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          },
-          {
-            "id": 13,
-            "type": "zamereni",
-            "typeLabel": "Zaměření",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-16T10:00:00.000Z",
-            "endsAt": "2026-11-16T11:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000013,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 13",
-              "phone": "+420 777 100 013",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 1,
-                "name": "Ovt Alfa",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "in_progress",
-              "label": "Probíhá",
-              "closed": false,
-              "open": false
-            },
-            "result": null,
-            "reopen": null,
-            "tabletDraft": false,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          },
-          {
-            "id": 14,
-            "type": "znovuzamereni",
-            "typeLabel": "Znovuzaměření",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-16T12:00:00.000Z",
-            "endsAt": "2026-11-16T13:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000014,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 14",
-              "phone": "+420 777 100 014",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 1,
-                "name": "Ovt Alfa",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "planned",
-              "label": "Naplánováno",
-              "closed": false,
-              "open": false
-            },
-            "result": null,
-            "reopen": null,
-            "tabletDraft": false,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          }
-        ]
-      },
-      {
-        "person": {
-          "id": 2,
-          "name": "Ovt Beta"
-        },
-        "events": [
-          {
-            "id": 15,
-            "type": "zamereni",
-            "typeLabel": "Zaměření",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-16T08:00:00.000Z",
-            "endsAt": "2026-11-16T10:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000015,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 15",
-              "phone": "+420 777 100 015",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 2,
-                "name": "Ovt Beta",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "tablet_in_progress",
-              "label": "Rozpracováno v tabletu",
-              "closed": false,
-              "open": true
-            },
-            "result": null,
-            "reopen": null,
-            "tabletDraft": true,
-            "app": null,
-            "claim": null,
-            "amountDue": null,
-            "link": null
-          },
-          {
-            "id": 16,
-            "type": "zamereni",
-            "typeLabel": "Zaměření",
-            "title": null,
-            "status": "scheduled",
-            "origin": null,
-            "startsAt": "2026-11-16T09:00:00.000Z",
-            "endsAt": "2026-11-16T10:00:00.000Z",
-            "day": "2026-11-16",
-            "orderId": 10000016,
-            "complaintId": null,
-            "customer": {
-              "name": "Zákazník 16",
-              "phone": "+420 777 100 016",
-              "city": "Brno"
-            },
-            "orderStatus": "zamereni",
-            "orderStatusLabel": "Zaměření",
-            "people": [
-              {
-                "id": 2,
-                "name": "Ovt Beta",
-                "source": "owner"
-              }
-            ],
-            "b2b": null,
-            "state": {
-              "code": "closed_from_order",
-              "label": "Uzavřeno (ze zakázky)",
-              "closed": true,
-              "open": false
-            },
-            "result": null,
             "reopen": null,
             "tabletDraft": false,
             "app": null,
@@ -614,20 +166,20 @@
         "person": null,
         "events": [
           {
-            "id": 17,
+            "id": 2,
             "type": "zamereni",
             "typeLabel": "Zaměření",
-            "title": null,
+            "title": "T",
             "status": "scheduled",
             "origin": null,
-            "startsAt": "2026-11-16T14:00:00.000Z",
-            "endsAt": "2026-11-16T15:00:00.000Z",
+            "startsAt": "2026-11-16T12:00:00.000Z",
+            "endsAt": "2026-11-16T13:00:00.000Z",
             "day": "2026-11-16",
-            "orderId": null,
+            "orderId": 10000001,
             "complaintId": null,
             "customer": {
-              "name": "Zákazník 17",
-              "phone": "+420 777 100 017",
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
               "city": "Brno"
             },
             "orderStatus": "zamereni",
@@ -642,7 +194,7 @@
             },
             "result": null,
             "reopen": null,
-            "tabletDraft": false,
+            "tabletDraft": true,
             "app": null,
             "claim": null,
             "amountDue": null,
@@ -652,11 +204,11 @@
       }
     ],
     "tiles": {
-      "people": 2,
-      "events": 7,
-      "closed": 3
+      "people": 1,
+      "events": 2,
+      "closed": 1
     },
-    "truncated": false,
-    "qIgnored": false
+    "qIgnored": false,
+    "truncated": false
   }
 }

@@ -93,6 +93,8 @@ export function parseEventView(v: unknown, where = 'event'): EventView {
     num(po, 'id', `${where}.people[${i}]`);
     str(po, 'name', `${where}.people[${i}]`);
   });
+  if (o.claim !== null && o.claim !== undefined) { const c = obj(o.claim, `${where}.claim`); num(c, 'id', `${where}.claim`); }
+  if (o.link !== null && o.link !== undefined) { const l = obj(o.link, `${where}.link`); str(l, 'code', `${where}.link`); str(l, 'label', `${where}.link`); }
   return {
     typeLabel: typeof o.typeLabel === 'string' ? o.typeLabel : String(o.type),
     title: null,
@@ -197,9 +199,8 @@ function parseProblemRow(v: unknown, where: string) {
   str(o, 'key', where);
   str(o, 'kind', where);
   str(o, 'kindLabel', where);
-  str(o, 'at', where);
   return {
-    eventId: null, orderId: null, eventType: null, customer: null, owner: null, endsAt: null, reason: null, reasonLabel: null, note: null, subState: null,
+    at: null, eventId: null, orderId: null, eventType: null, customer: null, owner: null, endsAt: null, reason: null, reasonLabel: null, note: null, subState: null,
     ageWorkingDays: null, valueSDph: null, b2b: null, orderStatus: null, orderStatusLabel: null, severity: 0,
     ...o,
     resolution: o.resolution ? parseResolution(o.resolution, `${where}.resolution`) : null,
@@ -266,7 +267,7 @@ export function parseMissing(v: unknown): MvtMissing {
     owing: owing(o.owing, 'missing.owing'),
     recent: list(o.recent, 'missing.recent', parseMissingRow),
     backlog: list(o.backlog, 'missing.backlog', parseMissingRow),
-    closedOutside: { count: num(outside, 'count', 'missing.closedOutside'), rows: list(outside.rows, 'missing.closedOutside.rows', parseEventView) },
+    closedOutside: { count: num(outside, 'count', 'missing.closedOutside'), rows: list(outside.rows, 'missing.closedOutside.rows', parseMissingRow) },
     handledCount: typeof o.handledCount === 'number' ? o.handledCount : 0,
     thresholds: { graceHours: 2, recentDays: 7, ...((o.thresholds as object) ?? {}) },
     closeReasons: record(o.closeReasons, 'missing.closeReasons'),
@@ -275,11 +276,17 @@ export function parseMissing(v: unknown): MvtMissing {
   };
 }
 
+function parseChange(v: unknown, where: string) {
+  const o = obj(v, where);
+  const val = (x: unknown) => (typeof x === 'string' || typeof x === 'number' ? x : null);
+  return { field: str(o, 'field', where), label: str(o, 'label', where), before: val(o.before), after: val(o.after) };
+}
+
 function parseReopenRow(v: unknown, where: string) {
   const o = obj(v, where);
   num(o, 'id', where);
   str(o, 'at', where);
-  return { reason: null, reopenedBy: null, stillOpen: false, before: null, after: null, changes: [], ...o, event: parseEventView(o.event, `${where}.event`) } as unknown as MvtReopens['rows'][number];
+  return { reason: null, reopenedBy: null, stillOpen: false, before: null, after: null, ...o, changes: list(o.changes ?? [], `${where}.changes`, parseChange), event: parseEventView(o.event, `${where}.event`) } as unknown as MvtReopens['rows'][number];
 }
 
 export function parseReopens(v: unknown): MvtReopens {
@@ -348,7 +355,7 @@ function parseSubmissionRow(v: unknown, where: string) {
   num(o, 'eventId', where);
   str(o, 'status', where);
   str(o, 'createdAt', where);
-  return { erpOrderId: null, fitterName: null, outcome: null, statusLabel: String(o.status), completedAt: null, stepCount: 0, failedSteps: 0, warningCount: 0, collected: null, method: null, ...o } as unknown as SubmissionList['rows'][number];
+  return { erpOrderId: null, fitterName: null, outcome: null, statusLabel: String(o.status), completedAt: null, stepCount: 0, failedSteps: 0, warningCount: 0, collected: null, method: null, methodLabel: null, outcomeLabel: null, ...o } as unknown as SubmissionList['rows'][number];
 }
 
 export function parseSubmissionList(v: unknown): SubmissionList {
@@ -369,6 +376,7 @@ export function parseSubmissionDetail(v: unknown): SubmissionDetail {
     }),
     warnings: strArr(o.warnings),
     input: o.input && typeof o.input === 'object' ? (o.input as Record<string, unknown>) : null,
+    inputFields: list(o.inputFields ?? [], 'submission.inputFields', (x, w) => { const f = obj(x, w); return { key: str(f, 'key', w), label: str(f, 'label', w), value: f.value }; }),
     uploads: Array.isArray(o.uploads) ? (o.uploads as Array<Record<string, unknown>>) : [],
   };
 }
@@ -382,8 +390,8 @@ export function parseOverview(v: unknown): MvtOverview {
   const claims = block('claims');
   const sp = block('submissionProblems');
   return {
-    missing: { count: num(missing, 'count', 'overview.missing'), backlog: typeof missing.backlog === 'number' ? missing.backlog : 0, owing: owing(missing.owing, 'overview.missing.owing'), top: list(missing.top, 'overview.missing.top', parseMissingRow) },
-    reopened: { count: num(reopened, 'count', 'overview.reopened'), top: list(reopened.top, 'overview.reopened.top', parseReopenRow) },
+    missing: { count: num(missing, 'count', 'overview.missing'), recent: typeof missing.recent === 'number' ? missing.recent : 0, backlog: typeof missing.backlog === 'number' ? missing.backlog : 0, owing: owing(missing.owing, 'overview.missing.owing'), top: list(missing.top, 'overview.missing.top', parseMissingRow) },
+    reopened: { count: num(reopened, 'count', 'overview.reopened'), top: list(reopened.top, 'overview.reopened.top', parseEventView) },
     doplatek: { count: num(doplatek, 'count', 'overview.doplatek'), counts: counts(doplatek.counts), top: list(doplatek.top, 'overview.doplatek.top', parseDoplatekRow) },
     claims: {
       count: num(claims, 'count', 'overview.claims'),
@@ -393,7 +401,7 @@ export function parseOverview(v: unknown): MvtOverview {
         return { reason: null, reasonLabel: null, note: null, ageDays: null, claim: null, followUp: null, state: '', stateLabel: '', ...r, event: parseEventView(r.event, `${w}.event`) } as unknown as MontazClaimRow;
       }),
     },
-    submissionProblems: { count: num(sp, 'count', 'overview.submissionProblems'), pending: typeof sp.pending === 'number' ? sp.pending : 0 },
+    submissionProblems: { count: num(sp, 'count', 'overview.submissionProblems'), pending: sp.pending === true },
     today: str(o, 'today', 'overview'),
   };
 }

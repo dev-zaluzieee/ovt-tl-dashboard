@@ -67,7 +67,7 @@ export function Navigation() {
                   role="tab"
                   aria-selected={side === s}
                   onClick={() => switchTo(s)}
-                  title={s === 'ovt' ? 'Obchodníci (OVT)' : 'Montéři (MVT)'}
+                  title={s === 'ovt' ? 'OVT (zaměřovači)' : 'Montéři (MVT)'}
                   className={`px-3 py-1.5 font-semibold transition-colors ${side === s ? 'bg-[#1E8449] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                 >
                   {s.toUpperCase()}

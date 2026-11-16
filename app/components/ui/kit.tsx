@@ -95,7 +95,7 @@ export function stateBarClass(code: string): string {
 
 export function StateChip({ ev }: { ev: EventView }) {
   return (
-    <Chip tone={stateTone(ev.state.code)} title={ev.state.code}>
+    <Chip tone={stateTone(ev.state.code)}>
       {ev.state.label}
     </Chip>
   );
@@ -171,7 +171,7 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
   }, [onClose]);
   return (
     <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
-      <div ref={ref} tabIndex={-1} onClick={(e) => e.stopPropagation()} className={`max-h-[88vh] w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-xl outline-none ${wide ? 'max-w-2xl' : 'max-w-lg'}`}>
+      <div ref={ref} tabIndex={-1} onClick={(e) => e.stopPropagation()} className={`max-h-[88vh] w-full overflow-y-auto whitespace-normal rounded-2xl border border-gray-200 bg-white p-5 shadow-xl outline-none ${wide ? 'max-w-2xl' : 'max-w-lg'}`}>
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-gray-900">{title}</h3>
           <button type="button" onClick={onClose} className={btnSmall}>
@@ -250,7 +250,7 @@ export function ReasonDialog({
       const r = await onSubmit({ reason, note: trimmed });
       if (r) {
         setResult(r);
-        if (r.outcome === 'done') window.setTimeout(onClose, 1200);
+        if (r.outcome === 'done') window.setTimeout(onClose, 2200);
       } else onClose();
     } catch (e) {
       setError(errorText(e));
@@ -279,7 +279,7 @@ export function ReasonDialog({
         <label className="block">
           <span className="text-xs font-semibold text-gray-700">
             {noteLabel}
-            {noteNeeded ? ' (povinná)' : ' (nepovinná)'}
+            {noteNeeded ? ' – povinné pole' : ' – nepovinné'}
           </span>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} className={`${inputCls} mt-1 w-full`} />
         </label>

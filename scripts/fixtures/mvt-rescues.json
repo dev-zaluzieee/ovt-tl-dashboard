@@ -1,31 +1,33 @@
 {
   "success": true,
   "data": {
+    "from": "2026-10-18",
+    "to": "2026-11-16",
     "rows": [
       {
         "event": {
-          "id": 37,
+          "id": 3,
           "type": "montaz",
           "typeLabel": "Montáž",
-          "title": null,
-          "status": "scheduled",
+          "title": "T",
+          "status": "completed",
           "origin": null,
-          "startsAt": "2026-11-10T07:00:00.000Z",
+          "startsAt": "2026-11-10T08:00:00.000Z",
           "endsAt": "2026-11-10T09:00:00.000Z",
           "day": "2026-11-10",
-          "orderId": 10000037,
+          "orderId": 10000001,
           "complaintId": null,
           "customer": {
-            "name": "Zákazník 37",
-            "phone": "+420 777 100 037",
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
             "city": "Brno"
           },
           "orderStatus": "zamereni",
           "orderStatusLabel": "Zaměření",
           "people": [
             {
-              "id": 3,
-              "name": "Montér Karel",
+              "id": 5,
+              "name": "Ovt Alfa",
               "source": "owner"
             }
           ],
@@ -36,7 +38,22 @@
             "closed": true,
             "open": false
           },
-          "result": null,
+          "result": {
+            "outcome": "done_rescue",
+            "outcomeLabel": "Montáž dokončena se záchranou",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
+            "discountAmount": 500,
+            "discountNote": null,
+            "rescueNote": "lišta",
+            "note": null,
+            "closedByName": null,
+            "completedAt": "2026-11-10T09:00:00.000Z",
+            "current": true
+          },
           "reopen": null,
           "tabletDraft": false,
           "app": null,
@@ -44,43 +61,43 @@
           "amountDue": null,
           "link": null
         },
-        "rescueNote": "Rám byl o 2 cm kratší, doříznuto na místě",
-        "discount": 800,
-        "discountNote": "sleva za zpoždění",
-        "collected": 4200,
-        "closedAt": "2026-11-10T10:00:00.000Z",
+        "rescueNote": "lišta",
+        "discount": 500,
+        "discountNote": null,
+        "collected": null,
+        "closedAt": "2026-11-10T09:00:00.000Z",
         "laterClaim": {
-          "id": 905,
-          "status": "new",
-          "createdAt": "2026-11-14T09:00:00.000Z"
+          "id": 5,
+          "status": "reklamace-nova",
+          "createdAt": "2026-11-13T09:00:00.000Z"
         },
-        "heldDays": 4,
+        "heldDays": 3,
         "held": false
       },
       {
         "event": {
-          "id": 38,
-          "type": "montaz",
-          "typeLabel": "Montáž",
-          "title": null,
-          "status": "scheduled",
+          "id": 4,
+          "type": "servis",
+          "typeLabel": "Servis",
+          "title": "T",
+          "status": "completed",
           "origin": null,
-          "startsAt": "2026-11-09T07:00:00.000Z",
-          "endsAt": "2026-11-09T09:00:00.000Z",
-          "day": "2026-11-09",
-          "orderId": 10000038,
+          "startsAt": "2026-11-10T08:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000001,
           "complaintId": null,
           "customer": {
-            "name": "Zákazník 38",
-            "phone": "+420 777 100 038",
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
             "city": "Brno"
           },
           "orderStatus": "zamereni",
           "orderStatusLabel": "Zaměření",
           "people": [
             {
-              "id": 4,
-              "name": "Montér Petr",
+              "id": 5,
+              "name": "Ovt Alfa",
               "source": "owner"
             }
           ],
@@ -91,31 +108,49 @@
             "closed": true,
             "open": false
           },
-          "result": null,
+          "result": {
+            "outcome": "done_rescue",
+            "outcomeLabel": "Dokončeno se záchranou",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
+            "discountAmount": 200,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": "2026-11-10T09:00:00.000Z",
+            "current": true
+          },
           "reopen": null,
           "tabletDraft": false,
           "app": null,
           "claim": null,
           "amountDue": null,
-          "link": null
+          "link": {
+            "code": "bez_reklamace",
+            "label": "Bez reklamace"
+          }
         },
         "rescueNote": null,
-        "discount": null,
+        "discount": 200,
         "discountNote": null,
-        "collected": 3000,
-        "closedAt": "2026-11-09T10:00:00.000Z",
+        "collected": null,
+        "closedAt": "2026-11-10T09:00:00.000Z",
         "laterClaim": null,
-        "heldDays": 7,
+        "heldDays": 6,
         "held": true
       }
     ],
+    "qIgnored": false,
     "summary": {
       "count": 2,
       "claimed": 1,
-      "totalDiscount": 800,
-      "medianDaysToClaim": 4
+      "totalDiscount": 700,
+      "medianDaysToClaim": 3
     },
-    "truncated": false,
-    "qIgnored": false
+    "truncated": false
   }
 }

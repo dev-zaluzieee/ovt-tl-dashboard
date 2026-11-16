@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { DayGroup, EventView } from '@/lib/types';
 import { assignLanes, barGeometry, nowLeftPct, visibleHourRange } from '@/lib/dayGrid';
-import { fmtTimeRange } from '@/lib/format';
+import { fmtTimeRange, plural } from '@/lib/format';
 import { B2BBadge, EventLinks, Modal, StateChip, stateBarClass } from '@/app/components/ui/kit';
 import { B2BControl } from './B2BControl';
 
@@ -22,7 +22,7 @@ function EventDetail({ ev, onChanged, onClose }: { ev: EventView; onChanged: () 
         <dt className="text-gray-500">Stav</dt>
         <dd>
           <StateChip ev={ev} />
-          {ev.tabletDraft && <span className="ml-2 text-xs text-sky-700">rozpracováno v tabletu</span>}
+          {ev.tabletDraft && ev.state.code !== 'tablet_in_progress' && !ev.state.closed && <span className="ml-2 text-xs text-sky-700">v tabletu je rozpracovaný koncept</span>}
         </dd>
         {ev.result && (
           <>
@@ -53,7 +53,7 @@ function EventDetail({ ev, onChanged, onClose }: { ev: EventView; onChanged: () 
           {ev.orderId ? `#${ev.orderId}` : '—'}
           {ev.orderStatusLabel ? ` · ${ev.orderStatusLabel}` : ''}
         </dd>
-        <dt className="text-gray-500">Obchodník</dt>
+        <dt className="text-gray-500">OVT</dt>
         <dd>{ev.people.map((p) => p.name).join(', ') || '—'}</dd>
         <dt className="text-gray-500">B2B</dt>
         <dd>
@@ -123,7 +123,7 @@ export function DayCalendar({ ymd, groups, nowIso, onChanged }: { ymd: string; g
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="min-w-[720px]">
           <div className="grid border-b border-gray-200 bg-gray-50" style={{ gridTemplateColumns: 'minmax(10rem,12rem) 1fr' }}>
-            <div className="border-r border-gray-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Obchodník</div>
+            <div className="border-r border-gray-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">OVT</div>
             <div className="relative flex min-h-[2.5rem]">
               {hours.map((h) => (
                 <div key={h} className="flex-1 border-l border-gray-200/80 py-2 text-center text-[11px] font-semibold tabular-nums text-gray-600 first:border-l-0">
@@ -137,7 +137,7 @@ export function DayCalendar({ ymd, groups, nowIso, onChanged }: { ymd: string; g
             <div key={g.person?.id ?? 'none'} className="grid border-b border-gray-100 last:border-b-0" style={{ gridTemplateColumns: 'minmax(10rem,12rem) 1fr' }}>
               <div className="border-r border-gray-200 px-3 py-3">
                 <p className="text-sm font-semibold text-gray-900">{g.person?.name ?? 'Bez vlastníka'}</p>
-                <p className="text-xs text-gray-500">{g.events.length} návštěv</p>
+                <p className="text-xs text-gray-500">{g.events.length} {plural(g.events.length, 'návštěva', 'návštěvy', 'návštěv')}</p>
               </div>
               <div className="relative" style={{ minHeight: Math.max(height, 56) }}>
                 <div className="pointer-events-none absolute inset-0 flex" aria-hidden>

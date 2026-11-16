@@ -21,12 +21,12 @@
         "name": "tags",
         "label": "Štítky zakázky",
         "status": "failed",
-        "detail": "Štítek se nepodařilo zapsat.",
-        "code": "ERP_ERROR"
+        "detail": "Neočekávaná chyba při volání ERP.",
+        "code": "ERROR"
       },
       {
         "name": "comment",
-        "label": "Komentář u zakázky",
+        "label": "Komentář v zakázce",
         "status": "ok",
         "detail": null,
         "code": null
@@ -39,6 +39,6 @@
         "code": null
       }
     ],
-    "ref": "tl2-ef34ac"
+    "ref": null
   }
 }

@@ -26,7 +26,7 @@
       },
       {
         "name": "comment",
-        "label": "Komentář u zakázky",
+        "label": "Komentář v zakázce",
         "status": "ok",
         "detail": "beze změny (už zapsáno předchozím pokusem)",
         "code": null
@@ -39,8 +39,6 @@
         "code": null
       }
     ],
-    "ref": "tl2-ab12ce",
-    "eventId": 3,
-    "orderId": 10000003
+    "ref": null
   }
 }

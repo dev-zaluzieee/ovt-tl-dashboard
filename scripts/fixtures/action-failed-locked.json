@@ -7,38 +7,38 @@
         "name": "columns",
         "label": "Sloupce zakázky",
         "status": "failed",
-        "detail": "Zakázku právě upravuje Alena.",
-        "code": "ORDER_LOCKED"
+        "detail": "Neočekávaná chyba při volání ERP.",
+        "code": "ERROR"
       },
       {
         "name": "status",
         "label": "Stav zakázky",
         "status": "pending",
-        "detail": null,
+        "detail": "Nespuštěno, předchozí krok selhal.",
         "code": null
       },
       {
         "name": "tags",
         "label": "Štítky zakázky",
         "status": "pending",
-        "detail": null,
+        "detail": "Nespuštěno, předchozí krok selhal.",
         "code": null
       },
       {
         "name": "comment",
-        "label": "Komentář u zakázky",
+        "label": "Komentář v zakázce",
         "status": "pending",
-        "detail": null,
+        "detail": "Nespuštěno, předchozí krok selhal.",
         "code": null
       },
       {
         "name": "visit_result",
         "label": "Výsledek návštěvy",
         "status": "pending",
-        "detail": null,
+        "detail": "Nespuštěno, předchozí krok selhal.",
         "code": null
       }
     ],
-    "ref": "tl2-ef34ab"
+    "ref": null
   }
 }

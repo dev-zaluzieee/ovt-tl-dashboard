@@ -2,7 +2,7 @@
 
 import { tlGet } from '@/lib/tl-api';
 import { parseReopens } from '@/lib/tl-parse';
-import type { MvtReopens, ResultSnapshot } from '@/lib/types';
+import type { MvtReopens, ResultChange, ResultSnapshot } from '@/lib/types';
 import { fmtDateTime, fmtKc, isYmd, shiftYmd } from '@/lib/format';
 import { useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, useUrlParams } from '@/app/components/ui/filters';
@@ -19,6 +19,24 @@ function Snapshot({ s, label }: { s: ResultSnapshot | null; label: string }) {
       {s.discountAmount ? ` · sleva ${fmtKc(s.discountAmount)}` : ''}
       {s.closedByName ? ` · ${s.closedByName}` : ''}
     </p>
+  );
+}
+
+function changeValue(field: string, v: string | number | null): string {
+  if (v === null || v === '') return 'nic';
+  return typeof v === 'number' && (field === 'collectedAmount' || field === 'discountAmount') ? fmtKc(v) : String(v);
+}
+
+function Changes({ changes, fallback }: { changes: ResultChange[]; fallback: string }) {
+  if (changes.length === 0) return <>{fallback}</>;
+  return (
+    <ul className="space-y-0.5">
+      {changes.map((c) => (
+        <li key={c.field}>
+          <span className="font-semibold text-gray-600">{c.label}:</span> <span className="whitespace-nowrap">{changeValue(c.field, c.before)} <span className="text-gray-400">→</span> {changeValue(c.field, c.after)}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -92,7 +110,7 @@ export function MvtReopensClient() {
                       <Snapshot s={r.before} label="Před" />
                       <Snapshot s={r.after} label="Po" />
                     </td>
-                    <td className="px-3 py-2 text-xs text-gray-700">{r.changes.length ? r.changes.join(', ') : r.after ? 'beze změny' : '—'}</td>
+                    <td className="px-3 py-2 text-xs text-gray-700"><Changes changes={r.changes} fallback={r.after ? 'beze změny' : '—'} /></td>
                     <td className="whitespace-nowrap px-3 py-2 text-right text-xs"><EventLinks ev={r.event} /></td>
                   </tr>
                 ))}
