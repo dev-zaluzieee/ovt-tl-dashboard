@@ -1,0 +1,93 @@
+{
+  "success": true,
+  "data": {
+    "from": "2026-11-01",
+    "to": "2026-11-16",
+    "total": 9,
+    "rows": [
+      {
+        "person": {
+          "id": 1,
+          "name": "Ovt Alfa"
+        },
+        "total": 5,
+        "buckets": {
+          "order": 2,
+          "retence": 0,
+          "nedopadlo": 2,
+          "nezastizen": 0,
+          "closed_no_result": 0,
+          "no_result": 1,
+          "reopened": 0,
+          "other": 0
+        },
+        "nedopadloReasons": [
+          {
+            "reason": "vysoka_cena",
+            "label": "Vysoká cena",
+            "count": 1
+          },
+          {
+            "reason": "nema_zajem",
+            "label": "Nemá zájem",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "person": {
+          "id": 2,
+          "name": "Ovt Beta"
+        },
+        "total": 3,
+        "buckets": {
+          "order": 1,
+          "retence": 1,
+          "nedopadlo": 0,
+          "nezastizen": 1,
+          "closed_no_result": 0,
+          "no_result": 0,
+          "reopened": 0,
+          "other": 0
+        },
+        "nedopadloReasons": []
+      },
+      {
+        "person": null,
+        "total": 1,
+        "buckets": {
+          "order": 0,
+          "retence": 0,
+          "nedopadlo": 0,
+          "nezastizen": 0,
+          "closed_no_result": 1,
+          "no_result": 0,
+          "reopened": 0,
+          "other": 0
+        },
+        "nedopadloReasons": []
+      }
+    ],
+    "totals": {
+      "order": 3,
+      "retence": 1,
+      "nedopadlo": 2,
+      "nezastizen": 1,
+      "closed_no_result": 1,
+      "no_result": 1,
+      "reopened": 0,
+      "other": 0
+    },
+    "bucketLabels": {
+      "order": "Objednávka",
+      "retence": "Retence",
+      "nedopadlo": "Nedopadlo",
+      "nezastizen": "Nezastižen",
+      "closed_no_result": "Uzavřeno bez výsledku",
+      "no_result": "Bez výsledku",
+      "reopened": "Otevřeno k opravě",
+      "other": "Jiné"
+    },
+    "note": "Bez hodnoty zakázek (v novém dashboardu se hodnota nepočítá)."
+  }
+}

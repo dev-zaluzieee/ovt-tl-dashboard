@@ -4,31 +4,27 @@ import { useMemo, useState } from "react";
 import { TargetSelect } from "./TargetSelect";
 import {
   SLOTS,
-  btnGhost,
   input,
   regionSlotId,
   resolveTarget,
   targetName,
-  type Slot,
-  type CalendarSource,
+  type OutsideOvt,
   type Region,
   type RegionOvt,
   type Resolution,
   type Settings,
+  type Slot,
   type Target,
-  type UnmatchedOvt,
 } from "./types";
 
 interface Props {
-  source: CalendarSource;
   activeDays: number;
+  krajSource: string | null;
   regions: Region[];
-  withoutRegion: RegionOvt[];
-  notInCalendar: UnmatchedOvt[];
+  outside: OutsideOvt[];
   settings: Settings | null;
   targets: Target[];
   targetById: Map<number, Target>;
-  isAdmin: boolean;
   busy: string | null;
   onSetRegion: (regionKey: string, slot: Slot, targetId: number | null) => Promise<void>;
 }
@@ -43,68 +39,35 @@ function resolutionText(res: Resolution): { text: string; tone: string } {
 
 function regionWarnings(r: Region, settings: Settings | null, targetById: Map<number, Target>): Warning[] {
   const out: Warning[] = [];
-  const active = r.ovts.filter((o) => o.admf_count > 0).length;
+  const active = r.ovts.length;
   for (const { slot, label, hint } of SLOTS) {
     const res = resolveTarget(r.config, slot, settings, targetById);
     if (active > 0 && res.kind === "none") {
       out.push({ level: "red", text: `${label} (${hint}): OVT z tohoto kraje QR neuvidí. Nastavte QR kraje nebo výchozí QR.` });
     }
     if (res.kind !== "region" && res.regionTargetInactive) {
-      out.push({
-        level: "amber",
-        text: `${label}: nastavený QR kraje je neaktivní, ${res.kind === "default" ? "použije se výchozí" : "neukáže se nic"}.`,
-      });
+      out.push({ level: "amber", text: `${label}: nastavený QR kraje je neaktivní, ${res.kind === "default" ? "použije se výchozí" : "neukáže se nic"}.` });
     }
   }
-  if (!r.known && r.in_calendar) {
-    out.push({
-      level: "amber",
-      text: "Neznámý název kraje v marketingovém kalendáři. Opravte ho tam na jeden ze 14 krajů; do té doby lze QR nastavit i pro tento název.",
-    });
-  }
-  if (!r.known && !r.in_calendar && r.config) {
-    out.push({ level: "amber", text: "Tento název kraje už v kalendáři nikdo nemá. Nastavení je zbytečné a lze ho smazat." });
+  if (!r.known) {
+    out.push({ level: "amber", text: "Název kraje není jedním ze 14 krajů. Nastavení je zbytečné a lze ho smazat." });
   }
   return out;
 }
 
 function OvtChip({ o, activeDays }: { o: RegionOvt; activeDays: number }) {
-  const inactive = o.admf_count === 0;
-  const title = [
-    o.position,
-    o.city,
-    o.email ?? `Raynet ${o.raynet_user_id}: bez účtu v tabletu`,
-    inactive ? `bez ADMF za posledních ${activeDays} dní` : `${o.admf_count} ADMF za ${activeDays} dní`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
   return (
     <span
-      title={title}
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${
-        inactive ? "border-gray-200 bg-gray-50 text-gray-400" : "border-gray-300 bg-white text-gray-800"
-      }`}
+      title={[o.email, `${o.surveys} zaměření za ${activeDays} dní`].filter(Boolean).join(" · ")}
+      className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800"
     >
       {o.name}
-      {o.city && <span className="text-gray-400">· {o.city}</span>}
-      {!o.email && <span className="text-amber-600">?</span>}
+      <span className="text-gray-400">· {o.surveys}</span>
     </span>
   );
 }
 
-export function RegionsSection({
-  source,
-  activeDays,
-  regions,
-  withoutRegion,
-  notInCalendar,
-  settings,
-  targets,
-  targetById,
-  isAdmin,
-  busy,
-  onSetRegion,
-}: Props) {
+export function RegionsSection({ activeDays, krajSource, regions, outside, settings, targets, targetById, busy, onSetRegion }: Props) {
   const [onlyProblems, setOnlyProblems] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -113,20 +76,10 @@ export function RegionsSection({
     return regions
       .map((r) => ({ r, warnings: regionWarnings(r, settings, targetById) }))
       .filter(({ warnings }) => !onlyProblems || warnings.length > 0)
-      .filter(
-        ({ r }) =>
-          !q ||
-          r.key.toLowerCase().includes(q) ||
-          r.ovts.some((o) => o.name.toLowerCase().includes(q) || (o.email ?? "").toLowerCase().includes(q))
-      );
+      .filter(({ r }) => !q || r.key.toLowerCase().includes(q) || r.ovts.some((o) => o.name.toLowerCase().includes(q) || (o.email ?? "").toLowerCase().includes(q)));
   }, [regions, settings, targetById, onlyProblems, query]);
 
-  const activeWithoutRegion = withoutRegion.filter((o) => o.admf_count > 0);
-  const idleWithoutRegion = withoutRegion.length - activeWithoutRegion.length;
-  const fallback = SLOTS.map(({ slot, label }) => ({
-    label,
-    ...resolutionText(resolveTarget(null, slot, settings, targetById)),
-  }));
+  const fallback = SLOTS.map(({ slot, label }) => ({ label, ...resolutionText(resolveTarget(null, slot, settings, targetById)) }));
 
   return (
     <section className="space-y-3">
@@ -141,21 +94,10 @@ export function RegionsSection({
         </div>
       </div>
       <p className="text-sm text-gray-500">
-        Kraj OVT se bere z marketingového kalendáře (tady se nenastavuje). Prázdný slot = výchozí QR (šedě v nabídce).
-        Šedě jsou OVT bez ADMF za posledních {activeDays} dní, otazník = OVT nemá účet v tabletu.
+        Kraj OVT je domovský kraj jeho uživatele v ERP (tady se nenastavuje). Prázdný slot = výchozí QR (šedě v nabídce). V kraji jsou OVT, kteří měli zaměření za posledních {activeDays} dní (číslo = počet zaměření).
+        {krajSource ? ` Zdroj: ${krajSource}.` : ""}
       </p>
 
-      {!source.ok ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50/60 p-3 text-sm text-rose-800">
-          Marketingový kalendář se nepodařilo načíst{source.error ? `: ${source.error}` : ""}. Kraje OVT teď nejsou vidět a tablety
-          QR pravděpodobně neukazují (bez kraje tablet QR raději neukáže vůbec).
-        </div>
-      ) : (
-        <p className="text-xs text-gray-400">Marketingový kalendář: {source.ovt_count} OVT.</p>
-      )}
-
-      {/* One row per kraj — 11 regions × 2 choices is a table, not a stack of cards.
-          Hints live once in the header; the fallback shows as the select's placeholder. */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
@@ -172,39 +114,17 @@ export function RegionsSection({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {rows.map(({ r, warnings }) => {
-              const active = r.ovts.filter((o) => o.admf_count > 0).length;
-              const spellings = r.raw_names.filter((n) => n !== r.key);
               const red = warnings.some((w) => w.level === "red");
               return (
                 <tr key={r.key} className={red ? "bg-rose-50/40" : warnings.length ? "bg-amber-50/40" : ""}>
                   <td className="px-3 py-2 align-top">
                     <div className="font-medium text-gray-900">{r.key}</div>
-                    <div className="text-xs text-gray-400">
-                      {r.ovts.length === 0 ? "žádný OVT v kalendáři" : `${active} / ${r.ovts.length} aktivních`}
-                    </div>
-                    {spellings.length > 0 && (
-                      <div className="text-[11px] text-gray-400" title="Jak je kraj zapsaný v marketingovém kalendáři">
-                        kalendář: {spellings.join(", ")}
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-400">{r.ovts.length === 0 ? "žádný aktivní OVT" : `${r.ovts.length} aktivních OVT`}</div>
                     {warnings.map((w, i) => (
                       <div key={i} className={`mt-1 text-xs ${w.level === "red" ? "text-rose-700" : "text-amber-700"}`}>
                         {w.text}
                       </div>
                     ))}
-                    {isAdmin && !r.known && !r.in_calendar && r.config && (
-                      <button
-                        type="button"
-                        className={`${btnGhost} mt-1`}
-                        disabled={busy === `reg-${r.key}-primary` || busy === `reg-${r.key}-secondary`}
-                        onClick={async () => {
-                          await onSetRegion(r.key, "primary", null);
-                          await onSetRegion(r.key, "secondary", null);
-                        }}
-                      >
-                        Smazat nastavení
-                      </button>
-                    )}
                   </td>
                   {SLOTS.map(({ slot, platformOrder }) => {
                     const slotTargetId = regionSlotId(r.config, slot);
@@ -214,30 +134,23 @@ export function RegionsSection({
                     const shown = resolutionText(res);
                     return (
                       <td key={slot} className="px-3 py-2 align-top">
-                        {isAdmin ? (
-                          <TargetSelect
-                            className={`w-full min-w-[13rem] ${slotTargetId == null ? "text-gray-400" : ""}`}
-                            targets={targets}
-                            platformOrder={platformOrder}
-                            value={slotTargetId}
-                            emptyLabel={emptyLabel}
-                            disabled={busy === `reg-${r.key}-${slot}`}
-                            onChange={(id) => void onSetRegion(r.key, slot, id)}
-                          />
-                        ) : (
-                          <span className={shown.tone}>{shown.text}</span>
-                        )}
-                        {/* Only when the stored region target is inactive and the tablet shows something else. */}
-                        {isAdmin && res.kind !== "region" && res.regionTargetInactive && (
-                          <div className={`mt-0.5 text-xs ${shown.tone}`}>tablet ukáže: {shown.text}</div>
-                        )}
+                        <TargetSelect
+                          className={`w-full min-w-[13rem] ${slotTargetId == null ? "text-gray-400" : ""}`}
+                          targets={targets}
+                          platformOrder={platformOrder}
+                          value={slotTargetId}
+                          emptyLabel={emptyLabel}
+                          disabled={busy === `reg-${r.key}-${slot}`}
+                          onChange={(id) => void onSetRegion(r.key, slot, id)}
+                        />
+                        {res.kind !== "region" && res.regionTargetInactive && <div className={`mt-0.5 text-xs ${shown.tone}`}>tablet ukáže: {shown.text}</div>}
                       </td>
                     );
                   })}
                   <td className="px-3 py-2 align-top">
                     <div className="flex max-w-xs flex-wrap gap-1">
                       {r.ovts.map((o) => (
-                        <OvtChip key={o.raynet_user_id} o={o} activeDays={activeDays} />
+                        <OvtChip key={o.userId} o={o} activeDays={activeDays} />
                       ))}
                     </div>
                   </td>
@@ -246,67 +159,44 @@ export function RegionsSection({
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-sm text-gray-500">Žádný kraj neodpovídá filtru.</td>
+                <td colSpan={4} className="px-3 py-6 text-center text-sm text-gray-500">
+                  Žádný kraj neodpovídá filtru.
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {source.ok && (notInCalendar.length > 0 || withoutRegion.length > 0) && (
+      {outside.length > 0 && (
         <div className="rounded-lg border border-amber-300 bg-white p-3">
           <h3 className="font-semibold text-gray-900">OVT mimo kraje</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Tito OVT nemají v marketingovém kalendáři kraj, takže tablet ukáže výchozí QR (primární: {" "}
-            <span className={fallback[0].tone}>{fallback[0].text}</span>, sekundární:{" "}
-            <span className={fallback[1].tone}>{fallback[1].text}</span>). Opravte to v marketingovém kalendáři, tady se kraj
-            nenastavuje.
+            Tito aktivní OVT nemají v ERP domovský kraj, takže tablet ukáže výchozí QR (primární: <span className={fallback[0].tone}>{fallback[0].text}</span>, sekundární:{" "}
+            <span className={fallback[1].tone}>{fallback[1].text}</span>). Kraj se doplňuje v ERP, tady se nenastavuje.
           </p>
           <div className="mt-2 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-3 py-2">OVT</th>
-                  <th className="px-3 py-2 text-right">ADMF {activeDays} dní</th>
+                  <th className="px-3 py-2 text-right">Zaměření {activeDays} dní</th>
                   <th className="px-3 py-2">Proč</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {notInCalendar.map((o) => (
-                  <tr key={o.email}>
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-800">
-                      {o.name ?? o.email.split("@")[0]} <span className="text-xs text-gray-400">{o.email}</span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{o.admf_count}</td>
-                    <td className="px-3 py-2 text-gray-600">
-                      {o.reason === "no_raynet_id"
-                        ? "účet v tabletu nemá Raynet ID, nelze ho spárovat s kalendářem"
-                        : `není v marketingovém kalendáři (Raynet ID ${o.raynet_user_id})`}
-                    </td>
-                  </tr>
-                ))}
-                {activeWithoutRegion.map((o) => (
-                  <tr key={o.raynet_user_id}>
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-800">
+                {outside.map((o) => (
+                  <tr key={o.userId}>
+                    <td className="whitespace-nowrap px-3 py-2 text-gray-800">
                       {o.name} {o.email && <span className="text-xs text-gray-400">{o.email}</span>}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{o.admf_count}</td>
-                    <td className="px-3 py-2 text-gray-600">v kalendáři nemá vyplněný kraj</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{o.surveys}</td>
+                    <td className="px-3 py-2 text-gray-600">{o.reason === "no_home_kraj" ? "v ERP nemá domovský kraj" : o.reason}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {idleWithoutRegion > 0 && (
-            <p className="mt-2 text-xs text-gray-400">
-              Dalších {idleWithoutRegion} záznamů v kalendáři bez kraje nemá žádné ADMF za {activeDays} dní:{" "}
-              {withoutRegion
-                .filter((o) => o.admf_count === 0)
-                .map((o) => o.name)
-                .join(", ")}
-              .
-            </p>
-          )}
         </div>
       )}
     </section>

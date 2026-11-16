@@ -1,16 +1,14 @@
-import { AppLayout } from '../../components/layout/AppLayout';
-import { MvtOpenClient } from '../../components/mvt/MvtOpenClient';
+import { Suspense } from 'react';
+import { AppLayout } from '@/app/components/shell/AppLayout';
+import { MvtMissingClient } from '@/app/components/mvt/MvtMissingClient';
+import { Skeleton } from '@/app/components/ui/kit';
 
 export default function Page() {
   return (
     <AppLayout>
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-[#1E8449]">Chybí výsledek</h1>
-        <p className="mb-6 mt-2 text-gray-600">
-          Montáže po termínu bez výsledku, nezdařené zápisy do ERP a reklamace čekající na založení navazující události. „Vyřízeno“ položku skryje.
-        </p>
-        <MvtOpenClient />
-      </main>
+      <Suspense fallback={<main className="container mx-auto px-4 py-8"><Skeleton /></main>}>
+        <MvtMissingClient />
+      </Suspense>
     </AppLayout>
   );
 }

@@ -1,0 +1,238 @@
+{
+  "success": true,
+  "data": {
+    "from": "2026-11-03",
+    "to": "2026-11-16",
+    "owing": [
+      {
+        "person": {
+          "id": 3,
+          "name": "Montér Karel"
+        },
+        "count": 2
+      },
+      {
+        "person": {
+          "id": 4,
+          "name": "Montér Petr"
+        },
+        "count": 1
+      }
+    ],
+    "recent": [
+      {
+        "event": {
+          "id": 22,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-16T09:00:00.000Z",
+          "endsAt": "2026-11-16T11:00:00.000Z",
+          "day": "2026-11-16",
+          "orderId": 10000022,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 22",
+            "phone": "+420 777 100 022",
+            "city": "Brno"
+          },
+          "orderStatus": "montaz",
+          "orderStatusLabel": "Montáž",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            },
+            {
+              "id": 4,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "overdue",
+            "label": "Po termínu bez výsledku",
+            "closed": false,
+            "open": true
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "ageDays": 0,
+        "resolution": null
+      },
+      {
+        "event": {
+          "id": 31,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-13T08:00:00.000Z",
+          "endsAt": "2026-11-13T10:00:00.000Z",
+          "day": "2026-11-13",
+          "orderId": 10000031,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 31",
+            "phone": "+420 777 100 031",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "overdue",
+            "label": "Po termínu bez výsledku",
+            "closed": false,
+            "open": true
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "ageDays": 3,
+        "resolution": {
+          "id": 8,
+          "kind": "mvt_chybi_vysledek",
+          "itemKey": "22",
+          "reason": "pripomenuto",
+          "note": null,
+          "actorEmail": "tl@example.cz",
+          "actorName": "Karel Testovací",
+          "createdAt": "2026-11-15T15:00:00.000Z",
+          "undoneAt": null,
+          "undoneBy": null,
+          "erpWrittenAt": null,
+          "erpWriteNote": null
+        }
+      }
+    ],
+    "backlog": [
+      {
+        "event": {
+          "id": 32,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-05T08:00:00.000Z",
+          "endsAt": "2026-11-05T10:00:00.000Z",
+          "day": "2026-11-05",
+          "orderId": 10000032,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 32",
+            "phone": "+420 777 100 032",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 4,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "overdue",
+            "label": "Po termínu bez výsledku",
+            "closed": false,
+            "open": true
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "ageDays": 11,
+        "resolution": null
+      }
+    ],
+    "closedOutside": {
+      "count": 12,
+      "rows": [
+        {
+          "id": 33,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "completed",
+          "origin": null,
+          "startsAt": "2026-11-12T07:00:00.000Z",
+          "endsAt": "2026-11-12T09:00:00.000Z",
+          "day": "2026-11-12",
+          "orderId": 10000033,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 33",
+            "phone": "+420 777 100 033",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed_no_result",
+            "label": "Uzavřeno bez výsledku",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        }
+      ]
+    },
+    "handledCount": 1,
+    "thresholds": {
+      "graceHours": 2,
+      "recentDays": 7
+    },
+    "closeReasons": {
+      "pripomenuto": "Připomenuto",
+      "uzavreno_v_erp": "Uzavřeno v ERP",
+      "netyka_se": "Netýká se"
+    },
+    "warnings": [],
+    "truncated": false
+  }
+}

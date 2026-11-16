@@ -1,0 +1,19 @@
+{
+  "success": false,
+  "code": "ERP_WRITE_FAILED",
+  "message": "ERP odmítlo zápis: Zakázka je ve stavu, který to nedovoluje.",
+  "ref": "tl2-9f9f9f",
+  "data": {
+    "outcome": "failed",
+    "steps": [
+      {
+        "name": "columns",
+        "label": "Sloupce zakázky",
+        "status": "failed",
+        "detail": "Zakázka je ve stavu, který to nedovoluje.",
+        "code": "ERP_VALIDATION"
+      }
+    ],
+    "ref": "tl2-9f9f9f"
+  }
+}

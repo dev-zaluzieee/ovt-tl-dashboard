@@ -1,0 +1,116 @@
+{
+  "success": true,
+  "data": {
+    "settings": {
+      "enabled": true,
+      "default_primary_target_id": 1,
+      "default_secondary_target_id": 2,
+      "updated_at": "2026-11-10T10:00:00.000Z",
+      "updated_by": "tl@example.cz"
+    },
+    "targets": [
+      {
+        "id": 1,
+        "label": "Brno",
+        "platform": "firmy",
+        "url": "https://example.com/review/1",
+        "active": true,
+        "created_at": "2026-11-01T10:00:00.000Z",
+        "updated_at": "2026-11-10T10:00:00.000Z",
+        "created_by": "a@example.cz",
+        "updated_by": "tl@example.cz"
+      },
+      {
+        "id": 2,
+        "label": "Brno",
+        "platform": "google",
+        "url": "https://example.com/review/2",
+        "active": true,
+        "created_at": "2026-11-01T10:00:00.000Z",
+        "updated_at": "2026-11-10T10:00:00.000Z",
+        "created_by": "a@example.cz",
+        "updated_by": "tl@example.cz"
+      },
+      {
+        "id": 3,
+        "label": "Praha",
+        "platform": "google",
+        "url": "https://example.com/review/3",
+        "active": false,
+        "created_at": "2026-11-01T10:00:00.000Z",
+        "updated_at": "2026-11-10T10:00:00.000Z",
+        "created_by": "a@example.cz",
+        "updated_by": "tl@example.cz"
+      }
+    ],
+    "regions": [
+      {
+        "key": "Jihomoravský kraj",
+        "known": true,
+        "config": {
+          "primary_target_id": 1,
+          "secondary_target_id": null,
+          "updated_at": "2026-11-10T10:00:00.000Z",
+          "updated_by": "tl@example.cz"
+        },
+        "ovts": [
+          {
+            "userId": 1,
+            "name": "Ovt Alfa",
+            "email": "alfa@example.cz",
+            "surveys": 12,
+            "lastSurveyAt": "2026-11-15T10:00:00.000Z",
+            "kraj": "Jihomoravský kraj"
+          },
+          {
+            "userId": 2,
+            "name": "Ovt Beta",
+            "email": "beta@example.cz",
+            "surveys": 7,
+            "lastSurveyAt": "2026-11-15T10:00:00.000Z",
+            "kraj": "Jihomoravský kraj"
+          }
+        ]
+      },
+      {
+        "key": "Hlavní město Praha",
+        "known": true,
+        "config": {
+          "primary_target_id": 3,
+          "secondary_target_id": null,
+          "updated_at": "2026-11-10T10:00:00.000Z",
+          "updated_by": null
+        },
+        "ovts": [
+          {
+            "userId": 6,
+            "name": "Ovt Gama",
+            "email": "gama@example.cz",
+            "surveys": 4,
+            "lastSurveyAt": "2026-11-15T10:00:00.000Z",
+            "kraj": "Jihomoravský kraj"
+          }
+        ]
+      },
+      {
+        "key": "Olomoucký kraj",
+        "known": true,
+        "config": null,
+        "ovts": []
+      }
+    ],
+    "outsideRegions": [
+      {
+        "userId": 7,
+        "name": "Ovt Delta",
+        "email": "delta@example.cz",
+        "surveys": 3,
+        "lastSurveyAt": "2026-11-15T10:00:00.000Z",
+        "kraj": null,
+        "reason": "no_home_kraj"
+      }
+    ],
+    "activeDays": 60,
+    "krajSource": "user_kraj_assignments (domovský řádek)"
+  }
+}

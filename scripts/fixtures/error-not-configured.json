@@ -1,0 +1,8 @@
+{
+  "success": false,
+  "code": "NOT_CONFIGURED",
+  "message": "Modul tl2 není nastaven.",
+  "missing": [
+    "TL2_START_AT"
+  ]
+}

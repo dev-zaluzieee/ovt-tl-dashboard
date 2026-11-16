@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "data": {
+    "people": [
+      {
+        "id": 3,
+        "name": "Montér Karel",
+        "active": true
+      },
+      {
+        "id": 4,
+        "name": "Montér Petr",
+        "active": true
+      }
+    ]
+  }
+}

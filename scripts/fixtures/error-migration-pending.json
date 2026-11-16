@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "code": "MIGRATION_PENDING",
+  "message": "Migrace tl2 není nasazena."
+}

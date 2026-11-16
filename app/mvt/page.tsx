@@ -1,17 +1,14 @@
-import { AppLayout } from '../components/layout/AppLayout';
-import { MvtOverviewClient } from '../components/mvt/MvtOverviewClient';
+import { Suspense } from 'react';
+import { AppLayout } from '@/app/components/shell/AppLayout';
+import { MvtOverviewClient } from '@/app/components/mvt/MvtOverviewClient';
+import { Skeleton } from '@/app/components/ui/kit';
 
-/** MVT landing = Přehled: warnings needing the team leader, reopened events, then the section tiles. */
-export default function MvtHome() {
+export default function Page() {
   return (
     <AppLayout>
-      <main className="container mx-auto max-w-6xl px-4 py-8">
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold text-[#1E8449]">Montéři (MVT) — Přehled</h1>
-          <p className="mt-2 text-gray-600">Co dnes potřebuje vaše rozhodnutí. Podrobnosti najdete na jednotlivých stránkách.</p>
-        </header>
+      <Suspense fallback={<main className="container mx-auto px-4 py-8"><Skeleton /></main>}>
         <MvtOverviewClient />
-      </main>
+      </Suspense>
     </AppLayout>
   );
 }

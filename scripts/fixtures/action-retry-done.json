@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "data": {
+    "outcome": "done",
+    "steps": [
+      {
+        "name": "columns",
+        "label": "Sloupce zakázky",
+        "status": "ok",
+        "detail": "beze změny (už zapsáno předchozím pokusem)",
+        "code": null
+      },
+      {
+        "name": "status",
+        "label": "Stav zakázky",
+        "status": "ok",
+        "detail": "beze změny (už zapsáno předchozím pokusem)",
+        "code": null
+      },
+      {
+        "name": "tags",
+        "label": "Štítky zakázky",
+        "status": "ok",
+        "detail": "beze změny (už zapsáno předchozím pokusem)",
+        "code": null
+      },
+      {
+        "name": "comment",
+        "label": "Komentář u zakázky",
+        "status": "ok",
+        "detail": "beze změny (už zapsáno předchozím pokusem)",
+        "code": null
+      },
+      {
+        "name": "visit_result",
+        "label": "Výsledek návštěvy",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      }
+    ],
+    "ref": "tl2-ab12ce",
+    "eventId": 3,
+    "orderId": 10000003
+  }
+}

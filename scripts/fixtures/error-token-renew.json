@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "code": "TOKEN_RENEW",
+  "message": "ERP odmítlo token."
+}

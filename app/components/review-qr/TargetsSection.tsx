@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   SLOTS,
   btn,
+  fmtDateTime,
   btnGhost,
   btnPrimary,
   defaultIdOf,
@@ -52,14 +53,13 @@ export function usageByTarget(settings: Settings | null, regions: Region[]): Map
 interface Props {
   targets: Target[];
   usage: Map<number, TargetUsage>;
-  isAdmin: boolean;
   busy: string | null;
   onSave: (id: number | null, form: typeof EMPTY_FORM) => Promise<boolean>;
   onDelete: (t: Target) => Promise<void>;
 }
 
 /** Catalogue of review pages; the QR is rendered from the URL, nothing is stored as an image. */
-export function TargetsSection({ targets, usage, isAdmin, busy, onSave, onDelete }: Props) {
+export function TargetsSection({ targets, usage, busy, onSave, onDelete }: Props) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
@@ -97,7 +97,15 @@ export function TargetsSection({ targets, usage, isAdmin, busy, onSave, onDelete
               const used = !!u && (u.defaults.length > 0 || u.regions.length > 0);
               return (
                 <tr key={t.id} className={t.active ? "" : "text-gray-400"}>
-                  <td className="px-3 py-2 font-medium text-gray-800">{t.label}</td>
+                  <td className="px-3 py-2 font-medium text-gray-800">
+                    {t.label}
+                    {(t.updated_by || t.created_by) && (
+                      <div className="text-[11px] font-normal text-gray-400">
+                        {t.updated_by ?? t.created_by}
+                        {t.updated_at ? ` · ${fmtDateTime(t.updated_at)}` : ""}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap">{PLATFORM_LABEL[t.platform]}</td>
                   <td className="max-w-[320px] truncate px-3 py-2 text-gray-600" title={t.url}>
                     <a href={t.url} target="_blank" rel="noreferrer" className="text-[#1E8449] hover:underline">
@@ -123,7 +131,7 @@ export function TargetsSection({ targets, usage, isAdmin, busy, onSave, onDelete
                     <button type="button" className={btnGhost} onClick={() => setPreviewId(previewId === t.id ? null : t.id)}>
                       Náhled
                     </button>
-                    {isAdmin && (
+                    {(
                       <>
                         <button
                           type="button"
@@ -173,7 +181,7 @@ export function TargetsSection({ targets, usage, isAdmin, busy, onSave, onDelete
         </div>
       )}
 
-      {isAdmin && (
+      {(
         <div className="rounded-lg border border-gray-200 bg-white p-3">
           <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">{editingId ? "Upravit QR cíl" : "Nový QR cíl"}</p>
           <div className="flex flex-wrap items-end gap-2">

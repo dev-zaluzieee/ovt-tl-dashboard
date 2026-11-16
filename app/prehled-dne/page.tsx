@@ -1,30 +1,14 @@
 import { Suspense } from 'react';
-import { AppLayout } from '../components/layout/AppLayout';
-import { OfficeDayClient } from '../components/office-day/OfficeDayClient';
+import { AppLayout } from '@/app/components/shell/AppLayout';
+import { OvtDayClient } from '@/app/components/ovt/OvtDayClient';
+import { Skeleton } from '@/app/components/ui/kit';
 
-/**
- * Denní přehled Raynet událostí napříč všemi uživateli s propojeným Raynetem (kancelář / admin).
- * `Suspense`: `OfficeDayClient` používá `useSearchParams` (hluboké odkazy `?date=&person=&view=`).
- */
-export default function PrehledDnePage() {
+export default function Page() {
   return (
     <AppLayout>
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#1E8449]">Přehled dne</h1>
-        </div>
-        <Suspense
-          fallback={
-            <div className="space-y-3" aria-busy="true">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-100" />
-              ))}
-            </div>
-          }
-        >
-          <OfficeDayClient />
-        </Suspense>
-      </main>
+      <Suspense fallback={<main className="container mx-auto px-4 py-8"><Skeleton /></main>}>
+        <OvtDayClient />
+      </Suspense>
     </AppLayout>
   );
 }

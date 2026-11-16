@@ -1,6 +1,5 @@
 /**
- * Recenze QR admin: API shapes (ceniky-2 /api/admin/review-qr) and the small
- * helpers every section shares.
+ * Recenze QR: API shapes (backend /api/tl2/review-qr) and the small helpers every section shares.
  */
 
 export type Platform = "google" | "firmy" | "other";
@@ -21,17 +20,19 @@ export interface Target {
   platform: Platform;
   url: string;
   active: boolean;
+  created_by?: string | null;
+  updated_by?: string | null;
+  updated_at?: string | null;
 }
 
 export interface RegionOvt {
-  raynet_user_id: number;
+  userId: number;
   name: string;
-  position: string | null;
-  city: string | null;
-  region_raw: string | null;
   email: string | null;
-  /** ADMFs in the last `active_days` days; 0 = not active. */
-  admf_count: number;
+  /** Surveys (zaměření / znovuzaměření) owned in the last `activeDays` days. */
+  surveys: number;
+  lastSurveyAt: string | null;
+  kraj: string | null;
 }
 
 export interface RegionConfig {
@@ -44,60 +45,56 @@ export interface RegionConfig {
 export interface Region {
   key: string;
   known: boolean;
-  in_calendar: boolean;
-  raw_names: string[];
   config: RegionConfig | null;
   ovts: RegionOvt[];
 }
 
-export interface UnmatchedOvt {
-  email: string;
-  name: string | null;
-  raynet_user_id: number | null;
-  admf_count: number;
-  reason: "no_raynet_id" | "not_in_calendar";
-}
-
-export interface CalendarSource {
-  configured: boolean;
-  ok: boolean;
-  error: string | null;
-  ovt_count: number;
+export interface OutsideOvt extends RegionOvt {
+  reason: string;
 }
 
 export interface ReviewQrData {
   settings: Settings;
   targets: Target[];
-  source: CalendarSource;
-  active_days: number;
   regions: Region[];
-  without_region: RegionOvt[];
-  not_in_calendar: UnmatchedOvt[];
+  outsideRegions: OutsideOvt[];
+  activeDays: number;
+  krajSource: string | null;
 }
 
 export interface PromptRow {
   id: number;
-  form_id: number;
-  order_id: number | null;
-  ovt_email: string;
-  target_label: string | null;
-  target_platform: Platform | null;
-  slot: Slot;
+  erpOrderId: number | null;
+  ovtEmail: string | null;
+  ovtName: string | null;
+  customerName: string | null;
+  targetId: number | null;
+  targetLabel: string | null;
+  targetPlatform: Platform | null;
+  slot: Slot | null;
   region: string | null;
-  target_source: "region" | "default" | null;
-  shown_at: string;
+  targetSource: "region" | "default" | null;
+  shownAt: string;
   outcome: "written" | "not_shown" | "refused" | null;
   reason: string | null;
-  customer_name: string | null;
+  closedAt: string | null;
 }
 
 export interface PromptStats {
   key: string | null;
+  ovtName?: string | null;
   shown: number;
   written: number;
   not_shown: number;
   refused: number;
   unanswered: number;
+}
+
+export interface PromptsData {
+  days: number;
+  prompts: PromptRow[];
+  statsByOvt: PromptStats[];
+  statsByRegion: PromptStats[];
 }
 
 export const PLATFORM_LABEL: Record<Platform, string> = { google: "Google", firmy: "Firmy.cz", other: "Jiné" };
@@ -118,10 +115,7 @@ export const btnPrimary = `${btn} bg-[#1E8449] text-white hover:bg-[#166e3b]`;
 export const btnGhost = `${btn} border border-gray-300 text-gray-700 hover:bg-gray-50`;
 export const input = "rounded-md border border-gray-300 px-2 py-1 text-sm";
 
-export function fmtDateTime(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
-}
+export { fmtDateTime } from "@/lib/format";
 
 /** Labels repeat across platforms (Brno on Google and on Firmy.cz), so always show both. */
 export function targetName(t: Pick<Target, "label" | "platform">): string {

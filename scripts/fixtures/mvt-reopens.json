@@ -1,0 +1,160 @@
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "id": 1,
+        "event": {
+          "id": 25,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-16T10:00:00.000Z",
+          "endsAt": "2026-11-16T12:00:00.000Z",
+          "day": "2026-11-16",
+          "orderId": 10000025,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 25",
+            "phone": "+420 777 100 025",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "reopened",
+            "label": "Otevřeno k opravě",
+            "closed": false,
+            "open": true
+          },
+          "result": {
+            "outcome": "done",
+            "outcomeLabel": "Montáž dokončena",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": 800,
+            "paymentMethod": "hotove",
+            "paymentMethodLabel": "Hotově",
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": "Ovt Alfa",
+            "completedAt": "2026-11-16T10:00:00.000Z",
+            "current": false
+          },
+          "reopen": {
+            "reason": "Špatná částka",
+            "actorName": "Karel Testovací",
+            "at": "2026-11-16T09:40:00.000Z"
+          },
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "reason": "Špatná částka",
+        "reopenedBy": "Karel Testovací",
+        "at": "2026-11-16T09:40:00.000Z",
+        "stillOpen": true,
+        "before": {
+          "outcome": "done",
+          "outcomeLabel": "Montáž dokončena",
+          "collectedAmount": 800,
+          "paymentMethod": "hotove",
+          "paymentMethodLabel": "Hotově",
+          "discountAmount": null,
+          "closedByName": "Montér Karel",
+          "completedAt": "2026-11-16T11:00:00.000Z"
+        },
+        "after": null,
+        "changes": []
+      },
+      {
+        "id": 2,
+        "event": {
+          "id": 34,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-12T07:00:00.000Z",
+          "endsAt": "2026-11-12T09:00:00.000Z",
+          "day": "2026-11-12",
+          "orderId": 10000034,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 34",
+            "phone": "+420 777 100 034",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 4,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "reason": "Doplatek měl být na fakturu",
+        "reopenedBy": "Kancelář",
+        "at": "2026-11-12T13:00:00.000Z",
+        "stillOpen": false,
+        "before": {
+          "outcome": "done",
+          "outcomeLabel": "Montáž dokončena",
+          "collectedAmount": 5000,
+          "paymentMethod": "hotove",
+          "paymentMethodLabel": "Hotově",
+          "discountAmount": null,
+          "closedByName": "Montér Karel",
+          "completedAt": "2026-11-16T11:00:00.000Z"
+        },
+        "after": {
+          "outcome": "done",
+          "outcomeLabel": "Montáž dokončena",
+          "collectedAmount": 0,
+          "paymentMethod": "fakturou",
+          "paymentMethodLabel": "Fakturou",
+          "discountAmount": null,
+          "closedByName": "Montér Karel",
+          "completedAt": "2026-11-16T11:00:00.000Z"
+        },
+        "changes": [
+          "collectedAmount",
+          "paymentMethodLabel"
+        ]
+      }
+    ],
+    "openCount": 1,
+    "truncated": false
+  }
+}

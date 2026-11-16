@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "data": {
+    "people": [
+      {
+        "id": 1,
+        "name": "Ovt Alfa",
+        "active": true
+      },
+      {
+        "id": 2,
+        "name": "Ovt Beta",
+        "active": true
+      },
+      {
+        "id": 5,
+        "name": "Ovt Starý",
+        "active": false
+      }
+    ]
+  }
+}

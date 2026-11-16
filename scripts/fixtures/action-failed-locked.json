@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "data": {
+    "outcome": "failed",
+    "steps": [
+      {
+        "name": "columns",
+        "label": "Sloupce zakázky",
+        "status": "failed",
+        "detail": "Zakázku právě upravuje Alena.",
+        "code": "ORDER_LOCKED"
+      },
+      {
+        "name": "status",
+        "label": "Stav zakázky",
+        "status": "pending",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "tags",
+        "label": "Štítky zakázky",
+        "status": "pending",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "comment",
+        "label": "Komentář u zakázky",
+        "status": "pending",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "visit_result",
+        "label": "Výsledek návštěvy",
+        "status": "pending",
+        "detail": null,
+        "code": null
+      }
+    ],
+    "ref": "tl2-ef34ab"
+  }
+}

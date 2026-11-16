@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "code": "ORDER_NOT_IN_SURVEY",
+  "message": "Zakázka není ve stavu zaměření."
+}

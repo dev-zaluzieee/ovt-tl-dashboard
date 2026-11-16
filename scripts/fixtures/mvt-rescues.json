@@ -1,0 +1,121 @@
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "event": {
+          "id": 37,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-10T07:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000037,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 37",
+            "phone": "+420 777 100 037",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "rescueNote": "Rám byl o 2 cm kratší, doříznuto na místě",
+        "discount": 800,
+        "discountNote": "sleva za zpoždění",
+        "collected": 4200,
+        "closedAt": "2026-11-10T10:00:00.000Z",
+        "laterClaim": {
+          "id": 905,
+          "status": "new",
+          "createdAt": "2026-11-14T09:00:00.000Z"
+        },
+        "heldDays": 4,
+        "held": false
+      },
+      {
+        "event": {
+          "id": 38,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-09T07:00:00.000Z",
+          "endsAt": "2026-11-09T09:00:00.000Z",
+          "day": "2026-11-09",
+          "orderId": 10000038,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 38",
+            "phone": "+420 777 100 038",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 4,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "rescueNote": null,
+        "discount": null,
+        "discountNote": null,
+        "collected": 3000,
+        "closedAt": "2026-11-09T10:00:00.000Z",
+        "laterClaim": null,
+        "heldDays": 7,
+        "held": true
+      }
+    ],
+    "summary": {
+      "count": 2,
+      "claimed": 1,
+      "totalDiscount": 800,
+      "medianDaysToClaim": 4
+    },
+    "truncated": false,
+    "qIgnored": false
+  }
+}

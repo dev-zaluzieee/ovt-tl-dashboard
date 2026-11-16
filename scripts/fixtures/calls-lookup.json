@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "data": {
+    "orders": [
+      {
+        "orderId": 10000011,
+        "customerId": 201,
+        "customerName": "Jana Svobodová",
+        "statusLabel": "Zaměření",
+        "owner": {
+          "id": 1,
+          "name": "Ovt Alfa"
+        },
+        "lastVisitAt": "2026-11-16T08:00:00.000Z",
+        "phones": [
+          {
+            "phone": "+420 777 111 222",
+            "key": "777111222",
+            "source": "order"
+          },
+          {
+            "phone": "603 333 444",
+            "key": "603333444",
+            "source": "customer"
+          }
+        ]
+      },
+      {
+        "orderId": 10000012,
+        "customerId": 202,
+        "customerName": "Petr Dvořák",
+        "statusLabel": "Montáž",
+        "owner": {
+          "id": 2,
+          "name": "Ovt Beta"
+        },
+        "lastVisitAt": "2026-11-16T08:00:00.000Z",
+        "phones": [
+          {
+            "phone": "+420 721 555 666",
+            "key": "721555666",
+            "source": "order"
+          }
+        ]
+      }
+    ],
+    "truncated": false
+  }
+}

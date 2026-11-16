@@ -1,0 +1,65 @@
+{
+  "success": true,
+  "data": {
+    "visits": [
+      {
+        "id": 12,
+        "type": "zamereni",
+        "typeLabel": "Zaměření",
+        "title": null,
+        "status": "completed",
+        "origin": null,
+        "startsAt": "2026-11-16T08:00:00.000Z",
+        "endsAt": "2026-11-16T09:00:00.000Z",
+        "day": "2026-11-16",
+        "orderId": 10000012,
+        "complaintId": null,
+        "customer": {
+          "name": "Zákazník 12",
+          "phone": "+420 777 100 012",
+          "city": "Brno"
+        },
+        "orderStatus": "zamereni",
+        "orderStatusLabel": "Zaměření",
+        "people": [
+          {
+            "id": 1,
+            "name": "Ovt Alfa",
+            "source": "owner"
+          }
+        ],
+        "b2b": true,
+        "state": {
+          "code": "closed",
+          "label": "Uzavřeno",
+          "closed": true,
+          "open": false
+        },
+        "result": {
+          "outcome": "nedopadlo",
+          "outcomeLabel": "Nedopadlo",
+          "reason": "vysoka_cena",
+          "reasonLabel": "Vysoká cena",
+          "collectedAmount": null,
+          "paymentMethod": null,
+          "paymentMethodLabel": null,
+          "discountAmount": null,
+          "discountNote": null,
+          "rescueNote": null,
+          "note": null,
+          "closedByName": "Ovt Alfa",
+          "completedAt": "2026-11-16T10:00:00.000Z",
+          "current": true
+        },
+        "reopen": null,
+        "tabletDraft": false,
+        "app": null,
+        "claim": null,
+        "amountDue": null,
+        "link": null
+      }
+    ],
+    "truncated": false,
+    "bucketLabel": "Nedopadlo"
+  }
+}

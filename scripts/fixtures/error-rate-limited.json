@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "code": "RATE_LIMITED",
+  "message": "Příliš mnoho dotazů."
+}

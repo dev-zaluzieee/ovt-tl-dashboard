@@ -1,0 +1,195 @@
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "event": {
+          "id": 39,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-10T07:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000039,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 39",
+            "phone": "+420 777 100 039",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "state": "ceka",
+        "stateLabel": "Čeká",
+        "reason": "chybi_zbozi",
+        "reasonLabel": "Chybí zboží",
+        "note": "Nedodali boční lišty",
+        "ageDays": 6,
+        "claim": {
+          "id": 910,
+          "status": "new",
+          "statusLabel": "Nová",
+          "druh": "Chybějící zboží",
+          "uznano": null,
+          "resolvedOn": null,
+          "blocker": "výrobce",
+          "createdAt": "2026-11-10T12:00:00.000Z"
+        },
+        "followUp": null
+      },
+      {
+        "event": {
+          "id": 40,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-09T07:00:00.000Z",
+          "endsAt": "2026-11-09T09:00:00.000Z",
+          "day": "2026-11-09",
+          "orderId": 10000040,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 40",
+            "phone": "+420 777 100 040",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 4,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "state": "bez_reklamace",
+        "stateLabel": "Bez reklamace",
+        "reason": "zakaznik_nepritomen",
+        "reasonLabel": "Zákazník nebyl doma",
+        "note": null,
+        "ageDays": 7,
+        "claim": null,
+        "followUp": null
+      },
+      {
+        "event": {
+          "id": 41,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": null,
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-06T07:00:00.000Z",
+          "endsAt": "2026-11-06T09:00:00.000Z",
+          "day": "2026-11-06",
+          "orderId": 10000041,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník 41",
+            "phone": "+420 777 100 041",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 3,
+              "name": "Montér Karel",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "state": "naplanovano",
+        "stateLabel": "Naplánováno",
+        "reason": "chybi_zbozi",
+        "reasonLabel": "Chybí zboží",
+        "note": null,
+        "ageDays": 10,
+        "claim": {
+          "id": 911,
+          "status": "planned",
+          "statusLabel": "Naplánována",
+          "druh": "Vada",
+          "uznano": "uznano",
+          "resolvedOn": null,
+          "blocker": null,
+          "createdAt": "2026-11-06T12:00:00.000Z"
+        },
+        "followUp": {
+          "id": 500,
+          "type": "reklamace",
+          "status": "scheduled",
+          "startsAt": "2026-11-19T08:00:00.000Z"
+        }
+      }
+    ],
+    "counts": {
+      "ceka": 1,
+      "bez_reklamace": 1,
+      "naplanovano": 1
+    },
+    "stateLabels": {
+      "vyreseno": "Vyřešeno",
+      "naplanovano": "Naplánováno",
+      "ceka": "Čeká",
+      "bez_reklamace": "Bez reklamace"
+    },
+    "truncated": false
+  }
+}

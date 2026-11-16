@@ -1,6 +1,10 @@
-import { WorkforceLanding } from '../components/workforce/WorkforceLanding';
+import { AppLayout } from '@/app/components/shell/AppLayout';
+import { Landing } from '@/app/components/shell/Landing';
 
-/** OVT landing — the OVT/MVT switch lands here. */
-export default function OvtHome() {
-  return <WorkforceLanding workforce="ovt" />;
+export default function Page() {
+  return (
+    <AppLayout>
+      <Landing side="ovt" />
+    </AppLayout>
+  );
 }

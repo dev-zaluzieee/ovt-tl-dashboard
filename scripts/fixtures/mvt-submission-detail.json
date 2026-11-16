@@ -1,0 +1,61 @@
+{
+  "success": true,
+  "data": {
+    "id": 6,
+    "eventId": 21,
+    "erpOrderId": 10000021,
+    "fitterName": "Montér Karel",
+    "outcome": "happy",
+    "status": "partial",
+    "statusLabel": "Částečně zapsáno",
+    "createdAt": "2026-11-16T09:00:00.000Z",
+    "completedAt": "2026-11-16T09:00:05.000Z",
+    "stepCount": 5,
+    "failedSteps": 1,
+    "warningCount": 1,
+    "collected": 5000,
+    "method": "hotove",
+    "steps": [
+      {
+        "name": "visit_result",
+        "label": "Výsledek návštěvy",
+        "status": "ok",
+        "statusLabel": "Zapsáno",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "columns",
+        "label": "Sloupce zakázky",
+        "status": "failed",
+        "statusLabel": "Selhalo",
+        "detail": "Zakázku právě upravuje Alena (zamčeno)",
+        "code": "ORDER_LOCKED"
+      },
+      {
+        "name": "cash",
+        "label": "Hotovost",
+        "status": "skipped",
+        "statusLabel": "Přeskočeno",
+        "detail": null,
+        "code": null
+      }
+    ],
+    "warnings": [
+      "Příloha předávacího protokolu chybí."
+    ],
+    "input": {
+      "outcome": "happy",
+      "collected": 5000,
+      "method": "hotove",
+      "discount": null,
+      "fitter": "Montér Karel"
+    },
+    "uploads": [
+      {
+        "id": 1,
+        "kind": "predavak"
+      }
+    ]
+  }
+}

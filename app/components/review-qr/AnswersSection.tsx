@@ -29,7 +29,7 @@ function StatsTable({ title, rows, emptyKey }: { title: string; rows: PromptStat
         <tbody className="divide-y divide-gray-100">
           {rows.map((s) => (
             <tr key={s.key ?? "__none"}>
-              <td className="px-3 py-2 whitespace-nowrap text-gray-800">{s.key ?? <span className="text-gray-400">{emptyKey}</span>}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-gray-800">{s.ovtName ?? s.key ?? <span className="text-gray-400">{emptyKey}</span>}</td>
               <td className="px-3 py-2 text-right tabular-nums">{s.shown}</td>
               <td className="px-3 py-2 text-right tabular-nums text-emerald-700">{s.written}</td>
               <td className="px-3 py-2 text-right tabular-nums">{s.refused}</td>
@@ -106,21 +106,21 @@ export function AnswersSection({ days, onDaysChange, prompts, stats, regionStats
           <tbody className="divide-y divide-gray-100">
             {prompts.map((p) => (
               <tr key={p.id}>
-                <td className="px-3 py-2 whitespace-nowrap text-gray-700">{fmtDateTime(p.shown_at)}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-gray-700">{p.ovt_email.split("@")[0]}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-gray-700">{fmtDateTime(p.shownAt)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-gray-700">{p.ovtName ?? p.ovtEmail?.split("@")[0] ?? "—"}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-gray-600">{p.region ?? <span className="text-gray-400">bez kraje</span>}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-gray-800">
-                  {p.customer_name ?? "—"}
-                  {p.order_id != null && <span className="ml-1 text-xs text-gray-400">#{p.order_id}</span>}
+                  {p.customerName ?? "—"}
+                  {p.erpOrderId != null && <span className="ml-1 text-xs text-gray-400">#{p.erpOrderId}</span>}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-gray-500">{p.slot === "secondary" ? "sekundární (přepnuto)" : p.slot === "primary" ? "primární" : "—"}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-gray-600">
-                  {p.target_label
-                    ? p.target_platform
-                      ? targetName({ label: p.target_label, platform: p.target_platform })
-                      : p.target_label
+                  {p.targetLabel
+                    ? p.targetPlatform
+                      ? targetName({ label: p.targetLabel, platform: p.targetPlatform })
+                      : p.targetLabel
                     : "—"}
-                  {p.target_source === "default" && <span className="ml-1 text-xs text-gray-400">(výchozí)</span>}
+                  {p.targetSource === "default" && <span className="ml-1 text-xs text-gray-400">(výchozí)</span>}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {p.outcome ? (

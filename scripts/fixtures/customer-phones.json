@@ -1,0 +1,25 @@
+{
+  "success": true,
+  "data": {
+    "customerId": 201,
+    "customerName": "Jana Svobodová",
+    "phones": [
+      {
+        "phone": "+420 777 111 222",
+        "key": "777111222",
+        "source": "order"
+      },
+      {
+        "phone": "603 333 444",
+        "key": "603333444",
+        "source": "customer"
+      }
+    ],
+    "orders": [
+      {
+        "orderId": 10000011,
+        "statusLabel": "Zaměření"
+      }
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "data": {
+    "outcome": "partial",
+    "steps": [
+      {
+        "name": "columns",
+        "label": "Sloupce zakázky",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "status",
+        "label": "Stav zakázky",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "tags",
+        "label": "Štítky zakázky",
+        "status": "failed",
+        "detail": "Štítek se nepodařilo zapsat.",
+        "code": "ERP_ERROR"
+      },
+      {
+        "name": "comment",
+        "label": "Komentář u zakázky",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "visit_result",
+        "label": "Výsledek návštěvy",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      }
+    ],
+    "ref": "tl2-ef34ac"
+  }
+}
