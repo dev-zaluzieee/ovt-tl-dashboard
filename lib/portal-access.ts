@@ -25,6 +25,8 @@ export const PAGE_PATTERNS: readonly RegExp[] = [
   /^\/mvt\/zachrany$/,
   /^\/mvt\/reklamace$/,
   /^\/objednavky-s-hovory$/,
+  /^\/hotovost$/,
+  new RegExp(`^/hotovost/${ID}$`),
   new RegExp(`^/zakaznik/${ID}/hovory$`),
   new RegExp(`^/zakazka/${ID}/hovory$`),
 ];
@@ -33,9 +35,9 @@ export function isPageEnabled(pathname: string): boolean {
   return PAGE_PATTERNS.some((re) => re.test(pathname));
 }
 
-/** The only API trees besides `/api/auth/*`: the backend proxy and the recordings routes (each verifies the session itself too). */
+/** The only API trees besides `/api/auth/*`: the backend proxy, the recordings routes and the Hotovost routes (each verifies the session itself too). */
 export function isApiEnabled(pathname: string): boolean {
-  return pathname === '/api/tl' || pathname.startsWith('/api/tl/') || pathname.startsWith('/api/calls/');
+  return pathname === '/api/tl' || pathname.startsWith('/api/tl/') || pathname.startsWith('/api/calls/') || pathname.startsWith('/api/cash/');
 }
 
 /**

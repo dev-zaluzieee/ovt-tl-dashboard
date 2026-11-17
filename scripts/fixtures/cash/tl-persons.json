@@ -1,0 +1,100 @@
+{
+  "success": true,
+  "data": {
+    "persons": [
+      {
+        "id": 1,
+        "email": "jana@example.test",
+        "display_name": "Jana Nová",
+        "role": "ovt",
+        "active": true,
+        "balance_czk": "3200.00",
+        "entry_count": 5,
+        "last_entry_at": "<timestamp>",
+        "overdue_czk": "3200.00",
+        "held_since": "<timestamp>",
+        "inventura_at": "<timestamp>",
+        "raynet_user_id": null,
+        "erp_user_id": 1,
+        "erp_user_ids": [
+          1
+        ],
+        "missing_proof_count": 2
+      },
+      {
+        "id": 2,
+        "email": "petr@example.test",
+        "display_name": "Petr Montér",
+        "role": "mvt",
+        "active": true,
+        "balance_czk": "2000.00",
+        "entry_count": 2,
+        "last_entry_at": "<timestamp>",
+        "overdue_czk": "2000.00",
+        "held_since": "<timestamp>",
+        "inventura_at": "<timestamp>",
+        "raynet_user_id": null,
+        "erp_user_id": 2,
+        "erp_user_ids": [
+          2
+        ],
+        "missing_proof_count": 0
+      },
+      {
+        "id": 3,
+        "email": "gone@example.test",
+        "display_name": "Odešlý",
+        "role": "ovt",
+        "active": true,
+        "balance_czk": "0",
+        "entry_count": 0,
+        "last_entry_at": null,
+        "overdue_czk": "0",
+        "held_since": null,
+        "inventura_at": null,
+        "raynet_user_id": null,
+        "erp_user_id": 3,
+        "erp_user_ids": [
+          3
+        ],
+        "missing_proof_count": 0
+      },
+      {
+        "id": 4,
+        "email": "new@example.test",
+        "display_name": "Nováček",
+        "role": "ovt",
+        "active": true,
+        "balance_czk": "0",
+        "entry_count": 0,
+        "last_entry_at": null,
+        "overdue_czk": "0",
+        "held_since": null,
+        "inventura_at": null,
+        "raynet_user_id": null,
+        "erp_user_id": 4,
+        "erp_user_ids": [
+          4
+        ],
+        "missing_proof_count": 0
+      },
+      {
+        "id": 5,
+        "email": "unmapped@example.test",
+        "display_name": "Nenapárovaný",
+        "role": "ovt",
+        "active": true,
+        "balance_czk": "0",
+        "entry_count": 0,
+        "last_entry_at": null,
+        "overdue_czk": "0",
+        "held_since": null,
+        "inventura_at": null,
+        "raynet_user_id": null,
+        "erp_user_id": null,
+        "erp_user_ids": [],
+        "missing_proof_count": 0
+      }
+    ]
+  }
+}

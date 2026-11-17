@@ -12,6 +12,8 @@ export interface NavGroup {
 
 const HOVORY: NavItem = { href: '/objednavky-s-hovory', label: 'Hovory', description: 'Objednávky s hovory a historie hovorů zákazníka: přehrání nahrávky a AI analýza.' };
 
+const HOTOVOST: NavItem = { href: '/hotovost', label: 'Hotovost', description: 'Kolik hotovosti mají lidé v terénu u sebe, co je po termínu a kdo čeká na inventuru. Jen ke čtení.' };
+
 /** Navigation per side (no teams). Same groups on both sides so a team leader finds things in the same place. */
 export const NAV: Record<Side, NavGroup[]> = {
   ovt: [
@@ -30,6 +32,7 @@ export const NAV: Record<Side, NavGroup[]> = {
       ],
     },
     { label: 'Zákazník', items: [HOVORY] },
+    { label: 'Hotovost', items: [HOTOVOST] },
   ],
   mvt: [
     {
@@ -51,6 +54,7 @@ export const NAV: Record<Side, NavGroup[]> = {
       ],
     },
     { label: 'Zákazník', items: [HOVORY] },
+    { label: 'Hotovost', items: [HOTOVOST] },
   ],
 };
 

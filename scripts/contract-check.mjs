@@ -1,5 +1,8 @@
 // Validates recorded backend answers (scripts/fixtures, shapes from ceniky-2 readonly-docs L7) against the app's parsers, and
 // checks the app's own rules (BFF allow-list, access gate, callback paths, CSRF, error texts, Prague days).
+// Hotovost: the finance backend's own cash fixtures (finance-dashboard/backend/docs/fixtures/cash, generated from its code) are read
+// from the sibling repo (override: FINANCE_FIXTURES=<dir>); without that checkout the recorded copies in scripts/fixtures/cash
+// are used (refresh: cp the same files there).
 // Imports nothing from the backend. The parsers are TypeScript, so they are transpiled on the fly with the repo's own
 // `typescript`. Run: node scripts/contract-check.mjs
 import fs from 'node:fs';
@@ -19,7 +22,7 @@ const load = async (rel) => {
   fs.writeFileSync(path.join(tmp, `${name}.mjs`), code);
   return name;
 };
-const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant'];
+const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'cash', 'cash-routes', 'finance-url'];
 for (const n of names) await load(`lib/${n}.ts`);
 const imp = (n) => import(pathToFileURL(path.join(tmp, `${n}.mjs`)).href);
 const P = await imp('tl-parse');
@@ -31,6 +34,9 @@ const { checkCsrf } = await imp('csrf');
 const L = await imp('links');
 const F = await imp('format');
 const G = await imp('dayGrid');
+const C = await imp('cash');
+const CR = await imp('cash-routes');
+const FU = await imp('finance-url');
 process.env.NEXTAUTH_SECRET = 'contract-check-secret';
 const CG = await imp('call-grant');
 
@@ -93,6 +99,138 @@ check('wrong shapes are refused (named field)', () => {
   try { P.parseOvtDay(bad); } catch (e) { if (!String(e.message).includes('tiles')) throw new Error('error does not name the field'); }
 });
 
+// ---- Hotovost: finance fixtures, parsers, helpers -----------------------------------------------------------------------
+const FIN_DIR = process.env.FINANCE_FIXTURES ?? '/Users/karel/source/zaluzieee/finance-dashboard/backend/docs/fixtures/cash';
+const cashFxDir = fs.existsSync(path.join(FIN_DIR, 'tl-persons.json')) ? FIN_DIR : path.join(root, 'scripts/fixtures/cash');
+console.log(`      (cash fixtures from ${cashFxDir})`);
+const cfx = (n) => JSON.parse(fs.readFileSync(path.join(cashFxDir, `${n}.json`), 'utf8'));
+const cdata = (n) => { const j = cfx(n); if (j.success !== true) throw new Error('fixture is not a success envelope'); return j.data; };
+const sameKeys = (obj, known, what) => {
+  const have = Object.keys(obj).sort().join(',');
+  const want = [...known].sort().join(',');
+  if (have !== want) throw new Error(`${what}: backend keys [${have}] differ from the client's [${want}]`);
+};
+
+check('cash persons: client keys equal the finance fixture, mapping and counts', () => {
+  const raw = cdata('tl-persons');
+  for (const p of raw.persons) sameKeys(p, C.CASH_PERSON_KEYS, 'person');
+  const ps = C.parseCashPersons(raw);
+  eq(ps.length, 5, 'persons'); eq(ps[0].role, 'ovt', 'role'); eq(ps[1].role, 'mvt', 'mvt role');
+  eq(ps[4].erp_user_id, null, 'unmapped person'); eq(ps[0].erp_user_ids.length, 1, 'erp ids'); eq(ps[0].missing_proof_count, 2, 'missing proof');
+  eq(ps[2].inventura_at, null, 'not activated'); eq(ps[0].balance_czk, '3200.00', 'decimal string kept');
+});
+check('cash detail: client keys equal the finance fixture (person, entry, summary, missing proof)', () => {
+  const raw = cdata('tl-person-detail');
+  sameKeys(raw.person, C.CASH_PERSON_HEAD_KEYS, 'person');
+  for (const e of raw.entries) sameKeys(e, C.CASH_ENTRY_KEYS, 'entry');
+  sameKeys(raw.summary, C.CASH_SUMMARY_KEYS, 'summary');
+  for (const m of raw.missingProof.entries) sameKeys(m, C.CASH_MISSING_PROOF_KEYS, 'missing proof');
+  const d = C.parseCashDetail(raw);
+  eq(d.entries.length, 5, 'entries'); eq(d.missingProof.count, 2, 'missing count'); eq(d.erpSync.stale, true, 'stale flag'); eq(d.erpSync.reason, 'not_configured', 'reason');
+  eq(d.summary.ovtCode, 'OVT05', 'code'); eq(d.summary.pendingDepositsCzk, 1000, 'pending'); eq(d.summary.discrepancyDepositsCzk, 500, 'discrepancy');
+  const e3 = d.entries.find((e) => e.id === 3);
+  eq(e3.order_ref, 77, 'order_ref'); eq(e3.erp_order_id, null, 'erp_order_id'); eq(C.entryOrderId(e3), 77, 'order link target'); eq(e3.source, 'erp_sync', 'source');
+  eq(d.entries.find((e) => e.id === 5).recon_status, 'discrepancy', 'recon'); eq(d.entries.find((e) => e.id === 6).attachments[0].filename, 'paragon.jpg', 'attachment');
+});
+check('cash: wrong shapes are refused (named field)', () => {
+  const b1 = cfx('tl-persons').data; delete b1.persons[0].balance_czk; throws(() => C.parseCashPersons(b1), 'no balance');
+  const b2 = cfx('tl-persons').data; b2.persons[0].active = 'yes'; throws(() => C.parseCashPersons(b2), 'active as text');
+  const b3 = cfx('tl-person-detail').data; delete b3.summary; throws(() => C.parseCashDetail(b3), 'no summary');
+  const b4 = cfx('tl-person-detail').data; b4.entries[0].recon_status = 'done'; throws(() => C.parseCashDetail(b4), 'unknown recon status');
+  const b5 = cfx('tl-person-detail').data; b5.entries[1].attachments = null; throws(() => C.parseCashDetail(b5), 'attachments');
+  const b6 = cfx('tl-person-detail').data; b6.entries[0].amount_czk = 'abc'; throws(() => C.parseCashDetail(b6), 'amount');
+  try { C.parseCashPersons(b1); } catch (e) { if (!String(e.message).includes('balance_czk')) throw new Error('error does not name the field'); }
+});
+check('cash overview: totals count only activated persons (the old page rule)', () => {
+  const ps = C.parseCashPersons(cdata('tl-persons'));
+  const t = C.cashTotals(ps);
+  eq(t.count, 5, 'count'); eq(t.activated, 2, 'activated'); eq(t.waiting, 3, 'waiting'); eq(t.balance, 5200, 'balance'); eq(t.overdue, 5200, 'overdue'); eq(t.overdueCount, 2, 'overdue persons'); eq(t.missingProof, 2, 'missing proof');
+  const ovt = C.cashTotals(C.filterPersons(ps, { role: 'ovt', q: '', onlyActive: true }));
+  eq(ovt.count, 4, 'ovt only'); eq(ovt.balance, 3200, 'ovt balance');
+  eq(JSON.stringify(C.roleCounts(ps, true)), '{"all":5,"ovt":4,"mvt":1}', 'role counts');
+});
+check('cash overview: switch OVT / MVT / all, search without diacritics, inactive hidden', () => {
+  const ps = C.parseCashPersons(cdata('tl-persons')).map((p) => (p.id === 3 ? { ...p, active: false } : p));
+  eq(C.filterPersons(ps, { role: 'mvt', q: '', onlyActive: true }).map((p) => p.id).join(), '2', 'mvt');
+  eq(C.filterPersons(ps, { role: 'all', q: '', onlyActive: true }).length, 4, 'inactive hidden');
+  eq(C.filterPersons(ps, { role: 'all', q: '', onlyActive: false }).length, 5, 'inactive shown');
+  eq(C.filterPersons(ps, { role: 'all', q: 'jana nova', onlyActive: false }).map((p) => p.id).join(), '1', 'Jana Nová found as "jana nova"');
+  eq(C.filterPersons(ps, { role: 'all', q: 'MONTER', onlyActive: false }).map((p) => p.id).join(), '2', 'case and diacritics');
+  eq(C.filterPersons(ps, { role: 'all', q: 'unmapped@', onlyActive: false }).map((p) => p.id).join(), '5', 'by e-mail');
+  eq(C.parseRoleFilter('mvt'), 'mvt', 'role param'); eq(C.parseRoleFilter('x'), 'all', 'bad role param'); eq(C.parseRoleFilter(null), 'all', 'no role param');
+});
+check('cash overview: sorting (names in Czech, missing dates always last, held = longest first)', () => {
+  const mk = (id, name, extra) => ({ id, email: `${id}@x.cz`, display_name: name, role: 'ovt', active: true, balance_czk: '0', entry_count: 0, last_entry_at: null, overdue_czk: '0', held_since: null, inventura_at: null, raynet_user_id: null, erp_user_id: id, erp_user_ids: [id], missing_proof_count: 0, ...extra });
+  const ps = [mk(1, 'Čech', { held_since: '2026-11-10T08:00:00Z', overdue_czk: '100', balance_czk: '900' }), mk(2, 'Adam', { held_since: '2026-11-01T08:00:00Z', overdue_czk: '300', balance_czk: '100' }), mk(3, 'Zora', { overdue_czk: '200', balance_czk: '500' }), mk(4, 'Dita', { held_since: '2026-11-05T08:00:00Z' })];
+  const ids = (k, d) => C.sortPersons(ps, k, d).map((p) => p.id).join();
+  eq(ids('name', 'asc'), '2,1,4,3', 'name asc (Č after C, before D)');
+  eq(ids('overdue', 'desc'), '2,3,1,4', 'overdue desc');
+  eq(ids('balance', 'asc'), '4,2,3,1', 'balance asc');
+  eq(ids('held', 'desc'), '2,4,1,3', 'held desc = oldest first, never-held last');
+  eq(ids('held', 'asc'), '1,4,2,3', 'held asc, never-held still last');
+  eq(ps.map((p) => p.id).join(), '1,2,3,4', 'input not mutated');
+});
+check('cash person page: anchor, expenses since, notes, labels, links, money', () => {
+  const d = C.parseCashDetail(cdata('tl-person-detail'));
+  eq(typeof C.anchorAt(d.entries), 'string', 'anchor');
+  const mk = (id, type, at, amt, extra) => ({ ...d.entries[0], id, entry_type: type, happened_at: at, amount_czk: amt, voided_at: null, ...extra });
+  const es = [mk(1, 'inventura', '2026-11-02T08:00:00Z', '0'), mk(2, 'expense', '2026-11-01T08:00:00Z', '50'), mk(3, 'expense', '2026-11-03T08:00:00Z', '300'), mk(4, 'expense', '2026-11-04T08:00:00Z', '70', { voided_at: '2026-11-05T08:00:00Z' }), mk(5, 'inventura', '2026-11-09T08:00:00Z', '0', { voided_at: '2026-11-09T09:00:00Z' })];
+  eq(C.anchorAt(es), '2026-11-02T08:00:00Z', 'latest VALID inventura'); eq(C.expenseSince(es, C.anchorAt(es)), 300, 'after anchor, no voided'); eq(C.expenseSince(es, null), 350, 'no anchor: all valid');
+  const post = { ...d.entries[0], entry_type: 'bank_deposit', deposit_channel: 'post', declared_variable_symbol: '1051117', declared_gross_czk: '1065.00', fee_czk: '65.00', customer_name: null, expense_category: null, note: null };
+  eq(C.entryNote(post), 'VS 1051117 · předáno 1 065 Kč · poplatek 65 Kč', 'post deposit note'); eq(C.entryTypeLabel(post), 'Vklad na poště', 'post label');
+  eq(C.entryNote({ ...d.entries[0], customer_name: 'Marie', expense_category: 'Other', note: 'obj. #77' }), 'Marie · obj. #77', 'Other category hidden');
+  eq(C.entryNote(d.entries.find((e) => e.id === 6)), 'PHM', 'expense category');
+  eq(C.entryOrderId({ erp_order_id: 9, order_ref: 77 }), 9, 'erp id first'); eq(C.entryOrderId({ erp_order_id: null, order_ref: null }), null, 'none');
+  eq(C.sourceLabel('erp_sync'), 'ERP (návštěva)', 'erp_sync'); eq(C.sourceLabel('ovt_app'), 'tablet', 'ovt_app'); eq(C.sourceLabel('mvt_app'), 'aplikace montérů', 'mvt_app'); eq(C.sourceLabel('manual'), 'ručně (finance)', 'manual'); eq(C.sourceLabel('bank_api'), 'banka', 'bank_api'); eq(C.sourceLabel('new_thing'), 'new_thing', 'unknown kept');
+  eq(C.fmtCzk('3200.00'), '3 200 Kč', 'decimal string'); eq(C.fmtCzk(0), '0 Kč', 'zero'); eq(C.fmtCzk(null), '—', 'null'); eq(C.personName({ display_name: null, email: 'jana@x.cz' }), 'jana', 'name from e-mail');
+  eq(L.erpOrderUrl('https://erp.example.cz', C.entryOrderId(d.entries.find((e) => e.id === 3))), 'https://erp.example.cz/orders/77', 'link to the ERP order');
+});
+check('cash errors: the 401 that is not a lost session never loops through the login; finance messages are shown as they are', () => {
+  eq(C.cashHttpStatus(401, 'TOKEN_EXPIRED'), 401, 'renew and retry'); eq(C.cashHttpStatus(401, 'UNAUTHORIZED'), 401, 'no session');
+  eq(C.cashHttpStatus(401, 'WRONG_AUDIENCE'), 403, 'wrong audience'); eq(C.cashHttpStatus(401, 'INVALID_TOKEN'), 403, 'invalid token'); eq(C.cashHttpStatus(401, null), 403, 'unknown 401');
+  eq(C.cashHttpStatus(403, 'WRONG_CLIENT'), 403, '403 stays'); eq(C.cashHttpStatus(503, 'NOT_CONFIGURED'), 503, '503 stays'); eq(C.cashHttpStatus(404, 'PERSON_NOT_FOUND'), 404, '404 stays');
+  for (const n of ['error-attachment-not-found', 'error-storage-not-configured']) { const b = cfx(n); if (!C.CASH_MESSAGE_CODES.has(b.code) || typeof b.message !== 'string' || !b.message) throw new Error(`${n}: code ${b.code} is not shown with finance's message`); }
+  eq(C.CASH_NOT_CONFIGURED_MESSAGE, 'Hotovost není nastavena.', 'not set up text');
+});
+check('FINANCE_API_URL: unset or not http(s) = not set up, trailing slash cut, no default address', () => {
+  const was = process.env.FINANCE_API_URL;
+  try {
+    delete process.env.FINANCE_API_URL; eq(FU.getFinanceUrl(), null, 'unset');
+    process.env.FINANCE_API_URL = '   '; eq(FU.getFinanceUrl(), null, 'blank');
+    process.env.FINANCE_API_URL = 'finance.local:4000'; eq(FU.getFinanceUrl(), null, 'no scheme');
+    process.env.FINANCE_API_URL = 'ftp://x'; eq(FU.getFinanceUrl(), null, 'other scheme');
+    process.env.FINANCE_API_URL = ' http://127.0.0.1:4100/// '; eq(FU.getFinanceUrl(), 'http://127.0.0.1:4100', 'trimmed');
+  } finally { if (was === undefined) delete process.env.FINANCE_API_URL; else process.env.FINANCE_API_URL = was; }
+});
+check('Hotovost routes: only numeric ids reach the finance URL; every path the source calls exists', () => {
+  for (const id of ['1', '42', '9007199254740991']) eq(CR.isCashId(id), true, id);
+  for (const id of ['0', '05', '-1', '1.5', '1/2', '..', '%2e', '1 ', '', 'x', '12345678901234567']) eq(CR.isCashId(id), false, id);
+  for (const p of ['persons', 'persons/4', 'attachments/9', 'status']) eq(CR.matchCashPath(p), true, p);
+  for (const p of ['persons/0', 'attachments', 'persons/4/entries', 'attachments/x', 'receive', 'persons/..']) eq(CR.matchCashPath(p), false, p);
+  const files = [];
+  const walk = (d) => { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, f.name); if (f.isDirectory()) walk(p); else if (/\.tsx?$/.test(f.name)) files.push(p); } };
+  walk(path.join(root, 'app')); walk(path.join(root, 'lib'));
+  let n = 0;
+  for (const f of files) {
+    const src = fs.readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/\bcashGet\(\s*[`'"]([^`'"]+)[`'"]/g)) { n++; if (!CR.matchCashPath(m[1].replace(/\$\{[^}]+\}/g, '5'))) throw new Error(`${path.relative(root, f)}: cashGet ${m[1]} is not a Hotovost route`); }
+    for (const m of src.matchAll(/\/api\/cash\/([A-Za-z0-9_\/${}.-]*[A-Za-z0-9_}])/g)) { if (m[1] === '${path}') continue; n++; if (!CR.matchCashPath(m[1].replace(/\$\{[^}]+\}/g, '5'))) throw new Error(`${path.relative(root, f)}: /api/cash/${m[1]} is not a Hotovost route`); }
+  }
+  if (n < 3) throw new Error(`only ${n} call sites found, the scan is broken`);
+});
+check('Hotovost is read-only: the route files export GET only, and the proxy sends GET only', () => {
+  const dir = path.join(root, 'app/api/cash');
+  const routes = [];
+  const walk = (d) => { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, f.name); if (f.isDirectory()) walk(p); else if (f.name === 'route.ts') routes.push(p); } };
+  walk(dir);
+  eq(routes.length, 4, 'route files');
+  for (const r of routes) { const src = fs.readFileSync(r, 'utf8'); if (/export\s+(async\s+)?function\s+(POST|PUT|PATCH|DELETE)\b/.test(src) || /export\s*\{[^}]*\b(POST|PUT|PATCH|DELETE)\b/.test(src)) throw new Error(`${path.relative(root, r)} exports a write method`); }
+  const proxy = fs.readFileSync(path.join(root, 'lib/finance-proxy.ts'), 'utf8');
+  if (/method:\s*'(POST|PUT|PATCH|DELETE)'/.test(proxy)) throw new Error('finance proxy sends a write');
+  if (!/\/api\/tl\/cash\//.test(proxy) || /\/api\/me\/cash/.test(proxy)) throw new Error('finance proxy must call only /api/tl/cash/');
+  if (/X-Person|searchParams|request\.(headers|url)/.test(proxy)) throw new Error('finance proxy must not forward caller-chosen identity or query');
+});
+
 // ---- errors in Czech ------------------------------------------------------------------------------------------------
 const apiErr = (name, status) => { const b = fx(name); return new E.TlApiError(status, b.message, b.code, b); };
 check('error texts per code', () => {
@@ -149,10 +287,10 @@ check('BFF query values are validated', () => {
 
 // ---- access gate ------------------------------------------------------------------------------------------------------
 check('access gate: only the listed pages and API trees exist', () => {
-  for (const p of ['/', '/login', '/ovt', '/prehled-dne', '/problematicke-zakazky', '/vysledky', '/recenze-qr', '/mvt', '/mvt/prehled-dne', '/mvt/nedokoncene', '/mvt/opravy', '/mvt/nesedi-doplatek', '/mvt/zapisy', '/mvt/zapisy/12', '/mvt/zachrany', '/mvt/reklamace', '/objednavky-s-hovory', '/zakaznik/201/hovory', '/zakazka/10000011/hovory']) eq(A.isPageEnabled(p), true, p);
-  for (const p of ['/tymy', '/klient/123', '/klient/123/hovory', '/hotovost', '/hotovost/4', '/automat-zf', '/skryte-zakazky', '/kontrola-nemozne-realizace', '/poslane-na-retence', '/mvt/parovani', '/mvt/problematicke-zakazky', '/auth', '/mvt/zapisy/05', '/mvt/zapisy/x']) eq(A.isPageEnabled(p), false, p);
-  for (const p of ['/api/tl/meta', '/api/calls/orders', '/api/calls/play/ab']) eq(A.isApiEnabled(p), true, p);
-  for (const p of ['/api/teams', '/api/users', '/api/cash/persons', '/api/raynet/office-day-events', '/api/retention-auto-zf/status', '/api/customer-calls/x', '/api/orders-with-calls', '/api/tlx', '/api']) eq(A.isApiEnabled(p), false, p);
+  for (const p of ['/', '/login', '/ovt', '/prehled-dne', '/problematicke-zakazky', '/vysledky', '/recenze-qr', '/mvt', '/mvt/prehled-dne', '/mvt/nedokoncene', '/mvt/opravy', '/mvt/nesedi-doplatek', '/mvt/zapisy', '/mvt/zapisy/12', '/mvt/zachrany', '/mvt/reklamace', '/objednavky-s-hovory', '/hotovost', '/hotovost/4', '/zakaznik/201/hovory', '/zakazka/10000011/hovory']) eq(A.isPageEnabled(p), true, p);
+  for (const p of ['/tymy', '/klient/123', '/klient/123/hovory', '/hotovost/05', '/hotovost/x', '/hotovost/4/x', '/automat-zf', '/skryte-zakazky', '/kontrola-nemozne-realizace', '/poslane-na-retence', '/mvt/parovani', '/mvt/problematicke-zakazky', '/auth', '/mvt/zapisy/05', '/mvt/zapisy/x']) eq(A.isPageEnabled(p), false, p);
+  for (const p of ['/api/tl/meta', '/api/calls/orders', '/api/calls/play/ab', '/api/cash/persons', '/api/cash/persons/4', '/api/cash/attachments/9', '/api/cash/status']) eq(A.isApiEnabled(p), true, p);
+  for (const p of ['/api/teams', '/api/users', '/api/cash', '/api/cashx/persons', '/api/raynet/office-day-events', '/api/retention-auto-zf/status', '/api/customer-calls/x', '/api/orders-with-calls', '/api/tlx', '/api']) eq(A.isApiEnabled(p), false, p);
 });
 check('access gate: public auth paths are exact', () => {
   for (const p of ['/api/auth/session', '/api/auth/csrf', '/api/auth/providers', '/api/auth/callback/demaxia', '/api/auth/signin/demaxia', '/api/auth/renew', '/api/auth/sso-logout', '/api/auth/session-expired']) eq(A.isPublicAuthPath(p), true, p);

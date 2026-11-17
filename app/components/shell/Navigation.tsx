@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { NAV, isActive, sideOfPath, type Side } from './nav';
 import { useMeta } from './MetaContext';
+import { useLoad } from '@/app/components/ui/useLoad';
 
 const KEY = 'tl-side';
 
@@ -50,6 +51,13 @@ export function Navigation() {
   };
 
   const items = NAV[side].flatMap((g) => g.items);
+  // Hotovost needs FINANCE_API_URL on the server: the entry stays, but says when it is not set up.
+  const { data: cashStatus } = useLoad<boolean>('cash-status', async (signal) => {
+    const res = await fetch('/api/cash/status', { headers: { Accept: 'application/json' }, signal });
+    const json = (await res.json().catch(() => null)) as { data?: { configured?: unknown } } | null;
+    return json?.data?.configured !== false;
+  });
+  const cashConfigured = cashStatus !== false;
 
   return (
     <>
@@ -90,6 +98,7 @@ export function Navigation() {
             {items.map((it) => (
               <Link key={it.href} href={it.href} className={`transition-opacity hover:opacity-80 ${isActive(pathname, it.href) ? 'font-semibold underline' : ''}`}>
                 {it.label}
+                {it.href === '/hotovost' && !cashConfigured && <span className="ml-1 text-xs font-normal opacity-80" title="Hotovost není nastavena (chybí FINANCE_API_URL)">(není nastavena)</span>}
               </Link>
             ))}
           </div>

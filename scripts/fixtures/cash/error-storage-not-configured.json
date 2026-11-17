@@ -1,0 +1,5 @@
+{
+  "error": "Ukládání dokladů zatím není nastavené (úložiště souborů). Doklad teď nejde nahrát ani otevřít, zkuste to později nebo kontaktujte finance.",
+  "message": "Ukládání dokladů zatím není nastavené (úložiště souborů). Doklad teď nejde nahrát ani otevřít, zkuste to později nebo kontaktujte finance.",
+  "code": "STORAGE_NOT_CONFIGURED"
+}
