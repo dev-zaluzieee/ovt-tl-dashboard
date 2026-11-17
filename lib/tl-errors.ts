@@ -100,6 +100,14 @@ export function errorText(e: unknown, fallback = 'Něco se nepovedlo, zkuste to 
     case 'SUBMISSION_NOT_FOUND':
     case 'TARGET_NOT_FOUND':
       return own ?? 'Záznam nebyl nalezen (nebo už neexistuje).';
+    case 'NOTE_REQUIRED':
+      return 'Napište poznámku (3 až 1000 znaků).';
+    case 'ALREADY_RESOLVED':
+      return 'Eskalace je už vyřešená. Obnovte seznam.';
+    case 'ALREADY_WITHDRAWN':
+      return 'Finance eskalaci mezitím stáhly. Obnovte seznam.';
+    case 'ESCALATION_NOT_FOUND':
+      return 'Eskalace nenalezena. Obnovte seznam.';
     case 'ERP_UNAVAILABLE':
       return `ERP je dočasně nedostupné, nic se nezapsalo.${own ? ` ${own}` : ''}`;
     default:

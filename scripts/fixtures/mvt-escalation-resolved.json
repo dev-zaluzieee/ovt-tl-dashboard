@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "data": {
+    "escalation": {
+      "id": 50,
+      "key": "k5",
+      "erpEventId": 303,
+      "erpOrderId": 10000011,
+      "reason": "x",
+      "link": null,
+      "escalatedBy": "alena@example.cz",
+      "escalatedByName": "Alena Účetní",
+      "createdAt": "2026-11-16T08:00:00.000Z",
+      "state": "resolved",
+      "withdrawnAt": null,
+      "withdrawnBy": null,
+      "resolvedAt": "2026-11-17T17:46:40.660Z",
+      "resolvedBy": "tl@example.cz",
+      "resolvedByName": "Team Leader",
+      "resolutionNote": "Vyřešeno s montérem"
+    }
+  }
+}

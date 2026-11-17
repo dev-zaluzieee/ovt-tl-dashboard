@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { NAV, isActive, sideOfPath, type Side } from './nav';
 import { useMeta } from './MetaContext';
 import { useLoad } from '@/app/components/ui/useLoad';
+import { EscalationBadge } from '@/app/components/mvt/EscalationBadge';
 
 const KEY = 'tl-side';
 
@@ -98,6 +99,7 @@ export function Navigation() {
             {items.map((it) => (
               <Link key={it.href} href={it.href} className={`transition-opacity hover:opacity-80 ${isActive(pathname, it.href) ? 'font-semibold underline' : ''}`}>
                 {it.label}
+                {it.href === '/mvt/eskalace' && <EscalationBadge />}
                 {it.href === '/hotovost' && !cashConfigured && <span className="ml-1 text-xs font-normal opacity-80" title="Hotovost není nastavena (chybí FINANCE_API_URL)">(není nastavena)</span>}
               </Link>
             ))}

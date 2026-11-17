@@ -1,0 +1,152 @@
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "escalation": {
+          "id": 1,
+          "key": "k2",
+          "erpEventId": 300,
+          "erpOrderId": 10000011,
+          "reason": "Montér vybral jinou částku než v dokladu, prosím o kontrolu.",
+          "link": "https://doklady.example.cz/visit/300",
+          "escalatedBy": "alena@example.cz",
+          "escalatedByName": "Alena Účetní",
+          "createdAt": "2026-11-16T08:00:00.000Z",
+          "state": "open",
+          "withdrawnAt": null,
+          "withdrawnBy": null,
+          "resolvedAt": null,
+          "resolvedBy": null,
+          "resolvedByName": null,
+          "resolutionNote": null
+        },
+        "event": {
+          "id": 300,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-12T07:00:00Z",
+          "endsAt": "2026-11-12T08:00:00Z",
+          "day": "2026-11-12",
+          "orderId": 10000011,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 6,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "overdue",
+            "label": "Po termínu bez výsledku",
+            "closed": false,
+            "open": true
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        }
+      },
+      {
+        "escalation": {
+          "id": 3,
+          "key": "k4",
+          "erpEventId": 302,
+          "erpOrderId": 10000013,
+          "reason": "Špatné číslo zakázky.",
+          "link": null,
+          "escalatedBy": "alena@example.cz",
+          "escalatedByName": "Alena Účetní",
+          "createdAt": "2026-11-10T08:00:00.000Z",
+          "state": "withdrawn",
+          "withdrawnAt": "2026-11-10T10:00:00.000Z",
+          "withdrawnBy": "alena@example.cz",
+          "resolvedAt": null,
+          "resolvedBy": null,
+          "resolvedByName": null,
+          "resolutionNote": null
+        },
+        "event": null
+      },
+      {
+        "escalation": {
+          "id": 2,
+          "key": "k3",
+          "erpEventId": 301,
+          "erpOrderId": 10000012,
+          "reason": "Chybí platba za doplatek.",
+          "link": null,
+          "escalatedBy": "alena@example.cz",
+          "escalatedByName": "Alena Účetní",
+          "createdAt": "2026-11-12T08:00:00.000Z",
+          "state": "resolved",
+          "withdrawnAt": null,
+          "withdrawnBy": null,
+          "resolvedAt": "2026-11-13T09:00:00.000Z",
+          "resolvedBy": "tl@example.cz",
+          "resolvedByName": "Team Leader",
+          "resolutionNote": "Doplatek doplacen na dobírku."
+        },
+        "event": {
+          "id": 301,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-12T07:00:00Z",
+          "endsAt": "2026-11-12T08:00:00Z",
+          "day": "2026-11-12",
+          "orderId": 10000012,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 6,
+              "name": "Montér Petr",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "overdue",
+            "label": "Po termínu bez výsledku",
+            "closed": false,
+            "open": true
+          },
+          "result": null,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        }
+      }
+    ],
+    "openCount": 1,
+    "pending": false
+  }
+}

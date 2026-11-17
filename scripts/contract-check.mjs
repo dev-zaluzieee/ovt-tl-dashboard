@@ -22,7 +22,7 @@ const load = async (rel) => {
   fs.writeFileSync(path.join(tmp, `${name}.mjs`), code);
   return name;
 };
-const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'cash', 'cash-routes', 'finance-url'];
+const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'escalations', 'cash', 'cash-routes', 'finance-url'];
 for (const n of names) await load(`lib/${n}.ts`);
 const imp = (n) => import(pathToFileURL(path.join(tmp, `${n}.mjs`)).href);
 const P = await imp('tl-parse');
@@ -34,6 +34,7 @@ const { checkCsrf } = await imp('csrf');
 const L = await imp('links');
 const F = await imp('format');
 const G = await imp('dayGrid');
+const ES = await imp('escalations');
 const C = await imp('cash');
 const CR = await imp('cash-routes');
 const FU = await imp('finance-url');
@@ -231,8 +232,39 @@ check('Hotovost is read-only: the route files export GET only, and the proxy sen
   if (/X-Person|searchParams|request\.(headers|url)/.test(proxy)) throw new Error('finance proxy must not forward caller-chosen identity or query');
 });
 
+check('escalations from finance: client keys equal the backend fixtures, rows, null visit, states', () => {
+  const raw = data('mvt-escalations-all');
+  for (const r of raw.rows) { sameKeys(r.escalation, ES.ESCALATION_KEYS, 'escalation'); }
+  const d = ES.parseEscalations(raw);
+  eq(d.rows.length, 3, 'rows'); eq(d.openCount, 1, 'open count'); eq(d.pending, false, 'pending'); eq(d.rows[0].event.id, 300, 'visit'); eq(d.rows[1].event, null, 'visit left the period');
+  eq(d.rows.map((r) => r.escalation.state).join(), 'open,withdrawn,resolved', 'states'); eq(d.rows[2].escalation.resolutionNote, 'Doplatek doplacen na dobírku.', 'note');
+  eq(ES.visibleRows(d.rows, 'open').length, 1, 'open filter'); eq(ES.visibleRows(d.rows, 'all').length, 3, 'all filter');
+  eq(ES.parseEscalations(data('mvt-escalations')).rows.length, 1, 'default list is open only');
+  const r = ES.parseResolved(data('mvt-escalation-resolved')); eq(r.state, 'resolved', 'resolved'); eq(r.resolvedBy, 'tl@example.cz', 'by'); eq(r.resolutionNote, 'Vyřešeno s montérem', 'note');
+  const bad = fx('mvt-escalations').data; bad.rows[0].escalation.state = 'done'; throws(() => ES.parseEscalations(bad), 'unknown state');
+  const bad2 = fx('mvt-escalations').data; delete bad2.rows[0].escalation.reason; throws(() => ES.parseEscalations(bad2), 'no reason');
+});
+check('escalations: note rule (3-1000 trimmed), only https links, filter param, error texts', () => {
+  eq(ES.noteValid('ab'), false, 'short'); eq(ES.noteValid('  ab  '), false, 'short trimmed'); eq(ES.noteValid('abc'), true, '3'); eq(ES.noteValid('x'.repeat(1001)), false, 'long');
+  const fo = 'https://doklady.example.cz';
+  eq(ES.safeLink('https://doklady.example.cz/v/1', fo), 'https://doklady.example.cz/v/1', 'finance origin'); eq(ES.safeLink('javascript:alert(1)', fo), null, 'js'); eq(ES.safeLink('http://doklady.example.cz/v/1', fo), null, 'http'); eq(ES.safeLink(null, fo), null, 'null');
+  eq(ES.safeLink('https://evil.example/login', fo), null, 'foreign origin'); eq(ES.safeLink('https://doklady.example.cz.evil.example/', fo), null, 'look-alike host'); eq(ES.safeLink('https://doklady.example.cz/v/1', null), null, 'no origin configured = no link');
+  eq(ES.parseFilter('all'), 'all', 'all'); eq(ES.parseFilter('x'), 'open', 'default');
+  const b = fx('error-already-resolved'); eq(E.errorText(new E.TlApiError(409, b.message, b.code, b)).includes('vyřešená'), true, 'ALREADY_RESOLVED');
+  eq(E.errorText(new E.TlApiError(400, 'x', 'NOTE_REQUIRED', {})).includes('3 až 1000'), true, 'NOTE_REQUIRED');
+});
+
 // ---- errors in Czech ------------------------------------------------------------------------------------------------
 const apiErr = (name, status) => { const b = fx(name); return new E.TlApiError(status, b.message, b.code, b); };
+check('FINANCE_WEB_URL: https origin only, unset = null', () => {
+  const was = process.env.FINANCE_WEB_URL;
+  try {
+    delete process.env.FINANCE_WEB_URL; eq(FU.getFinanceWebOrigin(), null, 'unset');
+    process.env.FINANCE_WEB_URL = 'http://x.cz'; eq(FU.getFinanceWebOrigin(), null, 'http');
+    process.env.FINANCE_WEB_URL = 'x.cz'; eq(FU.getFinanceWebOrigin(), null, 'no scheme');
+    process.env.FINANCE_WEB_URL = ' https://Doklady.example.cz/some/path/ '; eq(FU.getFinanceWebOrigin(), 'https://doklady.example.cz', 'origin only');
+  } finally { if (was === undefined) delete process.env.FINANCE_WEB_URL; else process.env.FINANCE_WEB_URL = was; }
+});
 check('error texts per code', () => {
   const t = (n, s) => E.errorText(apiErr(n, s));
   if (!t('error-no-erp-user', 403).includes('nemá uživatele v ERP')) throw new Error('NO_ERP_USER');
@@ -254,11 +286,11 @@ check('error texts per code', () => {
 
 // ---- BFF allow-list: exactly the backend routes the screens use ------------------------------------------------------
 check('BFF allow-list: open routes', () => {
-  const allowed = [['GET', 'meta'], ['GET', 'people'], ['GET', 'search'], ['GET', 'ovt/day'], ['POST', 'ovt/orders/10000001/b2b'], ['GET', 'ovt/problems'], ['POST', 'ovt/problems/close'], ['POST', 'ovt/problems/nedopadlo'], ['GET', 'ovt/results'], ['GET', 'ovt/results/visits'], ['GET', 'mvt/day'], ['GET', 'mvt/overview'], ['GET', 'mvt/missing'], ['POST', 'mvt/missing/close'], ['GET', 'mvt/reopens'], ['POST', 'mvt/events/5/reopen'], ['GET', 'mvt/doplatek'], ['POST', 'mvt/doplatek/resolve'], ['GET', 'mvt/rescues'], ['GET', 'mvt/montaz-claims'], ['GET', 'mvt/submissions'], ['GET', 'mvt/submissions/7'], ['POST', 'resolutions/3/undo'], ['GET', 'calls/search'], ['GET', 'review-qr'], ['PUT', 'review-qr/settings'], ['PUT', 'review-qr/defaults'], ['PUT', 'review-qr/regions'], ['POST', 'review-qr/targets'], ['PUT', 'review-qr/targets/4'], ['DELETE', 'review-qr/targets/4'], ['GET', 'review-qr/prompts']];
+  const allowed = [['GET', 'meta'], ['GET', 'people'], ['GET', 'search'], ['GET', 'ovt/day'], ['POST', 'ovt/orders/10000001/b2b'], ['GET', 'ovt/problems'], ['POST', 'ovt/problems/close'], ['POST', 'ovt/problems/nedopadlo'], ['GET', 'ovt/results'], ['GET', 'ovt/results/visits'], ['GET', 'mvt/day'], ['GET', 'mvt/overview'], ['GET', 'mvt/missing'], ['POST', 'mvt/missing/close'], ['GET', 'mvt/reopens'], ['POST', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations'], ['POST', 'mvt/escalations/5/resolve'], ['GET', 'mvt/doplatek'], ['POST', 'mvt/doplatek/resolve'], ['GET', 'mvt/rescues'], ['GET', 'mvt/montaz-claims'], ['GET', 'mvt/submissions'], ['GET', 'mvt/submissions/7'], ['POST', 'resolutions/3/undo'], ['GET', 'calls/search'], ['GET', 'review-qr'], ['PUT', 'review-qr/settings'], ['PUT', 'review-qr/defaults'], ['PUT', 'review-qr/regions'], ['POST', 'review-qr/targets'], ['PUT', 'review-qr/targets/4'], ['DELETE', 'review-qr/targets/4'], ['GET', 'review-qr/prompts']];
   for (const [m, p] of allowed) if (!R.matchRoute(m, p.split('/'))) throw new Error(`${m} ${p} should be open`);
 });
 check('BFF allow-list: everything else is closed (no open relay, no recordings keys)', () => {
-  const denied = [['GET', 'orders'], ['POST', 'calls/lookup'], ['GET', 'calls/customer-phones'], ['GET', 'teams'], ['PUT', 'ovt/day'], ['GET', 'resolutions/3/undo'], ['GET', 'mvt/submissions/05'], ['GET', 'mvt/events/5/reopen'], ['DELETE', 'review-qr'], ['GET', 'meta/x'], ['GET', '..'], ['GET', 'ovt/results/%2e%2e']];
+  const denied = [['GET', 'orders'], ['POST', 'calls/lookup'], ['GET', 'calls/customer-phones'], ['GET', 'teams'], ['PUT', 'ovt/day'], ['GET', 'resolutions/3/undo'], ['GET', 'mvt/submissions/05'], ['GET', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations/5/resolve'], ['POST', 'mvt/escalations'], ['DELETE', 'mvt/escalations/5'], ['POST', 'mvt/escalations/05/resolve'], ['DELETE', 'review-qr'], ['GET', 'meta/x'], ['GET', '..'], ['GET', 'ovt/results/%2e%2e']];
   for (const [m, p] of denied) if (R.matchRoute(m, p.split('/'))) throw new Error(`${m} ${p} should be closed`);
 });
 check('BFF allow-list covers every path the source calls', () => {
@@ -279,7 +311,7 @@ check('BFF allow-list covers every path the source calls', () => {
   if (n < 20) throw new Error(`only ${n} call sites found, the scan is broken`);
 });
 check('BFF query values are validated', () => {
-  const ok = [['date', '2026-11-16'], ['person', '12'], ['person', 'none'], ['closed', 'only'], ['current', '1'], ['q', 'Novák'], ['side', 'mvt'], ['status', 'failed,partial'], ['bucket', 'closed_no_result'], ['page', '3']];
+  const ok = [['date', '2026-11-16'], ['person', '12'], ['person', 'none'], ['closed', 'only'], ['current', '1'], ['q', 'Novák'], ['side', 'mvt'], ['status', 'failed,partial'], ['bucket', 'closed_no_result'], ['page', '3'], ['includeClosed', '1']];
   for (const [k, v] of ok) if (!R.validQueryValue(k, v)) throw new Error(`${k}=${v} should pass`);
   const bad = [['date', '2026-11-16; DROP'], ['person', '0'], ['person', '1 OR 1=1'], ['closed', 'all'], ['side', 'x'], ['status', 'a/b'], ['page', '-1'], ['unknown', '1'], ['q', 'a\u0000b']];
   for (const [k, v] of bad) if (R.validQueryValue(k, v)) throw new Error(`${k}=${v} should be refused`);
@@ -287,7 +319,7 @@ check('BFF query values are validated', () => {
 
 // ---- access gate ------------------------------------------------------------------------------------------------------
 check('access gate: only the listed pages and API trees exist', () => {
-  for (const p of ['/', '/login', '/ovt', '/prehled-dne', '/problematicke-zakazky', '/vysledky', '/recenze-qr', '/mvt', '/mvt/prehled-dne', '/mvt/nedokoncene', '/mvt/opravy', '/mvt/nesedi-doplatek', '/mvt/zapisy', '/mvt/zapisy/12', '/mvt/zachrany', '/mvt/reklamace', '/objednavky-s-hovory', '/hotovost', '/hotovost/4', '/zakaznik/201/hovory', '/zakazka/10000011/hovory']) eq(A.isPageEnabled(p), true, p);
+  for (const p of ['/', '/login', '/ovt', '/prehled-dne', '/problematicke-zakazky', '/vysledky', '/recenze-qr', '/mvt', '/mvt/prehled-dne', '/mvt/nedokoncene', '/mvt/opravy', '/mvt/nesedi-doplatek', '/mvt/zapisy', '/mvt/zapisy/12', '/mvt/zachrany', '/mvt/reklamace', '/mvt/eskalace', '/objednavky-s-hovory', '/hotovost', '/hotovost/4', '/zakaznik/201/hovory', '/zakazka/10000011/hovory']) eq(A.isPageEnabled(p), true, p);
   for (const p of ['/tymy', '/klient/123', '/klient/123/hovory', '/hotovost/05', '/hotovost/x', '/hotovost/4/x', '/automat-zf', '/skryte-zakazky', '/kontrola-nemozne-realizace', '/poslane-na-retence', '/mvt/parovani', '/mvt/problematicke-zakazky', '/auth', '/mvt/zapisy/05', '/mvt/zapisy/x']) eq(A.isPageEnabled(p), false, p);
   for (const p of ['/api/tl/meta', '/api/calls/orders', '/api/calls/play/ab', '/api/cash/persons', '/api/cash/persons/4', '/api/cash/attachments/9', '/api/cash/status']) eq(A.isApiEnabled(p), true, p);
   for (const p of ['/api/teams', '/api/users', '/api/cash', '/api/cashx/persons', '/api/raynet/office-day-events', '/api/retention-auto-zf/status', '/api/customer-calls/x', '/api/orders-with-calls', '/api/tlx', '/api']) eq(A.isApiEnabled(p), false, p);

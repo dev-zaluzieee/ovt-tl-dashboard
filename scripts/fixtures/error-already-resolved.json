@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "message": "Eskalace je už vyřešená.",
+  "code": "ALREADY_RESOLVED"
+}

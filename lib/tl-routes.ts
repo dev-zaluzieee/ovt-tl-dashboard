@@ -44,6 +44,8 @@ const ROUTES: readonly Route[] = [
   { method: 'POST', re: /^mvt\/missing\/close$/, body: true },
   { method: 'GET', re: /^mvt\/reopens$/, query: [...DATES, ...PERSON, 'open', 'side'] },
   { method: 'POST', re: new RegExp(`^mvt/events/${ID}/reopen$`), body: true },
+  { method: 'GET', re: /^mvt\/escalations$/, query: ['includeClosed'] },
+  { method: 'POST', re: new RegExp(`^mvt/escalations/${ID}/resolve$`), body: true },
   { method: 'GET', re: /^mvt\/doplatek$/, query: [...DATES, 'includeResolved', ...PERSON, 'severity'] },
   { method: 'POST', re: /^mvt\/doplatek\/resolve$/, body: true },
   { method: 'GET', re: /^mvt\/rescues$/, query: [...DATES, ...PERSON, 'q'] },
@@ -94,6 +96,7 @@ export function validQueryValue(key: string, value: string): boolean {
     case 'current':
     case 'includeHandled':
     case 'includeResolved':
+    case 'includeClosed':
     case 'open':
       return value === '1' || value === 'true';
     case 'closed':

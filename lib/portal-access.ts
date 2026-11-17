@@ -24,6 +24,7 @@ export const PAGE_PATTERNS: readonly RegExp[] = [
   new RegExp(`^/mvt/zapisy/${ID}$`),
   /^\/mvt\/zachrany$/,
   /^\/mvt\/reklamace$/,
+  /^\/mvt\/eskalace$/,
   /^\/objednavky-s-hovory$/,
   /^\/hotovost$/,
   new RegExp(`^/hotovost/${ID}$`),

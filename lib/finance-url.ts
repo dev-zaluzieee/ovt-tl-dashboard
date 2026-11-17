@@ -9,3 +9,18 @@ export function getFinanceUrl(): string | null {
   if (!url || !/^https?:\/\//i.test(url)) return null;
   return url.replace(/\/+$/, '');
 }
+
+/**
+ * Origin of the finance FRONTEND (`FINANCE_WEB_URL`, server-side only; `FINANCE_API_URL` is the backend, not the page).
+ * Only links to this origin are offered as "Otevřít ve financích" on the escalations page. Unset or not https = no link.
+ */
+export function getFinanceWebOrigin(): string | null {
+  const raw = process.env.FINANCE_WEB_URL?.trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'https:' ? u.origin : null;
+  } catch {
+    return null;
+  }
+}
