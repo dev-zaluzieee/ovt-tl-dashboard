@@ -241,7 +241,7 @@ export function CustomerCallsClient({ kind, id, q }: { kind: 'customer' | 'order
             onChange={(e) => setAgentFilter(e.target.value)}
             className={inputCls}
           >
-            <option value="">Operátor: všichni</option>
+            <option value="">Agent: všichni</option>
             {agents.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -317,7 +317,7 @@ export function CustomerCallsClient({ kind, id, q }: { kind: 'customer' | 'order
                 <tr>
                   <th className={cellPad}>Datum</th>
                   <th className={cellPad}>Telefon</th>
-                  <th className={cellPad}>Operátor</th>
+                  <th className={cellPad}>Agent</th>
                   <th className={cellPad}>Fronta</th>
                   <th className={cellPad}>Nahrávka</th>
                   <th className={`${cellPad} text-right`}>Akce</th>

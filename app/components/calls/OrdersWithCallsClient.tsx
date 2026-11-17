@@ -83,7 +83,7 @@ export function OrdersWithCallsClient() {
             {owners.map(([id, name]) => <option key={id} value={String(id)}>{name}</option>)}
           </select>
           <select value={agent} onChange={(e) => setAgent(e.target.value)} className={inputCls}>
-            <option value="">Operátor: všichni</option>
+            <option value="">Agent: všichni</option>
             {agents.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
           <DensityToggle density={density} onChange={setDensity} />
@@ -109,7 +109,7 @@ export function OrdersWithCallsClient() {
                     <tr key={r.orderId} className="align-top">
                       <td className={cell}>
                         <div className="font-medium text-gray-900">{r.customerName ?? `Zakázka #${r.orderId}`}</div>
-                        {density === 'standard' && r.agents.length > 0 && <div className="text-xs text-gray-400">Operátor: {r.agents.slice(0, 2).join(', ')}{r.agents.length > 2 ? '…' : ''}</div>}
+                        {density === 'standard' && r.agents.length > 0 && <div className="text-xs text-gray-400">Agent: {r.agents.slice(0, 2).join(', ')}{r.agents.length > 2 ? '…' : ''}</div>}
                       </td>
                       <td className={`${cell} whitespace-nowrap font-mono text-gray-800`}>{r.phones.map((p) => p.phone).join(', ') || '—'}</td>
                       <td className={`${cell} whitespace-nowrap text-gray-700`}>{r.owner?.name ?? '—'}</td>
