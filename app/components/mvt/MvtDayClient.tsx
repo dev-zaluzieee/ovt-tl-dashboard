@@ -6,7 +6,7 @@ import { tlGet } from '@/lib/tl-api';
 import { parseMvtDay } from '@/lib/tl-parse';
 import type { EventView, MvtDay } from '@/lib/types';
 import { fmtDateTime, fmtKc, fmtTimeRange, isYmd, plural } from '@/lib/format';
-import { useMeta } from '@/app/components/shell/MetaContext';
+import { useHistoryMin, useMeta } from '@/app/components/shell/MetaContext';
 import { DayNav, PersonSelect, SearchBox, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Chip, Empty, EventLinks, LoadError, PageHeader, Skeleton, StateChip, btnSmall, stateTone } from '@/app/components/ui/kit';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
@@ -29,6 +29,7 @@ export function ResultLine({ ev }: { ev: EventView }) {
 /** Přehled dne (MVT): montáže, servisy, reklamace and placené opravy per fitter, state chips, refresh every 120 s. */
 export function MvtDayClient() {
   const { meta } = useMeta();
+  const historyMin = useHistoryMin();
   const { get, set } = useUrlParams();
   const [density, setDensity] = useListDensity();
   const [picked, setPicked] = useState<string[]>([]);
@@ -56,9 +57,9 @@ export function MvtDayClient() {
     <main className="container mx-auto px-4 py-8">
       <PageHeader title="Montéři (MVT): Přehled dne" subtitle="Montáže, servisy, reklamace a placené opravy dne po montérech. Stránka se sama obnovuje každé 2 minuty." />
       <div className="space-y-4">
-        <DayNav date={date} today={today} onChange={(d) => set({ date: d === today ? null : d })} />
+        <DayNav date={date} today={today} min={historyMin} onChange={(d) => set({ date: d === today ? null : d })} />
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <PersonSelect side="mvt" value={person} onChange={(v) => set({ person: v })} />
+          <PersonSelect side="mvt" scope="history" value={person} onChange={(v) => set({ person: v })} />
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={showAll} onChange={(e) => set({ all: e.target.checked ? '1' : null })} />
             zobrazit i uzavřené a bez montéra{hidden ? ` (${hidden})` : ''}

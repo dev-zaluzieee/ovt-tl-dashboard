@@ -31,9 +31,12 @@ export function useUrlParams() {
   return { get, set, qs };
 }
 
-/** Person filter on every list: ERP users who own visits of the side (backend `/people`). */
-export function PersonSelect({ side, value, onChange }: { side: Side; value: string; onChange: (id: string) => void }) {
-  const { data } = useLoad<Person[]>(`people-${side}`, async (signal) => parsePeople(await tlGet('people', { side }, signal)));
+/**
+ * Person filter on every list: ERP users who own visits of the side (backend `/people`). `scope` is the kind of the page: a WORK page
+ * (default) offers people of the work scope, a HISTORY page (day views, Výsledky, Záchrany, Reklamace z montáží) people of the history scope.
+ */
+export function PersonSelect({ side, value, onChange, scope = 'work' }: { side: Side; value: string; onChange: (id: string) => void; scope?: 'work' | 'history' }) {
+  const { data } = useLoad<Person[]>(`people-${side}-${scope}`, async (signal) => parsePeople(await tlGet('people', { side, scope }, signal)));
   const people = data ?? [];
   return (
     <label className="flex items-center gap-2 text-sm">
@@ -85,10 +88,10 @@ export function SearchBox({ value, onChange, placeholder, ignored }: { value: st
   );
 }
 
-export function DayNav({ date, today, onChange }: { date: string; today: string; onChange: (ymd: string) => void }) {
+export function DayNav({ date, today, onChange, min }: { date: string; today: string; onChange: (ymd: string) => void; min?: string | null }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <button type="button" onClick={() => onChange(shiftYmd(date, -1))} className={btnGhost} aria-label="Předchozí den">
+      <button type="button" onClick={() => onChange(shiftYmd(date, -1))} disabled={!!min && date <= min} className={btnGhost} aria-label="Předchozí den">
         ← Předchozí den
       </button>
       <button type="button" onClick={() => onChange(today)} className={btnPrimary}>
@@ -97,23 +100,23 @@ export function DayNav({ date, today, onChange }: { date: string; today: string;
       <button type="button" onClick={() => onChange(shiftYmd(date, 1))} className={btnGhost} aria-label="Následující den">
         Následující den →
       </button>
-      <input type="date" value={date} onChange={(e) => e.target.value && onChange(e.target.value)} className={inputCls} aria-label="Konkrétní datum" />
+      <input type="date" value={date} min={min ?? undefined} onChange={(e) => e.target.value && onChange(e.target.value)} className={inputCls} aria-label="Konkrétní datum" />
       <span className="text-sm text-gray-600">{fmtLongDay(date)}</span>
     </div>
   );
 }
 
-export function DateRange({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
+export function DateRange({ from, to, onChange, min }: { from: string; to: string; onChange: (from: string, to: string) => void; min?: string | null }) {
   return (
     <div className="flex items-center gap-2 text-sm">
       <label className="font-medium text-gray-700" htmlFor="range-from">
         Od:
       </label>
-      <input id="range-from" type="date" value={from} onChange={(e) => onChange(e.target.value, to)} className={inputCls} />
+      <input id="range-from" type="date" value={from} min={min ?? undefined} onChange={(e) => onChange(e.target.value, to)} className={inputCls} />
       <label className="font-medium text-gray-700" htmlFor="range-to">
         Do:
       </label>
-      <input id="range-to" type="date" value={to} onChange={(e) => onChange(from, e.target.value)} className={inputCls} />
+      <input id="range-to" type="date" value={to} min={min ?? undefined} onChange={(e) => onChange(from, e.target.value)} className={inputCls} />
     </div>
   );
 }

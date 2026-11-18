@@ -56,7 +56,37 @@ const data = (n) => { const j = fx(n); if (j.success !== true) throw new Error('
 const throws = (fn, what) => { let t = false; try { fn(); } catch { t = true; } if (!t) throw new Error(`${what}: accepted`); };
 
 // ---- recorded answers -----------------------------------------------------------------------------------------------
-check('meta', () => { const m = P.parseMeta(data('meta')); eq(m.today, '2026-11-16', 'today'); eq(m.erpWebBaseUrl, null, 'erp base (not configured in the fixture run)'); eq(m.vocabulary.ovtCloseReasons.jine.includes('Jiné'), true, 'reasons'); eq(m.vocabulary.quietStates.length, 3, 'quiet'); });
+check('meta', () => { const m = P.parseMeta(data('meta')); eq(m.today, '2026-11-16', 'today'); eq(m.erpWebBaseUrl, null, 'erp base (not configured in the fixture run)'); eq(m.vocabulary.ovtCloseReasons.jine.includes('Jiné'), true, 'reasons'); eq(m.vocabulary.quietStates.length, 4, 'quiet'); eq(m.vocabulary.quietStates.includes('legacy_no_result'), true, 'quiet state of migrated visits'); eq(m.historyFrom, '2025-01-01T00:00:00.000Z', 'history scope on in the recorded run'); });
+check('history scope: taken-over result is marked, a native one is not, the flag defaults to false', () => {
+  const base = { id: 1, type: 'zamereni', startsAt: '2025-06-01T08:00:00.000Z', day: '2025-06-01', people: [], state: { code: 'closed', label: 'Uzavřeno', closed: true, open: false } };
+  const old = P.parseEventView({ ...base, legacy: true, result: { outcome: 'order', source: 'legacy', current: true } });
+  eq(old.legacy, true, 'legacy'); eq(old.result.source, 'legacy', 'source legacy');
+  const fresh = P.parseEventView({ ...base, result: { outcome: 'order', current: true } });
+  eq(fresh.legacy, false, 'legacy default'); eq(fresh.result.source, 'native', 'source default native');
+  eq(P.parseEventView({ ...base, state: { code: 'legacy_no_result', label: 'Přeneseno z Raynetu, bez výsledku', closed: false, open: false } }).result, null, 'no result');
+  eq(P.parseMeta({ ...data('meta'), historyFrom: '2025-01-01T00:00:00.000Z' }).historyFrom, '2025-01-01T00:00:00.000Z', 'historyFrom');
+  eq(P.parseProblems({ ...data('ovt-problems'), rows: [{ key: 'event:1', kind: 'nedopadlo', kindLabel: 'Nedopadlo', legacy: true }] }).rows[0].legacy, true, 'problem row legacy');
+  eq(P.parseProblems(data('ovt-problems')).rows[0].legacy, false, 'problem row default');
+});
+// The parsers DEFAULT the history fields (an older backend must not break the app), so the check that the backend still SENDS them reads the RAW
+// recorded answers (generated from the backend's own builders, see ceniky-2 fixtures.test.ts): it fails when a regenerated fixture lacks them.
+check('history scope: the backend sends historyFrom, legacy and result.source (raw recorded answers, a legacy row among them)', () => {
+  const rawMeta = data('meta');
+  eq(typeof rawMeta.historyFrom, 'string', 'meta.historyFrom is sent (a string while the history scope is on)');
+  eq(Array.isArray(rawMeta.vocabulary.quietStates) && rawMeta.vocabulary.quietStates.includes('legacy_no_result'), true, 'quiet state in the vocabulary');
+  const raw = data('ovt-day-history');
+  for (const e of raw.events) eq(typeof e.legacy, 'boolean', `event ${e.id}: legacy is sent`);
+  for (const e of raw.events.filter((x) => x.result)) eq(['native', 'legacy'].includes(e.result.source), true, `event ${e.id}: result.source is sent`);
+  const d = P.parseOvtDay(raw);
+  eq(d.events.length, 2, 'two history events');
+  eq(d.events[0].legacy, true, 'legacy row'); eq(d.events[0].result.source, 'legacy', 'taken-over result'); eq(d.events[0].state.code, 'closed', 'closed');
+  eq(d.events[1].legacy, true, 'legacy without a result'); eq(d.events[1].result, null, 'no result'); eq(d.events[1].state.code, 'legacy_no_result', 'quiet state');
+  for (const n of ['ovt-day', 'mvt-day', 'ovt-results-visits']) for (const e of data(n).events ?? data(n).visits) eq(typeof e.legacy, 'boolean', `${n}: legacy is sent`);
+  const claims = data('mvt-montaz-claims');
+  eq(claims.rows.every((r) => typeof r.event.legacy === 'boolean'), true, 'claims rows send legacy');
+  eq(claims.rows.some((r) => r.state === 'preneseno' && r.event.legacy === true && r.claim === null), true, 'a taken-over montáž without a claim link is "preneseno"');
+  eq(typeof claims.stateLabels.preneseno, 'string', 'label of the state');
+});
 check('people', () => { eq(P.parsePeople(data('people-ovt')).length, 2, 'people'); eq(P.parsePeople(data('people-ovt'))[1].active, false, 'inactive'); });
 check('ovt day: events, groups (no owner last), tiles', () => { const d = P.parseOvtDay(data('ovt-day')); eq(d.events.length, 2, 'events'); eq(d.groups.at(-1).person, null, 'no owner last'); eq(d.tiles.closed, 1, 'closed'); eq(d.qIgnored, false, 'qIgnored default'); eq(d.events[0].b2b, true, 'b2b'); eq(d.events[1].tabletDraft, true, 'draft'); });
 check('mvt day: state counts, claim id and label of a claim visit', () => { const d = P.parseMvtDay(data('mvt-day')); eq(d.stateCounts.past_end, 1, 'past_end'); const c = d.events.find((e) => e.id === 21).claim; eq(c.id, 4, 'claim id'); eq(c.statusLabel, 'Nová', 'claim label'); eq(d.events.find((e) => e.id === 22).claim, null, 'no claim'); });

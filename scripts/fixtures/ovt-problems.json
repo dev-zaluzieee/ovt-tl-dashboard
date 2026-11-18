@@ -43,7 +43,8 @@
           "undoneBy": null,
           "erpWrittenAt": null,
           "erpWriteNote": null
-        }
+        },
+        "legacy": false
       },
       {
         "key": "order:10000040",
@@ -76,7 +77,8 @@
         "b2b": false,
         "orderStatus": "objednavky-k-doreseni-ovt",
         "orderStatusLabel": "K dořešení - OVT",
-        "resolution": null
+        "resolution": null,
+        "legacy": false
       },
       {
         "key": "event:10",
@@ -109,7 +111,8 @@
         "b2b": null,
         "orderStatus": "zamereni",
         "orderStatusLabel": "Zaměření",
-        "resolution": null
+        "resolution": null,
+        "legacy": false
       }
     ],
     "counts": {

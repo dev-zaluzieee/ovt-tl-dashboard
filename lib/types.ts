@@ -37,6 +37,8 @@ export interface EventResult {
   closedByName: string | null;
   completedAt: string | null;
   current: boolean;
+  /** `legacy` = a result taken over from the old systems (printed as "přenesený výsledek"); `native` = written by the new system. */
+  source: 'native' | 'legacy';
 }
 
 export interface EventView {
@@ -63,6 +65,8 @@ export interface EventView {
   app: { status: string; statusLabel: string | null; outcome: string | null; outcomeLabel: string | null } | null;
   claim: { id: number; status: string | null; statusLabel: string | null; druh: string | null } | null;
   amountDue: number | null;
+  /** A visit taken over from the old systems: read-only here (no reopen, mark nedopadlo or close-problem button; the server answers 409 LEGACY_VISIT). */
+  legacy: boolean;
   link: { code: 'bez_zakazky' | 'bez_reklamace' | 'servis_ze_zakazky'; label: string } | null;
 }
 
@@ -71,6 +75,8 @@ export interface Meta {
   now: string;
   today: string;
   startAt: string | null;
+  /** Start of the history scope (day views, Výsledky, Nedopadlo, Záchrany, Reklamace z montáží, search); null = same visits as the work lists. */
+  historyFrom: string | null;
   testMode: boolean;
   erpWebBaseUrl: string | null;
   invoicingCheck: boolean;
@@ -165,6 +171,8 @@ export interface ProblemRow {
   orderStatus: string | null;
   orderStatusLabel: string | null;
   resolution: Resolution | null;
+  /** A visit taken over from the old systems: no close / mark buttons. */
+  legacy: boolean;
 }
 
 export interface OvtProblems {

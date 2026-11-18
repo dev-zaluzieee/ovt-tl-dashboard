@@ -107,7 +107,6 @@ export function parseEventView(v: unknown, where = 'event'): EventView {
     orderStatus: null,
     orderStatusLabel: null,
     b2b: null,
-    result: null,
     reopen: null,
     tabletDraft: false,
     app: null,
@@ -115,6 +114,8 @@ export function parseEventView(v: unknown, where = 'event'): EventView {
     amountDue: null,
     link: null,
     ...o,
+    legacy: o.legacy === true,
+    result: o.result && typeof o.result === 'object' ? { ...(o.result as Obj), source: (o.result as Obj).source === 'legacy' ? 'legacy' : 'native' } : null,
   } as unknown as EventView;
 }
 
@@ -129,6 +130,7 @@ export function parseMeta(v: unknown): Meta {
   return {
     ...(o as unknown as Meta),
     erpWebBaseUrl: typeof o.erpWebBaseUrl === 'string' ? o.erpWebBaseUrl : null,
+    historyFrom: typeof o.historyFrom === 'string' ? o.historyFrom : null,
     vocabulary: { ...(voc as unknown as Meta['vocabulary']), quietStates: strArr(voc.quietStates) },
   };
 }
@@ -203,6 +205,7 @@ function parseProblemRow(v: unknown, where: string) {
     at: null, eventId: null, orderId: null, eventType: null, customer: null, owner: null, endsAt: null, reason: null, reasonLabel: null, note: null, subState: null,
     ageWorkingDays: null, valueSDph: null, b2b: null, orderStatus: null, orderStatusLabel: null, severity: 0,
     ...o,
+    legacy: o.legacy === true,
     resolution: o.resolution ? parseResolution(o.resolution, `${where}.resolution`) : null,
   } as unknown as OvtProblems['rows'][number];
 }

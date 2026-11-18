@@ -6,7 +6,7 @@ import { parseAction, parseProblems, parseResolution } from '@/lib/tl-parse';
 import { errorText } from '@/lib/tl-errors';
 import type { OvtProblems, ProblemRow } from '@/lib/types';
 import { fmtDateTime, fmtKc, isYmd, pragueYmd, shiftYmd } from '@/lib/format';
-import { useMeta } from '@/app/components/shell/MetaContext';
+import { useHistoryMin, useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, SearchBox, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, B2BBadge, Chip, Empty, ErpOrderLink, LoadError, PageHeader, ReasonDialog, Skeleton, btnAmber, btnSmall, inputCls } from '@/app/components/ui/kit';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
@@ -26,6 +26,7 @@ function itemId(row: ProblemRow): number | null {
 /** Problematické zakázky (OVT): three kinds, "uzavřené" with undo, close with a reason, mark nedopadlo. */
 export function OvtProblemsClient() {
   const { meta } = useMeta();
+  const historyMin = useHistoryMin();
   const { get, set } = useUrlParams();
   const [density, setDensity] = useListDensity();
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -88,8 +89,8 @@ export function OvtProblemsClient() {
               </button>
             ))}
           </div>
-          {mode === 'range' && <DateRange from={from} to={to} onChange={(f, t) => set({ from: f, to: t })} />}
-          <PersonSelect side="ovt" value={person} onChange={(v) => set({ person: v })} />
+          {mode === 'range' && <DateRange from={from} to={to} min={historyMin} onChange={(f, t) => set({ from: f, to: t })} />}
+          <PersonSelect side="ovt" scope={kinds.length === 1 && kinds[0] === 'nedopadlo' ? 'history' : 'work'} value={person} onChange={(v) => set({ person: v })} />
           <label className="flex items-center gap-2 text-sm">
             <span className="font-medium text-gray-700">Uzavřené</span>
             <select value={closed} onChange={(e) => set({ closed: e.target.value === 'hide' ? null : e.target.value })} className={inputCls}>
@@ -158,6 +159,7 @@ export function OvtProblemsClient() {
                     <td className={cell}>
                       <Chip tone={KIND_TONE[r.kind] ?? 'gray'}>{r.kindLabel}</Chip>
                       {r.reasonLabel && <p className="mt-0.5 text-xs text-gray-700">{r.reasonLabel}</p>}
+                      {r.legacy && <p className="mt-0.5 text-xs text-gray-500">přenesený výsledek</p>}
                       {r.subState && <p className="mt-0.5 text-xs text-gray-600">{r.subState.label}</p>}
                       {r.note && density === 'standard' && <p className="mt-0.5 text-xs italic text-gray-600">„{r.note}“</p>}
                       {r.resolution && (
@@ -193,6 +195,8 @@ export function OvtProblemsClient() {
                           <button type="button" className={btnSmall} onClick={() => void undo(r)}>
                             Vrátit zpět
                           </button>
+                        ) : r.legacy ? (
+                          <span className="text-xs text-gray-500" title="Návštěva byla přenesena ze starých systémů, z dashboardu se nedá měnit ani uzavřít.">přeneseno, jen ke čtení</span>
                         ) : (
                           <>
                             {r.kind === 'bez_vysledku' && (

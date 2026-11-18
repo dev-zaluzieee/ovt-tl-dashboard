@@ -39,6 +39,7 @@
           "open": true
         },
         "result": null,
+        "legacy": false,
         "reopen": null,
         "tabletDraft": false,
         "app": null,
@@ -85,6 +86,7 @@
           "open": false
         },
         "result": null,
+        "legacy": false,
         "reopen": null,
         "tabletDraft": false,
         "app": null,
@@ -134,6 +136,7 @@
               "open": true
             },
             "result": null,
+            "legacy": false,
             "reopen": null,
             "tabletDraft": false,
             "app": null,
@@ -180,6 +183,7 @@
               "open": false
             },
             "result": null,
+            "legacy": false,
             "reopen": null,
             "tabletDraft": false,
             "app": null,
@@ -197,7 +201,8 @@
     "quietStates": [
       "closed_no_result",
       "closed_from_order",
-      "no_owner"
+      "no_owner",
+      "legacy_no_result"
     ],
     "tiles": {
       "events": 2,

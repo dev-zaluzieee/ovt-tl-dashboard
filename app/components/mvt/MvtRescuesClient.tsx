@@ -5,7 +5,7 @@ import { tlGet } from '@/lib/tl-api';
 import { parseRescues } from '@/lib/tl-parse';
 import type { MvtRescues } from '@/lib/types';
 import { fmtDateTime, fmtKc, isYmd, shiftYmd } from '@/lib/format';
-import { useMeta } from '@/app/components/shell/MetaContext';
+import { useHistoryMin, useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, SearchBox, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Chip, Empty, EventLinks, LoadError, PageHeader, Skeleton, btnSmall } from '@/app/components/ui/kit';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
@@ -15,6 +15,7 @@ import { useLoad } from '@/app/components/ui/useLoad';
 /** Záchrany: montáže dokončené se záchranou, sleva a zda po nich přišla reklamace. */
 export function MvtRescuesClient() {
   const { meta } = useMeta();
+  const historyMin = useHistoryMin();
   const { get, set } = useUrlParams();
   const [density, setDensity] = useListDensity();
   const today = meta?.today ?? '';
@@ -30,8 +31,8 @@ export function MvtRescuesClient() {
       <PageHeader title="Montéři (MVT): Záchrany" subtitle="Montáže dokončené se záchranou: co bylo špatně, sleva a jestli po nich později přišla reklamace na stejnou zakázku." />
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <DateRange from={from} to={to} onChange={(f, t) => set({ from: f, to: t })} />
-          <PersonSelect side="mvt" value={person} onChange={(v) => set({ person: v })} />
+          <DateRange from={from} to={to} min={historyMin} onChange={(f, t) => set({ from: f, to: t })} />
+          <PersonSelect side="mvt" scope="history" value={person} onChange={(v) => set({ person: v })} />
           <SearchBox value={q} onChange={onQ} placeholder="Hledat: zákazník, telefon, číslo zakázky…" ignored={data?.qIgnored} />
           <DensityToggle density={density} onChange={setDensity} />
           <button type="button" className={btnSmall} onClick={reload}>Obnovit</button>

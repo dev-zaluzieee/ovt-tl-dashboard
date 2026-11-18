@@ -50,6 +50,7 @@ export function stateTone(code: string): Tone {
     case 'closed_from_order':
       return 'emerald';
     case 'closed_no_result':
+    case 'legacy_no_result':
     case 'no_owner':
     case 'planned':
     case 'cancelled':
@@ -93,11 +94,22 @@ export function stateBarClass(code: string): string {
   }
 }
 
+/** Small grey label on a visit whose result was taken over from the old systems (Raynet and the old apps), not written by the new system. */
+export function LegacyResultTag({ ev }: { ev: EventView }) {
+  if (ev.result?.source !== 'legacy') return null;
+  return (
+    <span className="inline-flex items-center rounded-md border border-gray-300 bg-gray-50 px-1.5 text-[10px] font-medium text-gray-600" title="Výsledek byl přenesen ze starých systémů (Raynet, staré aplikace); z dashboardu se nedá změnit.">
+      přenesený výsledek
+    </span>
+  );
+}
+
 export function StateChip({ ev }: { ev: EventView }) {
   return (
-    <Chip tone={stateTone(ev.state.code)}>
-      {ev.state.label}
-    </Chip>
+    <span className="inline-flex flex-wrap items-center gap-1">
+      <Chip tone={stateTone(ev.state.code)}>{ev.state.label}</Chip>
+      <LegacyResultTag ev={ev} />
+    </span>
   );
 }
 

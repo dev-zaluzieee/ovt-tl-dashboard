@@ -4,18 +4,19 @@ import { tlGet } from '@/lib/tl-api';
 import { parseMontazClaims } from '@/lib/tl-parse';
 import type { MvtMontazClaims } from '@/lib/types';
 import { fmtDateTime, fmtYmd, isYmd, shiftYmd } from '@/lib/format';
-import { useMeta } from '@/app/components/shell/MetaContext';
+import { useHistoryMin, useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, useUrlParams } from '@/app/components/ui/filters';
-import { Alert, Chip, Empty, EventLinks, LoadError, PageHeader, Skeleton, btnSmall } from '@/app/components/ui/kit';
+import { Alert, Chip, Empty, EventLinks, LegacyResultTag, LoadError, PageHeader, Skeleton, btnSmall } from '@/app/components/ui/kit';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
 import { useListDensity } from '@/app/components/retention/listDensity';
 import { useLoad } from '@/app/components/ui/useLoad';
 
-export const CLAIM_STATE_TONE: Record<string, 'green' | 'sky' | 'amber' | 'rose' | 'gray'> = { vyreseno: 'green', naplanovano: 'sky', ceka: 'amber', bez_reklamace: 'rose' };
+export const CLAIM_STATE_TONE: Record<string, 'green' | 'sky' | 'amber' | 'rose' | 'gray'> = { vyreseno: 'green', naplanovano: 'sky', ceka: 'amber', bez_reklamace: 'rose', preneseno: 'gray' };
 
 /** Reklamace z montáží: montáže nedokončené (not_done), the claim they created and its follow-up visit. */
 export function MvtMontazClaimsClient() {
   const { meta } = useMeta();
+  const historyMin = useHistoryMin();
   const { get, set } = useUrlParams();
   const [density, setDensity] = useListDensity();
   const today = meta?.today ?? '';
@@ -34,8 +35,8 @@ export function MvtMontazClaimsClient() {
       <PageHeader title="Montéři (MVT): Reklamace z montáží" subtitle="Montáže, které montér nedokončil, a co z nich vzniklo: reklamace a navazující návštěva." />
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <DateRange from={from} to={to} onChange={(f, t) => set({ from: f, to: t })} />
-          <PersonSelect side="mvt" value={person} onChange={(v) => set({ person: v })} />
+          <DateRange from={from} to={to} min={historyMin} onChange={(f, t) => set({ from: f, to: t })} />
+          <PersonSelect side="mvt" scope="history" value={person} onChange={(v) => set({ person: v })} />
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={resolved} onChange={(e) => set({ resolved: e.target.checked ? '1' : null })} />
             zobrazit i vyřešené
@@ -68,7 +69,7 @@ export function MvtMontazClaimsClient() {
                   <tr key={r.event.id} className="align-top">
                     <td className={pad}>
                       <p className="font-medium text-gray-900">{r.event.customer?.name ?? r.event.title ?? '—'}</p>
-                      <p className="text-xs text-gray-500">{fmtDateTime(r.event.startsAt)}{r.ageDays !== null ? ` · před ${r.ageDays} dny` : ''}</p>
+                      <p className="text-xs text-gray-500">{fmtDateTime(r.event.startsAt)}{r.ageDays !== null ? ` · před ${r.ageDays} dny` : ''} <LegacyResultTag ev={r.event} /></p>
                     </td>
                     <td className={`${pad} whitespace-nowrap`}>{r.event.people.map((p) => p.name).join(', ') || '—'}</td>
                     <td className={`${pad} max-w-xs`}>{r.reasonLabel ?? '—'}{r.note ? <p className="text-xs text-gray-500">{r.note}</p> : null}</td>
@@ -79,7 +80,7 @@ export function MvtMontazClaimsClient() {
                           <p>#{r.claim.id} · {r.claim.statusLabel ?? r.claim.status ?? ''}</p>
                           <p className="text-gray-500">{[r.claim.druh, r.claim.uznano, r.claim.blocker ? `čeká na ${r.claim.blocker}` : null].filter(Boolean).join(' · ')}</p>
                         </>
-                      ) : <span className="text-amber-700">bez reklamace</span>}
+                      ) : r.state === 'preneseno' ? <span className="text-gray-500">přeneseno ze starých systémů</span> : <span className="text-amber-700">bez reklamace</span>}
                     </td>
                     <td className={`${pad} text-xs`}>{r.followUp ? `${fmtYmd(r.followUp.startsAt.slice(0, 10))} · ${r.followUp.status}` : '—'}</td>
                     <td className={`${pad} text-right text-xs`}><EventLinks ev={r.event} claimId={r.claim?.id ?? null} /></td>

@@ -1,0 +1,227 @@
+{
+  "success": true,
+  "data": {
+    "date": "2025-06-03",
+    "now": "2026-11-16T10:00:00.000Z",
+    "today": "2026-11-16",
+    "events": [
+      {
+        "id": 61,
+        "type": "zamereni",
+        "typeLabel": "Zaměření",
+        "title": "T",
+        "status": "completed",
+        "origin": null,
+        "startsAt": "2025-06-03T08:00:00.000Z",
+        "endsAt": "2025-06-03T09:00:00.000Z",
+        "day": "2025-06-03",
+        "orderId": 10000001,
+        "complaintId": null,
+        "customer": {
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
+          "city": "Brno"
+        },
+        "orderStatus": "zamereni",
+        "orderStatusLabel": "Zaměření",
+        "people": [
+          {
+            "id": 5,
+            "name": "Ovt Alfa",
+            "source": "owner"
+          }
+        ],
+        "b2b": null,
+        "state": {
+          "code": "closed",
+          "label": "Uzavřeno",
+          "closed": true,
+          "open": false
+        },
+        "result": {
+          "outcome": "order",
+          "outcomeLabel": "Zaměřeno, objednávka",
+          "reason": null,
+          "reasonLabel": null,
+          "collectedAmount": null,
+          "paymentMethod": null,
+          "paymentMethodLabel": null,
+          "discountAmount": null,
+          "discountNote": null,
+          "rescueNote": null,
+          "note": null,
+          "closedByName": null,
+          "completedAt": "2025-06-03T09:00:00.000Z",
+          "current": true,
+          "source": "legacy"
+        },
+        "legacy": true,
+        "reopen": null,
+        "tabletDraft": false,
+        "app": null,
+        "claim": null,
+        "amountDue": null,
+        "link": null
+      },
+      {
+        "id": 62,
+        "type": "zamereni",
+        "typeLabel": "Zaměření",
+        "title": "T",
+        "status": "scheduled",
+        "origin": null,
+        "startsAt": "2025-06-03T10:00:00.000Z",
+        "endsAt": "2025-06-03T11:00:00.000Z",
+        "day": "2025-06-03",
+        "orderId": 10000001,
+        "complaintId": null,
+        "customer": {
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
+          "city": "Brno"
+        },
+        "orderStatus": "zamereni",
+        "orderStatusLabel": "Zaměření",
+        "people": [
+          {
+            "id": 5,
+            "name": "Ovt Alfa",
+            "source": "owner"
+          }
+        ],
+        "b2b": null,
+        "state": {
+          "code": "legacy_no_result",
+          "label": "Přeneseno z Raynetu, bez výsledku",
+          "closed": false,
+          "open": false
+        },
+        "result": null,
+        "legacy": true,
+        "reopen": null,
+        "tabletDraft": false,
+        "app": null,
+        "claim": null,
+        "amountDue": null,
+        "link": null
+      }
+    ],
+    "groups": [
+      {
+        "person": {
+          "id": 5,
+          "name": "Ovt Alfa"
+        },
+        "events": [
+          {
+            "id": 61,
+            "type": "zamereni",
+            "typeLabel": "Zaměření",
+            "title": "T",
+            "status": "completed",
+            "origin": null,
+            "startsAt": "2025-06-03T08:00:00.000Z",
+            "endsAt": "2025-06-03T09:00:00.000Z",
+            "day": "2025-06-03",
+            "orderId": 10000001,
+            "complaintId": null,
+            "customer": {
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
+              "city": "Brno"
+            },
+            "orderStatus": "zamereni",
+            "orderStatusLabel": "Zaměření",
+            "people": [
+              {
+                "id": 5,
+                "name": "Ovt Alfa",
+                "source": "owner"
+              }
+            ],
+            "b2b": null,
+            "state": {
+              "code": "closed",
+              "label": "Uzavřeno",
+              "closed": true,
+              "open": false
+            },
+            "result": {
+              "outcome": "order",
+              "outcomeLabel": "Zaměřeno, objednávka",
+              "reason": null,
+              "reasonLabel": null,
+              "collectedAmount": null,
+              "paymentMethod": null,
+              "paymentMethodLabel": null,
+              "discountAmount": null,
+              "discountNote": null,
+              "rescueNote": null,
+              "note": null,
+              "closedByName": null,
+              "completedAt": "2025-06-03T09:00:00.000Z",
+              "current": true,
+              "source": "legacy"
+            },
+            "legacy": true,
+            "reopen": null,
+            "tabletDraft": false,
+            "app": null,
+            "claim": null,
+            "amountDue": null,
+            "link": null
+          },
+          {
+            "id": 62,
+            "type": "zamereni",
+            "typeLabel": "Zaměření",
+            "title": "T",
+            "status": "scheduled",
+            "origin": null,
+            "startsAt": "2025-06-03T10:00:00.000Z",
+            "endsAt": "2025-06-03T11:00:00.000Z",
+            "day": "2025-06-03",
+            "orderId": 10000001,
+            "complaintId": null,
+            "customer": {
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
+              "city": "Brno"
+            },
+            "orderStatus": "zamereni",
+            "orderStatusLabel": "Zaměření",
+            "people": [
+              {
+                "id": 5,
+                "name": "Ovt Alfa",
+                "source": "owner"
+              }
+            ],
+            "b2b": null,
+            "state": {
+              "code": "legacy_no_result",
+              "label": "Přeneseno z Raynetu, bez výsledku",
+              "closed": false,
+              "open": false
+            },
+            "result": null,
+            "legacy": true,
+            "reopen": null,
+            "tabletDraft": false,
+            "app": null,
+            "claim": null,
+            "amountDue": null,
+            "link": null
+          }
+        ]
+      }
+    ],
+    "tiles": {
+      "people": 1,
+      "events": 2,
+      "closed": 1
+    },
+    "qIgnored": false,
+    "truncated": false
+  }
+}

@@ -5,12 +5,12 @@ import { tlGet } from '@/lib/tl-api';
 import { parseResults, parseVisits } from '@/lib/tl-parse';
 import type { EventView, OvtResults } from '@/lib/types';
 import { daysBetween, fmtDateTime, fmtTimeRange, fmtYmd, isYmd, shiftYmd } from '@/lib/format';
-import { useMeta } from '@/app/components/shell/MetaContext';
+import { useHistoryMin, useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Empty, EventLinks, LoadError, Modal, PageHeader, Skeleton, StateChip, btnSmall } from '@/app/components/ui/kit';
 import { useLoad } from '@/app/components/ui/useLoad';
 
-const ORDER = ['order', 'retence', 'nedopadlo', 'nezastizen', 'closed_no_result', 'no_result', 'reopened', 'other'];
+const ORDER = ['order', 'retence', 'nedopadlo', 'nezastizen', 'closed_no_result', 'legacy_no_result', 'no_result', 'reopened', 'other'];
 
 interface Drill {
   person: { id: number | 'none'; name: string };
@@ -67,6 +67,7 @@ function DrillDown({ d, from, to, onClose }: { d: Drill; from: string; to: strin
 /** Výsledky: counts of surveys per surveyor by what the visit ended with, drill-down to the visits. */
 export function OvtResultsClient() {
   const { meta } = useMeta();
+  const historyMin = useHistoryMin();
   const { get, set } = useUrlParams();
   const [drill, setDrill] = useState<Drill | null>(null);
   const today = meta?.today ?? '';
@@ -93,13 +94,13 @@ export function OvtResultsClient() {
       <PageHeader title="Výsledky" subtitle="Zaměření, která skončila, podle výsledku návštěvy. Období = den návštěvy (pražský čas). Počty, bez hodnoty zakázek." />
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <DateRange from={from} to={to} onChange={(f, t) => set({ from: f, to: t })} />
+          <DateRange from={from} to={to} min={historyMin} onChange={(f, t) => set({ from: f, to: t })} />
           {presets.map(([l, f, t]) => (
             <button key={l} type="button" className={btnSmall} onClick={() => set({ from: f, to: t })}>
               {l}
             </button>
           ))}
-          <PersonSelect side="ovt" value={person} onChange={(v) => set({ person: v })} />
+          <PersonSelect side="ovt" scope="history" value={person} onChange={(v) => set({ person: v })} />
         </div>
         {bad && <Alert tone="amber">Zvolte období od–do, nejvýše {meta?.limits.maxRangeDays ?? 92} dní.</Alert>}
         {error && <LoadError error={error} onRetry={reload} />}

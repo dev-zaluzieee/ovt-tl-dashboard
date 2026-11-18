@@ -25,8 +25,8 @@ const PERSON = ['person'] as const;
 
 const ROUTES: readonly Route[] = [
   { method: 'GET', re: /^meta$/ },
-  { method: 'GET', re: /^people$/, query: ['side'] },
-  { method: 'GET', re: /^search$/, query: ['q', 'scope', 'limit'] },
+  { method: 'GET', re: /^people$/, query: ['side', 'scope'] },
+  { method: 'GET', re: /^search$/, query: ['q', 'scope', 'limit', ...DATES] },
   { method: 'GET', re: /^resolutions$/, query: ['kind', 'key'] },
   { method: 'POST', re: new RegExp(`^resolutions/${ID}/undo$`) },
 

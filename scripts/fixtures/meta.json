@@ -9,6 +9,7 @@
     "now": "2026-11-16T10:00:00.000Z",
     "today": "2026-11-16",
     "startAt": "2026-11-01T00:00:00.000Z",
+    "historyFrom": "2025-01-01T00:00:00.000Z",
     "testMode": false,
     "erpWebBaseUrl": null,
     "invoicingCheck": false,
@@ -31,6 +32,7 @@
         "closed": "Uzavřeno",
         "closed_from_order": "Uzavřeno (ze zakázky)",
         "closed_no_result": "Uzavřeno bez výsledku",
+        "legacy_no_result": "Přeneseno z Raynetu, bez výsledku",
         "app_failed": "Zápis z aplikace selhal",
         "app_partial": "Zápis z aplikace je částečný",
         "cancelled": "Zrušeno",
@@ -44,7 +46,8 @@
       "quietStates": [
         "closed_no_result",
         "closed_from_order",
-        "no_owner"
+        "no_owner",
+        "legacy_no_result"
       ],
       "outcomes": {
         "order": "Zaměřeno, objednávka",
@@ -53,7 +56,9 @@
         "retence": "Odesláno na retence",
         "done": "Dokončeno",
         "done_rescue": "Dokončeno se záchranou",
-        "not_done": "Nedokončeno, reklamace"
+        "not_done": "Nedokončeno, reklamace",
+        "rz_done": "Znovuzaměřeno (reklamace)",
+        "rz_nezastizen": "Zákazník nezastižen (znovuzaměření reklamace)"
       },
       "montazOutcomes": {
         "done": "Montáž dokončena",
@@ -120,7 +125,8 @@
         "vyreseno": "Vyřešeno",
         "naplanovano": "Naplánována návštěva",
         "ceka": "Čeká na naplánování",
-        "bez_reklamace": "Reklamace v ERP nenalezena"
+        "bez_reklamace": "Reklamace v ERP nenalezena",
+        "preneseno": "Přenesený výsledek, bez odkazu na reklamaci"
       },
       "submissionStatuses": {
         "running": "Probíhá",

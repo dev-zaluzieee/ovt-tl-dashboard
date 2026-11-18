@@ -52,8 +52,10 @@
           "note": null,
           "closedByName": null,
           "completedAt": "2026-11-16T09:00:00.000Z",
-          "current": true
+          "current": true,
+          "source": "native"
         },
+        "legacy": false,
         "reopen": null,
         "tabletDraft": false,
         "app": null,
@@ -89,6 +91,7 @@
           "open": false
         },
         "result": null,
+        "legacy": false,
         "reopen": null,
         "tabletDraft": true,
         "app": null,
@@ -151,8 +154,10 @@
               "note": null,
               "closedByName": null,
               "completedAt": "2026-11-16T09:00:00.000Z",
-              "current": true
+              "current": true,
+              "source": "native"
             },
+            "legacy": false,
             "reopen": null,
             "tabletDraft": false,
             "app": null,
@@ -193,6 +198,7 @@
               "open": false
             },
             "result": null,
+            "legacy": false,
             "reopen": null,
             "tabletDraft": true,
             "app": null,

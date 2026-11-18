@@ -50,6 +50,7 @@
               "open": true
             },
             "result": null,
+            "legacy": false,
             "reopen": null,
             "tabletDraft": false,
             "app": null,
@@ -112,8 +113,10 @@
             "note": null,
             "closedByName": null,
             "completedAt": null,
-            "current": false
+            "current": false,
+            "source": "native"
           },
+          "legacy": false,
           "reopen": {
             "reason": "znovu",
             "actorName": "Kancl",
@@ -181,8 +184,10 @@
               "note": null,
               "closedByName": null,
               "completedAt": null,
-              "current": true
+              "current": true,
+              "source": "native"
             },
+            "legacy": false,
             "reopen": null,
             "tabletDraft": false,
             "app": null,

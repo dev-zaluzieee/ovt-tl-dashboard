@@ -52,8 +52,10 @@
             "note": "barva",
             "closedByName": null,
             "completedAt": "2026-11-12T09:00:00.000Z",
-            "current": true
+            "current": true,
+            "source": "native"
           },
+          "legacy": false,
           "reopen": null,
           "tabletDraft": false,
           "app": null,
@@ -132,8 +134,10 @@
             "note": null,
             "closedByName": null,
             "completedAt": null,
-            "current": true
+            "current": true,
+            "source": "native"
           },
+          "legacy": false,
           "reopen": null,
           "tabletDraft": false,
           "app": null,
@@ -149,17 +153,87 @@
         "ageDays": 6,
         "claim": null,
         "followUp": null
+      },
+      {
+        "event": {
+          "id": 3,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "completed",
+          "origin": null,
+          "startsAt": "2025-06-03T08:00:00.000Z",
+          "endsAt": "2025-06-03T09:00:00.000Z",
+          "day": "2025-06-03",
+          "orderId": 10000001,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 5,
+              "name": "Ovt Alfa",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": {
+            "outcome": "not_done",
+            "outcomeLabel": "Montáž nedokončena, reklamace",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": "2025-06-03T09:00:00.000Z",
+            "current": true,
+            "source": "legacy"
+          },
+          "legacy": true,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "state": "preneseno",
+        "stateLabel": "Přenesený výsledek, bez odkazu na reklamaci",
+        "reason": null,
+        "reasonLabel": null,
+        "note": null,
+        "ageDays": 531,
+        "claim": null,
+        "followUp": null
       }
     ],
     "counts": {
       "naplanovano": 1,
-      "bez_reklamace": 1
+      "bez_reklamace": 1,
+      "preneseno": 1
     },
     "stateLabels": {
       "vyreseno": "Vyřešeno",
       "naplanovano": "Naplánována návštěva",
       "ceka": "Čeká na naplánování",
-      "bez_reklamace": "Reklamace v ERP nenalezena"
+      "bez_reklamace": "Reklamace v ERP nenalezena",
+      "preneseno": "Přenesený výsledek, bez odkazu na reklamaci"
     },
     "truncated": false
   }

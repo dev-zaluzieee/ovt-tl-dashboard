@@ -5,7 +5,7 @@ import { tlGet } from '@/lib/tl-api';
 import { parseOvtDay } from '@/lib/tl-parse';
 import type { OvtDay } from '@/lib/types';
 import { isYmd } from '@/lib/format';
-import { useMeta } from '@/app/components/shell/MetaContext';
+import { useHistoryMin, useMeta } from '@/app/components/shell/MetaContext';
 import { DayNav, PersonSelect, SearchBox, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Empty, LoadError, PageHeader, Skeleton } from '@/app/components/ui/kit';
 import { DensityToggle } from '@/app/components/retention/DensityToggle';
@@ -17,6 +17,7 @@ import { DayList } from './DayList';
 /** Přehled dne (OVT): zaměření a znovuzaměření of one Prague day per surveyor, calendar or list, a state per visit. */
 export function OvtDayClient() {
   const { meta } = useMeta();
+  const historyMin = useHistoryMin();
   const { get, set } = useUrlParams();
   const [density, setDensity] = useListDensity();
   const today = meta?.today ?? '';
@@ -35,9 +36,9 @@ export function OvtDayClient() {
     <main className="container mx-auto px-4 py-8">
       <PageHeader title="Přehled dne" subtitle="Zaměření a znovuzaměření vybraného dne (pražský čas), po jednotlivých OVT." />
       <div className="space-y-4">
-        <DayNav date={date} today={today} onChange={(d) => set({ date: d === today ? null : d })} />
+        <DayNav date={date} today={today} min={historyMin} onChange={(d) => set({ date: d === today ? null : d })} />
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <PersonSelect side="ovt" value={person} onChange={(v) => set({ person: v })} />
+          <PersonSelect side="ovt" scope="history" value={person} onChange={(v) => set({ person: v })} />
           <SearchBox value={q} onChange={onQ} placeholder="Hledat v tomto dni: zákazník, telefon, číslo zakázky…" ignored={data?.qIgnored} />
           <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5" role="group" aria-label="Způsob zobrazení">
             {(['calendar', 'list'] as const).map((v) => (
@@ -67,7 +68,7 @@ export function OvtDayClient() {
             </div>
             {data.truncated && <Alert tone="amber">Seznam je zkrácený (nejvýše 1000 řádků). Zúžte filtr.</Alert>}
             {data.events.length === 0 ? (
-              <Empty title="Pro tento den nejsou žádná zaměření">Zkuste jiný den nebo zrušte filtr. Zobrazují se jen návštěvy od začátku nového provozu.</Empty>
+              <Empty title="Pro tento den nejsou žádná zaměření">Zkuste jiný den nebo zrušte filtr. {historyMin ? 'Zobrazují se návštěvy od začátku sledování, včetně těch s výsledky přenesenými ze starých systémů.' : 'Zobrazují se jen návštěvy od začátku nového provozu.'}</Empty>
             ) : view === 'calendar' ? (
               <DayCalendar ymd={data.date} groups={data.groups} nowIso={data.now} onChanged={reload} />
             ) : (

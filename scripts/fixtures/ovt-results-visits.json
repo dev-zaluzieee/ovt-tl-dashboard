@@ -36,6 +36,7 @@
           "open": true
         },
         "result": null,
+        "legacy": false,
         "reopen": null,
         "tabletDraft": false,
         "app": null,
