@@ -1,0 +1,68 @@
+{
+  "success": true,
+  "data": {
+    "visits": [
+      {
+        "id": 71,
+        "type": "zamereni",
+        "typeLabel": "Zaměření",
+        "title": "T",
+        "status": "scheduled",
+        "origin": null,
+        "startsAt": "2025-06-03T08:00:00.000Z",
+        "endsAt": "2025-06-03T09:00:00.000Z",
+        "day": "2025-06-03",
+        "orderId": 10000001,
+        "complaintId": null,
+        "customer": {
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
+          "city": "Brno"
+        },
+        "orderStatus": "zamereni",
+        "orderStatusLabel": "Zaměření",
+        "people": [
+          {
+            "id": 5,
+            "name": "Ovt Alfa",
+            "source": "owner"
+          }
+        ],
+        "b2b": null,
+        "state": {
+          "code": "closed",
+          "label": "Uzavřeno",
+          "closed": true,
+          "open": false
+        },
+        "result": {
+          "outcome": "zruseno",
+          "outcomeLabel": "Zrušeno",
+          "reason": null,
+          "reasonLabel": null,
+          "collectedAmount": null,
+          "paymentMethod": null,
+          "paymentMethodLabel": null,
+          "discountAmount": null,
+          "discountNote": null,
+          "rescueNote": null,
+          "note": "odloženo",
+          "closedByName": null,
+          "completedAt": null,
+          "current": true,
+          "source": "legacy"
+        },
+        "legacy": true,
+        "reopen": null,
+        "tabletDraft": false,
+        "app": null,
+        "claim": null,
+        "amountDue": null,
+        "link": null
+      }
+    ],
+    "truncated": false,
+    "bucketLabel": "Zrušeno",
+    "outcomeLabel": "Zrušeno"
+  }
+}

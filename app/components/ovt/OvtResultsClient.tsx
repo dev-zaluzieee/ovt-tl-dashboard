@@ -10,7 +10,7 @@ import { DateRange, PersonSelect, useUrlParams } from '@/app/components/ui/filte
 import { Alert, Empty, EventLinks, LoadError, Modal, PageHeader, Skeleton, StateChip, btnSmall } from '@/app/components/ui/kit';
 import { useLoad } from '@/app/components/ui/useLoad';
 
-const ORDER = ['order', 'retence', 'nedopadlo', 'nezastizen', 'closed_no_result', 'legacy_no_result', 'no_result', 'reopened', 'other'];
+const ORDER = ['order', 'retence', 'nedopadlo', 'nezastizen', 'zruseno', 'closed_no_result', 'legacy_no_result', 'no_result', 'reopened', 'other'];
 
 interface Drill {
   person: { id: number | 'none'; name: string };
