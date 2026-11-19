@@ -1,0 +1,105 @@
+{
+  "success": true,
+  "data": {
+    "available": true,
+    "testMode": false,
+    "from": "2026-11-19",
+    "to": "2026-11-26",
+    "today": "2026-11-19",
+    "windowDays": 7,
+    "checked": 4,
+    "capped": false,
+    "counts": {
+      "chyba": 2,
+      "overit": 1,
+      "info": 0
+    },
+    "tomorrow": {
+      "day": "2026-11-20",
+      "checked": 2,
+      "chyba": 1
+    },
+    "urgent": {
+      "today": {
+        "day": "2026-11-19",
+        "checked": 0,
+        "chyba": 0
+      },
+      "tomorrow": {
+        "day": "2026-11-20",
+        "checked": 2,
+        "chyba": 1
+      },
+      "red": 1
+    },
+    "byDay": [
+      {
+        "day": "2026-11-19",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-20",
+        "checked": 2,
+        "chyba": 1,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-21",
+        "checked": 2,
+        "chyba": 1,
+        "overit": 1,
+        "info": 0
+      },
+      {
+        "day": "2026-11-22",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-23",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-24",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-25",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-26",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      }
+    ],
+    "badge": {
+      "red": 2,
+      "limit": 15,
+      "show": true
+    },
+    "levels": {
+      "chyba": "Chyba",
+      "overit": "K ověření",
+      "info": "Informace"
+    },
+    "summary": true
+  }
+}

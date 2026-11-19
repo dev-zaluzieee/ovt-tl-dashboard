@@ -1,0 +1,235 @@
+{
+  "success": true,
+  "data": {
+    "available": true,
+    "testMode": false,
+    "from": "2026-11-19",
+    "to": "2026-11-26",
+    "today": "2026-11-19",
+    "windowDays": 7,
+    "checked": 4,
+    "capped": false,
+    "counts": {
+      "chyba": 2,
+      "overit": 1,
+      "info": 0
+    },
+    "tomorrow": {
+      "day": "2026-11-20",
+      "checked": 2,
+      "chyba": 1
+    },
+    "urgent": {
+      "today": {
+        "day": "2026-11-19",
+        "checked": 0,
+        "chyba": 0
+      },
+      "tomorrow": {
+        "day": "2026-11-20",
+        "checked": 2,
+        "chyba": 1
+      },
+      "red": 1
+    },
+    "byDay": [
+      {
+        "day": "2026-11-19",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-20",
+        "checked": 2,
+        "chyba": 1,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-21",
+        "checked": 2,
+        "chyba": 1,
+        "overit": 1,
+        "info": 0
+      },
+      {
+        "day": "2026-11-22",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-23",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-24",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-25",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      },
+      {
+        "day": "2026-11-26",
+        "checked": 0,
+        "chyba": 0,
+        "overit": 0,
+        "info": 0
+      }
+    ],
+    "badge": {
+      "red": 2,
+      "limit": 15,
+      "show": true
+    },
+    "levels": {
+      "chyba": "Chyba",
+      "overit": "K ověření",
+      "info": "Informace"
+    },
+    "rows": [
+      {
+        "event": {
+          "id": 2,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "Montáž",
+          "startsAt": "2026-11-20T08:00:00.000Z",
+          "endsAt": "2026-11-20T09:00:00.000Z",
+          "day": "2026-11-20",
+          "orderId": 1002,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "city": "Brno"
+          },
+          "people": [
+            {
+              "id": 5,
+              "name": "Alfa Montér",
+              "source": "owner"
+            }
+          ],
+          "orderStatusLabel": "Montáž",
+          "migrated": false,
+          "note": "Výrobní list není, je to zaměřeno zvlášť."
+        },
+        "level": "chyba",
+        "findings": [
+          {
+            "code": "bez_vlastniho_zamereni",
+            "level": "chyba",
+            "label": "Zakázka nemá vlastní zaměření",
+            "fix": "Formuláře jsou na zakázce #1001. Přeplánujte návštěvu na správnou zakázku, nebo dejte montérovi vědět."
+          },
+          {
+            "code": "bez_souboru",
+            "level": "overit",
+            "label": "Bez souborů (fotky, výrobní dokumentace)",
+            "fix": "Montér nemá žádnou přílohu. Nahrajte fotky ze zaměření nebo výrobní dokumentaci."
+          }
+        ],
+        "hint": {
+          "otherOrderIds": [
+            1001
+          ],
+          "otherOrders": 1,
+          "parentFirst": false
+        }
+      },
+      {
+        "event": {
+          "id": 3,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "Montáž",
+          "startsAt": "2026-11-21T08:00:00.000Z",
+          "endsAt": "2026-11-20T09:00:00.000Z",
+          "day": "2026-11-21",
+          "orderId": 1003,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "city": "Brno"
+          },
+          "people": [],
+          "orderStatusLabel": "Montáž",
+          "migrated": false,
+          "note": null
+        },
+        "level": "chyba",
+        "findings": [
+          {
+            "code": "bez_montera",
+            "level": "chyba",
+            "label": "Bez montéra",
+            "fix": "Návštěvu nikdo neuvidí v kalendáři. Přiřaďte montéra."
+          },
+          {
+            "code": "expedice_po_terminu",
+            "level": "overit",
+            "label": "Expedice 25. 11. je po termínu montáže",
+            "fix": "Zboží nebude včas. Ověřte expedici, nebo montáž přeplánujte."
+          }
+        ],
+        "hint": null
+      },
+      {
+        "event": {
+          "id": 4,
+          "type": "reklamace",
+          "typeLabel": "Reklamace",
+          "title": "Montáž",
+          "startsAt": "2026-11-21T09:00:00.000Z",
+          "endsAt": "2026-11-20T09:00:00.000Z",
+          "day": "2026-11-21",
+          "orderId": 1000,
+          "complaintId": 7,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "city": "Brno"
+          },
+          "people": [
+            {
+              "id": 5,
+              "name": "Alfa Montér",
+              "source": "owner"
+            }
+          ],
+          "orderStatusLabel": "Montáž",
+          "migrated": false,
+          "note": null
+        },
+        "level": "overit",
+        "findings": [
+          {
+            "code": "bez_telefonu",
+            "level": "overit",
+            "label": "Chybí telefon zákazníka",
+            "fix": "Doplňte telefon na zakázce."
+          },
+          {
+            "code": "reklamace_bez_popisu",
+            "level": "overit",
+            "label": "Reklamace bez popisu závady",
+            "fix": "Montér neví, co má opravit. Doplňte položky, komentář nebo fotky."
+          }
+        ],
+        "hint": null
+      }
+    ]
+  }
+}

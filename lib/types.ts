@@ -423,3 +423,67 @@ export interface CustomerPhones {
 export interface SearchHit extends EventView {
   side: Side;
 }
+
+// ---- Připravenost montáží (GET mvt/readiness) ----
+export type ReadinessLevel = 'chyba' | 'overit' | 'info';
+
+export interface ReadinessFinding {
+  code: string;
+  level: ReadinessLevel;
+  label: string;
+  fix: string;
+}
+
+export interface ReadinessRow {
+  event: {
+    id: number;
+    type: string;
+    typeLabel: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    day: string;
+    orderId: number | null;
+    complaintId: number | null;
+    customer: { name: string | null; city: string | null };
+    people: Array<{ id: number; name: string | null; source: string }>;
+    orderStatusLabel: string | null;
+    /** Taken over from the old system. */
+    migrated: boolean;
+    /** First 120 characters of the visit note, plain text. */
+    note: string | null;
+  };
+  level: ReadinessLevel;
+  findings: ReadinessFinding[];
+  hint: { otherOrderIds: number[]; otherOrders: number; parentFirst: boolean } | null;
+}
+
+export interface ReadinessDay {
+  day: string;
+  checked: number;
+  chyba: number;
+  overit: number;
+  info: number;
+}
+
+/** `available: false` = the read failed or the breaker is open (rows empty, counts null): the page shows an amber line, the badge hides. */
+export interface MvtReadiness {
+  available: boolean;
+  testMode: boolean;
+  from: string;
+  to: string;
+  today: string;
+  windowDays: number;
+  /** Visits read, with or without a finding. 0 = nothing to check: a neutral state, never "all fine". */
+  checked: number;
+  capped: boolean;
+  counts: Record<ReadinessLevel, number> | null;
+  tomorrow: { day: string; checked: number; chyba: number } | null;
+  /** Today + tomorrow: `red` = visits with a red finding on those two days (nav mark, no gate). Null when unavailable. */
+  urgent: { today: { day: string; checked: number; chyba: number }; tomorrow: { day: string; checked: number; chyba: number }; red: number } | null;
+  byDay: ReadinessDay[];
+  /** Release gate (default window only): `show` = badge and tile may be shown. */
+  badge: { red: number; limit: number; show: boolean } | null;
+  levels: Record<ReadinessLevel, string>;
+  rows: ReadinessRow[];
+}

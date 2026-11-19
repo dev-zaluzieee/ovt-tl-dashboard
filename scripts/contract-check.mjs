@@ -109,6 +109,18 @@ check('doplatek', () => { const d = P.parseDoplatek(data('mvt-doplatek')); eq(d.
 check('rescues, montaz claims', () => { eq(P.parseRescues(data('mvt-rescues')).summary.claimed, 1, 'claimed'); const c = P.parseMontazClaims(data('mvt-montaz-claims')); eq(c.rows[0].followUp.id, 77, 'followUp'); eq(c.rows[1].claim, null, 'no claim'); });
 check('submissions list + detail (Czech labels of what the fitter entered)', () => { eq(P.parseSubmissionList(data('mvt-submissions')).total, 1, 'total'); const d = P.parseSubmissionDetail(data('mvt-submission-detail')); eq(d.steps[1].code, 'ORDER_LOCKED', 'step code'); eq(d.warnings.length, 1, 'warnings'); eq(d.warnings[0].includes('raynet'), false, 'no Raynet name'); eq(d.inputFields.find((f) => f.key === 'komentar').label, 'Komentář', 'input label'); });
 check('overview: a reopened visit is a plain event, the pending flag is a boolean', () => { const d = P.parseOverview(data('mvt-overview')); eq(d.missing.owing.length, 1, 'owing'); eq(d.missing.count, 2, 'missing counts recent and older'); eq(d.reopened.top[0].reopen.reason, 'znovu', 'reopen reason on the event'); eq(d.submissionProblems.pending, false, 'pending'); });
+check('readiness: recorded answer (rows, findings, hint, gate) and the unavailable answer parse; a bad level or a missing field is refused', () => {
+  const d = P.parseReadiness(data('mvt-readiness'));
+  eq(d.available, true, 'available'); eq(d.windowDays, 7, 'window'); eq(d.checked, 4, 'checked counts the visits without a finding'); eq(d.counts.chyba, 2, 'red rows'); eq(d.byDay.length, 8, 'days of the window');
+  eq(d.tomorrow.chyba, 1, 'tomorrow'); eq(d.badge.show, true, 'gate'); eq(d.badge.limit, 15, 'gate limit'); eq(d.testMode, false, 'testMode');
+  const trigger = d.rows.find((r) => r.event.id === 2);
+  eq(trigger.findings[0].code, 'bez_vlastniho_zamereni', 'first finding'); eq(trigger.level, 'chyba', 'level'); eq(trigger.hint.otherOrderIds[0], 1001, 'hint order'); eq(trigger.event.note, 'Výrobní list není, je to zaměřeno zvlášť.', 'note is plain text');
+  eq(/#1001/.test(trigger.findings[0].fix), true, 'the fix names the order');
+  const u = P.parseReadiness(data('mvt-readiness-unavailable'));
+  eq(u.available, false, 'unavailable'); eq(u.rows.length, 0, 'no rows'); eq(u.counts, null, 'no counts'); eq(u.badge, null, 'no badge');
+  const bad = fx('mvt-readiness').data; bad.rows[0].level = 'zelena'; throws(() => P.parseReadiness(bad), 'unknown level');
+  const bad2 = fx('mvt-readiness').data; delete bad2.counts; throws(() => P.parseReadiness(bad2), 'no counts');
+});
 check('action with steps: done, and a failure that arrives as HTTP 200', () => {
   const d = P.parseAction(data('action-done'));
   eq(d.outcome, 'done', 'done'); eq(d.steps.length, 5, 'nedopadlo has five steps (columns, status, tags, comment, visit_result)'); eq(d.steps[2].name, 'tags', 'tags step');
@@ -327,8 +339,21 @@ check('error texts per code', () => {
 
 // ---- BFF allow-list: exactly the backend routes the screens use ------------------------------------------------------
 check('BFF allow-list: open routes', () => {
-  const allowed = [['GET', 'meta'], ['GET', 'people'], ['GET', 'search'], ['GET', 'ovt/day'], ['POST', 'ovt/orders/10000001/b2b'], ['GET', 'ovt/problems'], ['POST', 'ovt/problems/close'], ['POST', 'ovt/problems/nedopadlo'], ['GET', 'ovt/results'], ['GET', 'ovt/results/visits'], ['GET', 'mvt/day'], ['GET', 'mvt/overview'], ['GET', 'mvt/missing'], ['POST', 'mvt/missing/close'], ['GET', 'mvt/reopens'], ['POST', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations'], ['POST', 'mvt/escalations/5/resolve'], ['GET', 'mvt/doplatek'], ['POST', 'mvt/doplatek/resolve'], ['GET', 'mvt/rescues'], ['GET', 'mvt/montaz-claims'], ['GET', 'mvt/submissions'], ['GET', 'mvt/submissions/7'], ['POST', 'resolutions/3/undo'], ['GET', 'calls/search'], ['GET', 'review-qr'], ['PUT', 'review-qr/settings'], ['PUT', 'review-qr/defaults'], ['PUT', 'review-qr/regions'], ['POST', 'review-qr/targets'], ['PUT', 'review-qr/targets/4'], ['DELETE', 'review-qr/targets/4'], ['GET', 'review-qr/prompts']];
+  const allowed = [['GET', 'meta'], ['GET', 'people'], ['GET', 'search'], ['GET', 'ovt/day'], ['POST', 'ovt/orders/10000001/b2b'], ['GET', 'ovt/problems'], ['POST', 'ovt/problems/close'], ['POST', 'ovt/problems/nedopadlo'], ['GET', 'ovt/results'], ['GET', 'ovt/results/visits'], ['GET', 'mvt/day'], ['GET', 'mvt/overview'], ['GET', 'mvt/readiness'], ['GET', 'mvt/missing'], ['POST', 'mvt/missing/close'], ['GET', 'mvt/reopens'], ['POST', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations'], ['POST', 'mvt/escalations/5/resolve'], ['GET', 'mvt/doplatek'], ['POST', 'mvt/doplatek/resolve'], ['GET', 'mvt/rescues'], ['GET', 'mvt/montaz-claims'], ['GET', 'mvt/submissions'], ['GET', 'mvt/submissions/7'], ['POST', 'resolutions/3/undo'], ['GET', 'calls/search'], ['GET', 'review-qr'], ['PUT', 'review-qr/settings'], ['PUT', 'review-qr/defaults'], ['PUT', 'review-qr/regions'], ['POST', 'review-qr/targets'], ['PUT', 'review-qr/targets/4'], ['DELETE', 'review-qr/targets/4'], ['GET', 'review-qr/prompts']];
   for (const [m, p] of allowed) if (!R.matchRoute(m, p.split('/'))) throw new Error(`${m} ${p} should be open`);
+});
+check('readiness: urgent (today + tomorrow) and the light summary answer without rows', () => {
+  const d = P.parseReadiness(data('mvt-readiness'));
+  eq(d.urgent.red, 1, 'urgent red'); eq(d.urgent.today.day, '2026-11-19', 'today'); eq(d.urgent.tomorrow.chyba, 1, 'tomorrow red');
+  const s = P.parseReadiness(data('mvt-readiness-summary'));
+  eq(s.rows.length, 0, 'no rows in the summary'); eq(s.urgent.red, 1, 'summary urgent'); eq(s.badge.show, true, 'summary gate'); eq(s.counts.chyba, 2, 'summary counts');
+  eq(P.parseReadiness(data('mvt-readiness-unavailable')).urgent, null, 'unavailable has no urgent');
+});
+check('readiness route: only the days parameter is forwarded, its value is a small integer', () => {
+  const r = R.matchRoute('GET', ['mvt', 'readiness']);
+  eq(!!r, true, 'open'); eq(JSON.stringify(r.query), JSON.stringify(['days', 'summary']), 'forwarded parameters'); eq(R.validQueryValue('summary', '1'), true, 'summary 1'); eq(R.validQueryValue('summary', '0'), false, 'summary 0'); eq(R.validQueryValue('summary', 'x'), false, 'summary text');
+  eq(R.validQueryValue('days', '14'), true, 'days 14'); eq(R.validQueryValue('days', 'x'), false, 'days text'); eq(R.validQueryValue('days', '-7'), false, 'days negative');
+  eq(R.matchRoute('POST', ['mvt', 'readiness']), null, 'POST closed'); eq(R.matchRoute('GET', ['mvt', 'readiness', '1']), null, 'sub-path closed');
 });
 check('BFF allow-list: everything else is closed (no open relay, no recordings keys)', () => {
   const denied = [['GET', 'orders'], ['POST', 'calls/lookup'], ['GET', 'calls/customer-phones'], ['GET', 'teams'], ['PUT', 'ovt/day'], ['GET', 'resolutions/3/undo'], ['GET', 'mvt/submissions/05'], ['GET', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations/5/resolve'], ['POST', 'mvt/escalations'], ['DELETE', 'mvt/escalations/5'], ['POST', 'mvt/escalations/05/resolve'], ['DELETE', 'review-qr'], ['GET', 'meta/x'], ['GET', '..'], ['GET', 'ovt/results/%2e%2e']];
@@ -360,8 +385,8 @@ check('BFF query values are validated', () => {
 
 // ---- access gate ------------------------------------------------------------------------------------------------------
 check('access gate: only the listed pages and API trees exist', () => {
-  for (const p of ['/', '/login', '/ovt', '/prehled-dne', '/problematicke-zakazky', '/vysledky', '/recenze-qr', '/mvt', '/mvt/prehled-dne', '/mvt/nedokoncene', '/mvt/opravy', '/mvt/nesedi-doplatek', '/mvt/zapisy', '/mvt/zapisy/12', '/mvt/zachrany', '/mvt/reklamace', '/mvt/eskalace', '/objednavky-s-hovory', '/hotovost', '/hotovost/4', '/zakaznik/201/hovory', '/zakazka/10000011/hovory']) eq(A.isPageEnabled(p), true, p);
-  for (const p of ['/tymy', '/klient/123', '/klient/123/hovory', '/hotovost/05', '/hotovost/x', '/hotovost/4/x', '/automat-zf', '/skryte-zakazky', '/kontrola-nemozne-realizace', '/poslane-na-retence', '/mvt/parovani', '/mvt/problematicke-zakazky', '/auth', '/mvt/zapisy/05', '/mvt/zapisy/x']) eq(A.isPageEnabled(p), false, p);
+  for (const p of ['/', '/login', '/ovt', '/prehled-dne', '/problematicke-zakazky', '/vysledky', '/recenze-qr', '/mvt', '/mvt/prehled-dne', '/mvt/pripravenost', '/mvt/nedokoncene', '/mvt/opravy', '/mvt/nesedi-doplatek', '/mvt/zapisy', '/mvt/zapisy/12', '/mvt/zachrany', '/mvt/reklamace', '/mvt/eskalace', '/objednavky-s-hovory', '/hotovost', '/hotovost/4', '/zakaznik/201/hovory', '/zakazka/10000011/hovory']) eq(A.isPageEnabled(p), true, p);
+  for (const p of ['/tymy', '/klient/123', '/klient/123/hovory', '/hotovost/05', '/hotovost/x', '/hotovost/4/x', '/automat-zf', '/skryte-zakazky', '/kontrola-nemozne-realizace', '/poslane-na-retence', '/mvt/parovani', '/mvt/pripravenost/1', '/mvt/problematicke-zakazky', '/auth', '/mvt/zapisy/05', '/mvt/zapisy/x']) eq(A.isPageEnabled(p), false, p);
   for (const p of ['/api/tl/meta', '/api/calls/orders', '/api/calls/play/ab', '/api/cash/persons', '/api/cash/persons/4', '/api/cash/attachments/9', '/api/cash/status']) eq(A.isApiEnabled(p), true, p);
   for (const p of ['/api/teams', '/api/users', '/api/cash', '/api/cashx/persons', '/api/raynet/office-day-events', '/api/retention-auto-zf/status', '/api/customer-calls/x', '/api/orders-with-calls', '/api/tlx', '/api']) eq(A.isApiEnabled(p), false, p);
 });

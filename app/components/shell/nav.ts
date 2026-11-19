@@ -40,6 +40,7 @@ export const NAV: Record<Side, NavGroup[]> = {
       items: [
         { href: '/mvt', label: 'Přehled', description: 'Co potřebuje rozhodnutí: chybějící výsledky, opravy, nesedící doplatky, reklamace z montáží, zápisy s problémem.' },
         { href: '/mvt/prehled-dne', label: 'Přehled dne', description: 'Montáže, servisy a reklamace dne po montérech se stavem z ERP a z aplikace montérů.' },
+        { href: '/mvt/pripravenost', label: 'Připravenost montáží', description: 'Naplánované montáže, servisy a reklamace, kterým chybí formuláře, soubory, adresa, montér nebo zboží. Jen ke čtení.' },
         { href: '/mvt/nedokoncene', label: 'Chybí výsledek', description: 'Návštěvy po termínu bez výsledku; kdo dluží výsledek; co bylo uzavřeno mimo aplikaci.' },
         { href: '/mvt/opravy', label: 'Opravy', description: 'Návštěvy otevřené k opravě: kdo a proč, výsledek před a po.' },
         { href: '/mvt/eskalace', label: 'Z financí', description: 'Návštěvy, které finance eskalovaly vedoucímu týmu montérů; vyřešení s poznámkou.' },

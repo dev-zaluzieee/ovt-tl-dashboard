@@ -11,6 +11,7 @@ import { Chip, LoadError, PageHeader, Skeleton, StateChip } from '@/app/componen
 import { NAV } from '@/app/components/shell/nav';
 import { useLoad } from '@/app/components/ui/useLoad';
 import { CLAIM_STATE_TONE } from './MvtMontazClaimsClient';
+import { ReadinessTile } from './ReadinessTile';
 
 function Block({ title, count, href, tone, children }: { title: string; count: number; href: string; tone: 'rose' | 'amber' | 'sky' | 'gray'; children: ReactNode }) {
   const ring = { rose: 'border-rose-200', amber: 'border-amber-200', sky: 'border-sky-200', gray: 'border-gray-200' }[tone];
@@ -34,6 +35,7 @@ export function MvtOverviewClient() {
     <main className="container mx-auto px-4 py-8">
       <PageHeader title="Montéři (MVT): Přehled" subtitle="Co dnes potřebuje vaše rozhodnutí. Podrobnosti najdete na jednotlivých stránkách." />
       <div className="space-y-8">
+        <ReadinessTile />
         {error && <LoadError error={error} onRetry={reload} />}
         {!data && !error && <Skeleton rows={4} h="h-24" />}
         {data && (

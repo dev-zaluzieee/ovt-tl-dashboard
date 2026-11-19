@@ -17,6 +17,7 @@ export const PAGE_PATTERNS: readonly RegExp[] = [
   /^\/recenze-qr$/,
   /^\/mvt$/,
   /^\/mvt\/prehled-dne$/,
+  /^\/mvt\/pripravenost$/,
   /^\/mvt\/nedokoncene$/,
   /^\/mvt\/opravy$/,
   /^\/mvt\/nesedi-doplatek$/,

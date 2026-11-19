@@ -17,6 +17,11 @@ import type {
   MvtMissing,
   MvtMontazClaims,
   MvtOverview,
+  MvtReadiness,
+  ReadinessDay,
+  ReadinessFinding,
+  ReadinessLevel,
+  ReadinessRow,
   MvtReopens,
   MvtRescues,
   OvtDay,
@@ -406,6 +411,84 @@ export function parseOverview(v: unknown): MvtOverview {
     },
     submissionProblems: { count: num(sp, 'count', 'overview.submissionProblems'), pending: sp.pending === true },
     today: str(o, 'today', 'overview'),
+  };
+}
+
+const READINESS_LEVELS: ReadinessLevel[] = ['chyba', 'overit', 'info'];
+
+function readinessLevel(o: Obj, k: string, where: string): ReadinessLevel {
+  const v = str(o, k, where);
+  if (!READINESS_LEVELS.includes(v as ReadinessLevel)) throw new TlShapeError(`${where}.${k}`, 'neznámá úroveň');
+  return v as ReadinessLevel;
+}
+function intOrNull(o: Obj, k: string): number | null {
+  return typeof o[k] === 'number' && Number.isFinite(o[k] as number) ? (o[k] as number) : null;
+}
+
+function parseReadinessRow(v: unknown, where: string): ReadinessRow {
+  const o = obj(v, where);
+  const e = obj(o.event, `${where}.event`);
+  const ew = `${where}.event`;
+  const customer = obj(e.customer, `${ew}.customer`);
+  const hint = o.hint === null || o.hint === undefined ? null : obj(o.hint, `${where}.hint`);
+  return {
+    event: {
+      id: num(e, 'id', ew),
+      type: str(e, 'type', ew),
+      typeLabel: typeof e.typeLabel === 'string' ? e.typeLabel : str(e, 'type', ew),
+      title: typeof e.title === 'string' ? e.title : '',
+      startsAt: str(e, 'startsAt', ew),
+      endsAt: typeof e.endsAt === 'string' ? e.endsAt : str(e, 'startsAt', ew),
+      day: str(e, 'day', ew),
+      orderId: intOrNull(e, 'orderId'),
+      complaintId: intOrNull(e, 'complaintId'),
+      customer: { name: typeof customer.name === 'string' ? customer.name : null, city: typeof customer.city === 'string' ? customer.city : null },
+      people: arr(e.people, `${ew}.people`).map((p, i) => {
+        const po = obj(p, `${ew}.people[${i}]`);
+        return { id: num(po, 'id', `${ew}.people[${i}]`), name: typeof po.name === 'string' ? po.name : null, source: typeof po.source === 'string' ? po.source : 'owner' };
+      }),
+      orderStatusLabel: typeof e.orderStatusLabel === 'string' ? e.orderStatusLabel : null,
+      migrated: e.migrated === true,
+      note: typeof e.note === 'string' && e.note.trim() !== '' ? e.note : null,
+    },
+    level: readinessLevel(o, 'level', where),
+    findings: list(o.findings, `${where}.findings`, (x, w): ReadinessFinding => {
+      const f = obj(x, w);
+      return { code: str(f, 'code', w), level: readinessLevel(f, 'level', w), label: str(f, 'label', w), fix: typeof f.fix === 'string' ? f.fix : '' };
+    }),
+    hint: hint ? { otherOrderIds: arr(hint.otherOrderIds, `${where}.hint.otherOrderIds`).filter((n): n is number => typeof n === 'number'), otherOrders: num(hint, 'otherOrders', `${where}.hint`), parentFirst: hint.parentFirst === true } : null,
+  };
+}
+
+/** Answer of `GET mvt/readiness`. An unavailable answer (`available: false`) is valid: no rows, no counts. */
+export function parseReadiness(v: unknown): MvtReadiness {
+  const o = obj(v, 'readiness');
+  const available = bool(o, 'available', 'readiness');
+  const levelsRaw = o.levels && typeof o.levels === 'object' ? (o.levels as Obj) : {};
+  const levels = { chyba: typeof levelsRaw.chyba === 'string' ? levelsRaw.chyba : 'Chyba', overit: typeof levelsRaw.overit === 'string' ? levelsRaw.overit : 'K ověření', info: typeof levelsRaw.info === 'string' ? levelsRaw.info : 'Informace' };
+  const head = { available, testMode: o.testMode === true, from: str(o, 'from', 'readiness'), to: str(o, 'to', 'readiness'), today: str(o, 'today', 'readiness'), windowDays: num(o, 'windowDays', 'readiness'), levels };
+  if (!available) return { ...head, checked: 0, capped: false, counts: null, tomorrow: null, urgent: null, byDay: [], badge: null, rows: [] };
+  const c = obj(o.counts, 'readiness.counts');
+  const t = obj(o.tomorrow, 'readiness.tomorrow');
+  const b = o.badge === null || o.badge === undefined ? null : obj(o.badge, 'readiness.badge');
+  const dayCount = (x: unknown, w: string) => {
+    const d = obj(x, w);
+    return { day: str(d, 'day', w), checked: num(d, 'checked', w), chyba: num(d, 'chyba', w) };
+  };
+  const u = o.urgent === null || o.urgent === undefined ? null : obj(o.urgent, 'readiness.urgent');
+  return {
+    ...head,
+    checked: num(o, 'checked', 'readiness'),
+    capped: o.capped === true,
+    counts: { chyba: num(c, 'chyba', 'readiness.counts'), overit: num(c, 'overit', 'readiness.counts'), info: num(c, 'info', 'readiness.counts') },
+    tomorrow: { day: str(t, 'day', 'readiness.tomorrow'), checked: num(t, 'checked', 'readiness.tomorrow'), chyba: num(t, 'chyba', 'readiness.tomorrow') },
+    urgent: u ? { today: dayCount(u.today, 'readiness.urgent.today'), tomorrow: dayCount(u.tomorrow, 'readiness.urgent.tomorrow'), red: num(u, 'red', 'readiness.urgent') } : null,
+    byDay: list(o.byDay, 'readiness.byDay', (x, w): ReadinessDay => {
+      const d = obj(x, w);
+      return { day: str(d, 'day', w), checked: num(d, 'checked', w), chyba: num(d, 'chyba', w), overit: num(d, 'overit', w), info: num(d, 'info', w) };
+    }),
+    badge: b ? { red: num(b, 'red', 'readiness.badge'), limit: num(b, 'limit', 'readiness.badge'), show: bool(b, 'show', 'readiness.badge') } : null,
+    rows: o.rows === undefined ? [] : list(o.rows, 'readiness.rows', parseReadinessRow),
   };
 }
 

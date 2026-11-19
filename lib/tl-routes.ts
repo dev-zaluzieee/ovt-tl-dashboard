@@ -40,6 +40,7 @@ const ROUTES: readonly Route[] = [
 
   { method: 'GET', re: /^mvt\/day$/, query: ['date', 'person', 'q'] },
   { method: 'GET', re: /^mvt\/overview$/ },
+  { method: 'GET', re: /^mvt\/readiness$/, query: ['days', 'summary'] },
   { method: 'GET', re: /^mvt\/missing$/, query: [...DATES, 'includeHandled', ...PERSON] },
   { method: 'POST', re: /^mvt\/missing\/close$/, body: true },
   { method: 'GET', re: /^mvt\/reopens$/, query: [...DATES, ...PERSON, 'open', 'side'] },
@@ -115,6 +116,8 @@ export function validQueryValue(key: string, value: string): boolean {
       return /^[a-z_]{1,40}$/.test(value);
     case 'key':
       return /^[\w:-]{1,40}$/.test(value);
+    case 'summary':
+      return value === '1';
     case 'limit':
     case 'days':
     case 'page':
