@@ -146,7 +146,14 @@ export function MvtReadinessClient() {
                             ))}
                           </div>
                         </td>
-                        <td className={`${pad} max-w-md text-xs text-gray-700`}>{first ? <FixText text={first.fix} orderIds={ids} /> : null}</td>
+                        <td className={`${pad} max-w-md text-xs text-gray-700`}>
+                          {first ? <FixText text={first.fix} orderIds={ids} /> : null}
+                          {r.findings.some((f) => f.code === 'bez_zakazky') && (
+                            <p className="mt-1">
+                              <ExtA href={erpEventUrl(base, e.id, e.day)}>Otevřít událost v ERP</ExtA>
+                            </p>
+                          )}
+                        </td>
                         <td className={`${pad} whitespace-nowrap text-xs`}>
                           <span className="inline-flex flex-wrap gap-x-2">
                             <ExtA href={erpOrderUrl(base, e.orderId)}>Zakázka</ExtA>
