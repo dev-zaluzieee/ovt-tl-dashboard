@@ -85,7 +85,7 @@ export function errorText(e: unknown, fallback = 'Něco se nepovedlo, zkuste to 
     case 'NOT_CLOSED':
       return 'Návštěva není uzavřená, otevírat k opravě není co. Obnovte seznam.';
     case 'LEGACY_VISIT':
-      return 'Návštěva byla přenesena ze starých systémů a z dashboardu se nedá měnit (ani znovu otevřít, označit jako nedopadlo nebo uzavřít jako problém).';
+      return 'Návštěva byla přenesena ze starých systémů a z dashboardu se nedá měnit (ani označit jako nedopadlo nebo uzavřít jako problém).';
     case 'ALREADY_OPEN':
       return 'Návštěva už je otevřená k opravě. Obnovte seznam.';
     case 'INVOICE_CHECK_OFF':

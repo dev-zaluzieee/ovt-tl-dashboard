@@ -65,7 +65,7 @@ export interface EventView {
   app: { status: string; statusLabel: string | null; outcome: string | null; outcomeLabel: string | null } | null;
   claim: { id: number; status: string | null; statusLabel: string | null; druh: string | null } | null;
   amountDue: number | null;
-  /** A visit taken over from the old systems: read-only here (no reopen, mark nedopadlo or close-problem button; the server answers 409 LEGACY_VISIT). */
+  /** A visit taken over from the old systems: read-only here for mark nedopadlo and close-problem (the server answers 409 LEGACY_VISIT); "Otevřít k opravě" works on it like on any visit. */
   legacy: boolean;
   link: { code: 'bez_zakazky' | 'bez_reklamace' | 'servis_ze_zakazky'; label: string } | null;
 }

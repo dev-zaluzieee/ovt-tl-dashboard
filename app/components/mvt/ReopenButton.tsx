@@ -9,8 +9,9 @@ import { ReasonDialog, btnAmber } from '@/app/components/ui/kit';
 /** "Otevřít k opravě": ERP reopen-visit with a mandatory reason, as the signed-in person. Only for a closed visit. */
 export function ReopenButton({ ev, onDone }: { ev: EventView; onDone: () => void }) {
   const [open, setOpen] = useState(false);
-  // a visit taken over from the old systems is read-only here (the server refuses it as well: 409 LEGACY_VISIT)
-  if (!ev.state.closed || ev.legacy) return null;
+  // the ERP decides what can be reopened (it has no legacy rule): a visit taken over from the old systems is reopened like any other.
+  // Only a completed visit: state `closed_from_order` is closed by the order while the visit is scheduled (the server answers 409 NOT_CLOSED).
+  if (!ev.state.closed || ev.status !== 'completed') return null;
   return (
     <>
       <button type="button" className={btnAmber} onClick={() => setOpen(true)} title="Vrátí návštěvu do stavu naplánováno, aby šel výsledek znovu zapsat. Dosavadní výsledek zůstane v historii oprav.">

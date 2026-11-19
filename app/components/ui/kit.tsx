@@ -98,7 +98,7 @@ export function stateBarClass(code: string): string {
 export function LegacyResultTag({ ev }: { ev: EventView }) {
   if (ev.result?.source !== 'legacy') return null;
   return (
-    <span className="inline-flex items-center rounded-md border border-gray-300 bg-gray-50 px-1.5 text-[10px] font-medium text-gray-600" title="Výsledek byl přenesen ze starých systémů (Raynet, staré aplikace); z dashboardu se nedá změnit.">
+    <span className="inline-flex items-center rounded-md border border-gray-300 bg-gray-50 px-1.5 text-[10px] font-medium text-gray-600" title="Výsledek byl přenesen ze starých systémů (Raynet, staré aplikace), nezapsal ho nový systém.">
       přenesený výsledek
     </span>
   );
