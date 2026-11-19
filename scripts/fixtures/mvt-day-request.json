@@ -1,0 +1,228 @@
+{
+  "success": true,
+  "data": {
+    "date": "2026-11-16",
+    "now": "2026-11-16T10:00:00.000Z",
+    "today": "2026-11-16",
+    "events": [
+      {
+        "id": 21,
+        "type": "servis",
+        "typeLabel": "Servis",
+        "title": "T",
+        "status": "scheduled",
+        "origin": null,
+        "startsAt": "2026-11-16T08:00:00.000Z",
+        "endsAt": "2026-11-16T09:00:00.000Z",
+        "day": "2026-11-16",
+        "orderId": 10000001,
+        "complaintId": 4,
+        "customer": {
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
+          "city": "Brno"
+        },
+        "orderStatus": "zamereni",
+        "orderStatusLabel": "Zaměření",
+        "people": [
+          {
+            "id": 6,
+            "name": "Montér Petr",
+            "source": "owner"
+          }
+        ],
+        "b2b": null,
+        "state": {
+          "code": "past_end",
+          "label": "Po konci, bez výsledku",
+          "closed": false,
+          "open": true
+        },
+        "result": null,
+        "legacy": false,
+        "reopen": null,
+        "tabletDraft": false,
+        "app": null,
+        "claim": {
+          "id": 4,
+          "status": "reklamace-nova",
+          "statusLabel": "Nová",
+          "druh": "reklamace"
+        },
+        "amountDue": null,
+        "link": null,
+        "reopenRequest": {
+          "id": 7,
+          "reason": "Zákazník doplatil jinak.",
+          "requestedByName": "Montér Petr",
+          "requestedAt": "2026-11-18T09:15:00.000Z"
+        }
+      },
+      {
+        "id": 22,
+        "type": "montaz",
+        "typeLabel": "Montáž",
+        "title": "T",
+        "status": "scheduled",
+        "origin": null,
+        "startsAt": "2026-11-16T09:00:00.000Z",
+        "endsAt": "2026-11-16T10:00:00.000Z",
+        "day": "2026-11-16",
+        "orderId": 10000001,
+        "complaintId": null,
+        "customer": {
+          "name": "Zákazník Jedna",
+          "phone": "+420 777 111 222",
+          "city": "Brno"
+        },
+        "orderStatus": "zamereni",
+        "orderStatusLabel": "Zaměření",
+        "people": [
+          {
+            "id": 6,
+            "name": "Montér Petr",
+            "source": "owner"
+          }
+        ],
+        "b2b": null,
+        "state": {
+          "code": "in_progress",
+          "label": "Probíhá",
+          "closed": false,
+          "open": false
+        },
+        "result": null,
+        "legacy": false,
+        "reopen": null,
+        "tabletDraft": false,
+        "app": null,
+        "claim": null,
+        "amountDue": null,
+        "link": null
+      }
+    ],
+    "groups": [
+      {
+        "person": {
+          "id": 6,
+          "name": "Montér Petr"
+        },
+        "events": [
+          {
+            "id": 21,
+            "type": "servis",
+            "typeLabel": "Servis",
+            "title": "T",
+            "status": "scheduled",
+            "origin": null,
+            "startsAt": "2026-11-16T08:00:00.000Z",
+            "endsAt": "2026-11-16T09:00:00.000Z",
+            "day": "2026-11-16",
+            "orderId": 10000001,
+            "complaintId": 4,
+            "customer": {
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
+              "city": "Brno"
+            },
+            "orderStatus": "zamereni",
+            "orderStatusLabel": "Zaměření",
+            "people": [
+              {
+                "id": 6,
+                "name": "Montér Petr",
+                "source": "owner"
+              }
+            ],
+            "b2b": null,
+            "state": {
+              "code": "past_end",
+              "label": "Po konci, bez výsledku",
+              "closed": false,
+              "open": true
+            },
+            "result": null,
+            "legacy": false,
+            "reopen": null,
+            "tabletDraft": false,
+            "app": null,
+            "claim": {
+              "id": 4,
+              "status": "reklamace-nova",
+              "statusLabel": "Nová",
+              "druh": "reklamace"
+            },
+            "amountDue": null,
+            "link": null,
+            "reopenRequest": {
+              "id": 7,
+              "reason": "Zákazník doplatil jinak.",
+              "requestedByName": "Montér Petr",
+              "requestedAt": "2026-11-18T09:15:00.000Z"
+            }
+          },
+          {
+            "id": 22,
+            "type": "montaz",
+            "typeLabel": "Montáž",
+            "title": "T",
+            "status": "scheduled",
+            "origin": null,
+            "startsAt": "2026-11-16T09:00:00.000Z",
+            "endsAt": "2026-11-16T10:00:00.000Z",
+            "day": "2026-11-16",
+            "orderId": 10000001,
+            "complaintId": null,
+            "customer": {
+              "name": "Zákazník Jedna",
+              "phone": "+420 777 111 222",
+              "city": "Brno"
+            },
+            "orderStatus": "zamereni",
+            "orderStatusLabel": "Zaměření",
+            "people": [
+              {
+                "id": 6,
+                "name": "Montér Petr",
+                "source": "owner"
+              }
+            ],
+            "b2b": null,
+            "state": {
+              "code": "in_progress",
+              "label": "Probíhá",
+              "closed": false,
+              "open": false
+            },
+            "result": null,
+            "legacy": false,
+            "reopen": null,
+            "tabletDraft": false,
+            "app": null,
+            "claim": null,
+            "amountDue": null,
+            "link": null
+          }
+        ]
+      }
+    ],
+    "stateCounts": {
+      "past_end": 1,
+      "in_progress": 1
+    },
+    "quietStates": [
+      "closed_no_result",
+      "closed_from_order",
+      "no_owner",
+      "legacy_no_result"
+    ],
+    "tiles": {
+      "events": 2,
+      "closed": 0,
+      "open": 1
+    },
+    "warnings": [],
+    "qIgnored": false,
+    "truncated": false
+  }
+}

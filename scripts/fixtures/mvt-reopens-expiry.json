@@ -1,0 +1,206 @@
+{
+  "success": true,
+  "data": {
+    "from": "2026-10-18",
+    "to": "2026-11-16",
+    "side": "mvt",
+    "rows": [
+      {
+        "id": 2,
+        "event": {
+          "id": 50,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "scheduled",
+          "origin": null,
+          "startsAt": "2026-11-10T08:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000001,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 5,
+              "name": "Ovt Alfa",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "reopened",
+            "label": "Otevřeno k opravě",
+            "closed": false,
+            "open": true
+          },
+          "result": {
+            "outcome": "done",
+            "outcomeLabel": "Montáž dokončena",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": null,
+            "paymentMethod": null,
+            "paymentMethodLabel": null,
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": null,
+            "current": false,
+            "source": "native"
+          },
+          "legacy": false,
+          "reopen": {
+            "reason": "znovu",
+            "actorName": null,
+            "at": "2026-11-15T08:00:00.000Z"
+          },
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "reason": "znovu",
+        "reopenedBy": "Kancl",
+        "at": "2026-11-15T08:00:00.000Z",
+        "stillOpen": true,
+        "before": {
+          "outcome": "done",
+          "outcomeLabel": "Montáž dokončena",
+          "reason": null,
+          "reasonLabel": null,
+          "collectedAmount": 1200,
+          "paymentMethod": "hotove",
+          "paymentMethodLabel": "Hotově",
+          "discountAmount": null,
+          "closedByName": "Karel",
+          "completedAt": "2026-11-10T09:00:00.000Z"
+        },
+        "after": null,
+        "changes": [],
+        "requestId": null,
+        "expiry": null
+      },
+      {
+        "id": 1,
+        "event": {
+          "id": 51,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "completed",
+          "origin": null,
+          "startsAt": "2026-11-10T08:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000001,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 5,
+              "name": "Ovt Alfa",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": {
+            "outcome": "done",
+            "outcomeLabel": "Montáž dokončena",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": 1200,
+            "paymentMethod": "fakturou",
+            "paymentMethodLabel": "Fakturou",
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": "2026-11-12T10:00:00.000Z",
+            "current": true,
+            "source": "native"
+          },
+          "legacy": false,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        },
+        "reason": "částka",
+        "reopenedBy": "Kancl",
+        "at": "2026-11-12T08:00:00.000Z",
+        "stillOpen": false,
+        "before": {
+          "outcome": "done",
+          "outcomeLabel": "Montáž dokončena",
+          "reason": null,
+          "reasonLabel": null,
+          "collectedAmount": 800,
+          "paymentMethod": "hotove",
+          "paymentMethodLabel": "Hotově",
+          "discountAmount": null,
+          "closedByName": "Karel",
+          "completedAt": "2026-11-10T09:00:00.000Z"
+        },
+        "after": {
+          "outcome": "done",
+          "outcomeLabel": "Montáž dokončena",
+          "reason": null,
+          "reasonLabel": null,
+          "collectedAmount": 1200,
+          "paymentMethod": "fakturou",
+          "paymentMethodLabel": "Fakturou",
+          "discountAmount": null,
+          "closedByName": "Karel",
+          "completedAt": "2026-11-10T09:00:00.000Z"
+        },
+        "changes": [
+          {
+            "field": "collectedAmount",
+            "label": "Vybráno",
+            "before": 800,
+            "after": 1200
+          },
+          {
+            "field": "paymentMethodLabel",
+            "label": "Způsob úhrady",
+            "before": "Hotově",
+            "after": "Fakturou"
+          }
+        ],
+        "requestId": 5,
+        "expiry": {
+          "expiresAt": "2026-11-21T08:00:00.000Z",
+          "state": "running",
+          "blockCode": null
+        }
+      }
+    ],
+    "openCount": 1,
+    "truncated": false
+  }
+}

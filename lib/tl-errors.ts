@@ -28,6 +28,20 @@ export function stepLines(body: Record<string, unknown>): string[] {
   return out;
 }
 
+/** "Žádost už je vyřízená": who decided meanwhile and how, from the 409's `data.request` (absent = generic sentence). */
+function decidedText(body: Record<string, unknown>): string {
+  const data = body.data as { request?: Record<string, unknown> } | undefined;
+  const r = data && data.request && typeof data.request === 'object' ? data.request : null;
+  if (!r) return 'Žádost už mezitím někdo vyřídil. Seznam se obnoví.';
+  const s = (k: string) => (typeof r[k] === 'string' && (r[k] as string).trim() ? (r[k] as string).trim() : null);
+  const state = s('statusLabel') ?? ({ opened: 'Otevřeno', declined: 'Zamítnuto', withdrawn: 'Montér žádost stáhl', obsolete: 'Už neplatí' } as Record<string, string>)[s('status') ?? ''] ?? null;
+  const by = s('decidedByName');
+  const via = s('decidedViaLabel');
+  const note = s('decisionNote');
+  const bits = [state, by ? `vyřídil(a) ${by}` : null, via].filter(Boolean);
+  return `Žádost už mezitím byla vyřízena${bits.length ? ` (${bits.join(', ')})` : ''}${note ? `, poznámka: „${note}“` : ''}. Seznam se obnoví.`;
+}
+
 const ERP_REFUSALS = new Set(['ERP_WRITE_FAILED', 'ERP_VALIDATION', 'ERP_CONFLICT', 'ERP_ERROR']);
 
 export function errorText(e: unknown, fallback = 'Něco se nepovedlo, zkuste to prosím znovu.'): string {
@@ -80,6 +94,16 @@ export function errorText(e: unknown, fallback = 'Něco se nepovedlo, zkuste to 
       return 'Neplatný kraj: QR lze nastavit jen pro jeden ze 14 krajů.';
     case 'EVENT_CANCELLED':
       return 'Událost je zrušená.';
+    case 'REQUEST_NOT_FOUND':
+      return 'Žádost nebyla nalezena (nebo už neexistuje). Obnovte seznam.';
+    case 'REQUEST_DECIDED':
+      return decidedText(e.body);
+    case 'INVALID_BODY':
+      return own ?? 'Poznámka je příliš dlouhá (při otevření nejvýše 500 znaků, při zamítnutí nejvýše 1000).';
+    case 'INVALID_ID':
+      return own ?? 'Neplatné číslo záznamu. Obnovte stránku.';
+    case 'INVALID_QUERY':
+      return own ?? 'Neplatný filtr. Obnovte stránku.';
     case 'NO_ORDER':
       return 'Událost nemá zakázku, v ERP se nedá nic zapsat.';
     case 'NOT_CLOSED':

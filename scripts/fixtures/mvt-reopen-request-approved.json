@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "data": {
+    "outcome": "done",
+    "steps": [
+      {
+        "name": "reopen",
+        "label": "Znovuotevření návštěvy v ERP",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      },
+      {
+        "name": "mark",
+        "label": "Označení žádosti jako vyřízené",
+        "status": "ok",
+        "detail": null,
+        "code": null
+      }
+    ],
+    "ref": "tl2-test-1",
+    "request": {
+      "id": 7,
+      "eventId": 51,
+      "status": "opened",
+      "reason": "Zákazník doplatil jinak, výsledek je potřeba opravit.",
+      "requestedAt": "2026-11-18T09:15:00.000Z",
+      "requestedByName": "Montér Petr",
+      "requestedByEmail": "petr@example.cz",
+      "mine": false,
+      "decidedAt": "2026-11-19T08:00:00.000Z",
+      "decidedByName": "Team Leader",
+      "decisionNote": null,
+      "actorEmail": null,
+      "decidedVia": "dashboard",
+      "erpReopenId": 42,
+      "statusLabel": "Otevřeno",
+      "decidedViaLabel": "V dashboardu team leadera"
+    },
+    "eventId": 51,
+    "reopenId": 42,
+    "reopenedAt": "2026-11-19T08:00:00.000Z",
+    "expiresAt": null
+  }
+}

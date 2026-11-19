@@ -1,0 +1,108 @@
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "request": {
+          "id": 7,
+          "eventId": 51,
+          "status": "requested",
+          "reason": "Zákazník doplatil jinak, výsledek je potřeba opravit.",
+          "requestedAt": "2026-11-18T09:15:00.000Z",
+          "requestedByName": "Montér Petr",
+          "requestedByEmail": "petr@example.cz",
+          "mine": false,
+          "decidedAt": null,
+          "decidedByName": null,
+          "decisionNote": null,
+          "actorEmail": null,
+          "decidedVia": null,
+          "erpReopenId": null,
+          "statusLabel": "Čeká na vyřízení",
+          "decidedViaLabel": null
+        },
+        "event": {
+          "id": 51,
+          "type": "montaz",
+          "typeLabel": "Montáž",
+          "title": "T",
+          "status": "completed",
+          "origin": null,
+          "startsAt": "2026-11-10T08:00:00.000Z",
+          "endsAt": "2026-11-10T09:00:00.000Z",
+          "day": "2026-11-10",
+          "orderId": 10000001,
+          "complaintId": null,
+          "customer": {
+            "name": "Zákazník Jedna",
+            "phone": "+420 777 111 222",
+            "city": "Brno"
+          },
+          "orderStatus": "zamereni",
+          "orderStatusLabel": "Zaměření",
+          "people": [
+            {
+              "id": 5,
+              "name": "Ovt Alfa",
+              "source": "owner"
+            }
+          ],
+          "b2b": null,
+          "state": {
+            "code": "closed",
+            "label": "Uzavřeno",
+            "closed": true,
+            "open": false
+          },
+          "result": {
+            "outcome": "done",
+            "outcomeLabel": "Montáž dokončena",
+            "reason": null,
+            "reasonLabel": null,
+            "collectedAmount": 1200,
+            "paymentMethod": "fakturou",
+            "paymentMethodLabel": "Fakturou",
+            "discountAmount": null,
+            "discountNote": null,
+            "rescueNote": null,
+            "note": null,
+            "closedByName": null,
+            "completedAt": "2026-11-12T10:00:00.000Z",
+            "current": true,
+            "source": "native"
+          },
+          "legacy": false,
+          "reopen": null,
+          "tabletDraft": false,
+          "app": null,
+          "claim": null,
+          "amountDue": null,
+          "link": null
+        }
+      },
+      {
+        "request": {
+          "id": 6,
+          "eventId": 51,
+          "status": "requested",
+          "reason": "Zákazník doplatil jinak, výsledek je potřeba opravit.",
+          "requestedAt": "2026-11-18T09:15:00.000Z",
+          "requestedByName": "Montér Petr",
+          "requestedByEmail": "petr@example.cz",
+          "mine": false,
+          "decidedAt": null,
+          "decidedByName": null,
+          "decisionNote": null,
+          "actorEmail": null,
+          "decidedVia": null,
+          "erpReopenId": null,
+          "statusLabel": "Čeká na vyřízení",
+          "decidedViaLabel": null
+        },
+        "event": null
+      }
+    ],
+    "openCount": 2,
+    "pending": false
+  }
+}

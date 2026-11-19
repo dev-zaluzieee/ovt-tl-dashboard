@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "data": {
+    "request": {
+      "id": 7,
+      "eventId": 51,
+      "status": "declined",
+      "reason": "Zákazník doplatil jinak, výsledek je potřeba opravit.",
+      "requestedAt": "2026-11-18T09:15:00.000Z",
+      "requestedByName": "Montér Petr",
+      "requestedByEmail": "petr@example.cz",
+      "mine": false,
+      "decidedAt": "2026-11-19T08:00:00.000Z",
+      "decidedByName": "Team Leader",
+      "decisionNote": "Ne.",
+      "actorEmail": null,
+      "decidedVia": "dashboard",
+      "erpReopenId": null,
+      "statusLabel": "Zamítnuto",
+      "decidedViaLabel": "V dashboardu team leadera"
+    }
+  }
+}

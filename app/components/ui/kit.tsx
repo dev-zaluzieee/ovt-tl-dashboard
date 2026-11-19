@@ -230,6 +230,8 @@ export function ReasonDialog({
   noteRequiredFor,
   noteLabel = 'Poznámka',
   noteMin = 0,
+  noteMax = 1000,
+  renderResult,
   noReason,
   submitLabel,
   onClose,
@@ -241,6 +243,9 @@ export function ReasonDialog({
   noteRequiredFor?: string[];
   noteLabel?: string;
   noteMin?: number;
+  noteMax?: number;
+  /** Optional replacement of the steps panel for a result: a node = shown instead, the dialog stays open and offers no retry; null = default behaviour. */
+  renderResult?: (r: ActionResult) => ReactNode | null;
   noReason?: boolean;
   submitLabel: string;
   onClose: () => void;
@@ -251,6 +256,7 @@ export function ReasonDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ActionResult | null>(null);
+  const custom = result && renderResult ? renderResult(result) : null;
   const noteNeeded = noteMin > 0 || (noteRequiredFor ?? []).includes(reason);
   const trimmed = note.trim();
   const valid = (noReason || !!reason) && (!noteNeeded || trimmed.length >= Math.max(1, noteMin));
@@ -262,7 +268,7 @@ export function ReasonDialog({
       const r = await onSubmit({ reason, note: trimmed });
       if (r) {
         setResult(r);
-        if (r.outcome === 'done') window.setTimeout(onClose, 2200);
+        if (r.outcome === 'done' && !renderResult?.(r)) window.setTimeout(onClose, 2200);
       } else onClose();
     } catch (e) {
       setError(errorText(e));
@@ -293,15 +299,15 @@ export function ReasonDialog({
             {noteLabel}
             {noteNeeded ? ' – povinné pole' : ' – nepovinné'}
           </span>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} className={`${inputCls} mt-1 w-full`} />
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={noteMax} className={`${inputCls} mt-1 w-full`} />
         </label>
         {error && <Alert tone="red">{error}</Alert>}
-        {result && <StepsPanel result={result} />}
+        {result && (custom ?? <StepsPanel result={result} />)}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className={btnGhost}>
             {result ? 'Zavřít' : 'Zrušit'}
           </button>
-          {(!result || result.outcome !== 'done') && (
+          {(!result || (result.outcome !== 'done' && !custom)) && (
             <button type="button" disabled={!valid || busy} onClick={() => void go()} className={btnPrimary}>
               {busy ? 'Ukládám…' : result ? 'Zkusit znovu' : submitLabel}
             </button>

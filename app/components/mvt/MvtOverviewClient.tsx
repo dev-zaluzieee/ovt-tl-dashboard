@@ -40,6 +40,24 @@ export function MvtOverviewClient() {
         {!data && !error && <Skeleton rows={4} h="h-24" />}
         {data && (
           <div className="grid gap-4 lg:grid-cols-2">
+            {data.reopenRequests && (
+              <Block title="Žádosti montérů" count={data.reopenRequests.count} href="/mvt/opravy" tone="amber">
+                {data.reopenRequests.pending ? (
+                  <p className="px-2 py-2 text-sm text-gray-500">Žádosti montérů zatím nejsou k dispozici (databázová část ještě není nasazená).</p>
+                ) : data.reopenRequests.top.length === 0 ? (
+                  <p className="px-2 py-2 text-sm text-gray-500">Žádná žádost nečeká na vyřízení.</p>
+                ) : (
+                  <ul className="divide-y divide-gray-100">
+                    {data.reopenRequests.top.map(({ request: q, event: e }) => (
+                      <li key={q.id} className="px-2 py-1.5 text-sm">
+                        <p className="font-medium text-gray-900">{e?.customer?.name ?? e?.title ?? `Událost ${q.eventId}`} {e && <span className="text-xs font-normal text-gray-500">{e.typeLabel}</span>}</p>
+                        <p className="text-xs text-gray-600">{q.requestedByName ?? ''}{q.reason ? ` · „${q.reason}“` : ''} · {fmtDateTime(q.requestedAt)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Block>
+            )}
             <Block title="Chybí výsledek" count={data.missing.count} href="/mvt/nedokoncene" tone="rose">
               {data.missing.owing.length > 0 && <p className="px-2 pb-1 text-xs text-gray-500">dluží: {data.missing.owing.map((o) => `${o.person?.name ?? 'bez montéra'} (${o.count})`).join(', ')}{data.missing.backlog ? ` · z toho starších než 7 dní: ${data.missing.backlog}` : ''}</p>}
               {data.missing.top.length === 0 ? none : (

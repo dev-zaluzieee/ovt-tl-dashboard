@@ -68,6 +68,8 @@ export interface EventView {
   /** A visit taken over from the old systems: read-only here for mark nedopadlo and close-problem (the server answers 409 LEGACY_VISIT); "Otevřít k opravě" works on it like on any visit. */
   legacy: boolean;
   link: { code: 'bez_zakazky' | 'bez_reklamace' | 'servis_ze_zakazky'; label: string } | null;
+  /** Day view only: the fitter's pending request to reopen this closed visit. Absent from an older backend (the parser makes it null). */
+  reopenRequest: { id: number; reason: string; requestedByName: string | null; requestedAt: string } | null;
 }
 
 export interface Meta {
@@ -255,8 +257,53 @@ export interface ResultSnapshot {
   completedAt: string | null;
 }
 
+/** The fitter's request to reopen a closed visit, as the dashboard sees it. */
+export interface ReopenRequest {
+  id: number;
+  eventId: number;
+  /** requested (pending) | opened | declined | withdrawn | obsolete */
+  status: string;
+  statusLabel: string;
+  reason: string;
+  requestedAt: string;
+  requestedByName: string | null;
+  requestedByEmail: string | null;
+  decidedAt: string | null;
+  decidedByName: string | null;
+  decisionNote: string | null;
+  /** dashboard | erp | fitter | system */
+  /** The admin who acted on behalf of the fitter (e.g. withdrew for him); null when absent. */
+  decidedActorEmail: string | null;
+  decidedVia: string | null;
+  decidedViaLabel: string | null;
+  erpReopenId: number | null;
+}
+
+export interface ReopenRequestRow {
+  request: ReopenRequest;
+  /** null when the visit is outside the history scope or gone. */
+  event: EventView | null;
+}
+
+export interface MvtReopenRequests {
+  rows: ReopenRequestRow[];
+  openCount: number;
+  /** The database part is not applied yet: no rows, not an error. */
+  pending: boolean;
+}
+
+/** Deadline of a reopened visit (null on every row until the backend sets one). */
+export interface ReopenExpiry {
+  expiresAt: string | null;
+  state: 'running' | 'due' | 'blocked' | 'auto_closed';
+  blockCode: string | null;
+}
+
 export interface ReopenRow {
   id: number;
+  /** Set when the visit was opened on a fitter's request. */
+  requestId: number | null;
+  expiry: ReopenExpiry | null;
   event: EventView;
   reason: string | null;
   reopenedBy: string | null;
@@ -395,7 +442,9 @@ export interface SubmissionDetail extends SubmissionRow {
 export interface MvtOverview {
   missing: { count: number; recent: number; backlog: number; owing: Array<{ person: PersonRef | null; count: number }>; top: MissingRow[] };
   /** Visits open for correction: plain events (the reason, who and when are in `event.reopen`). */
-  reopened: { count: number; top: EventView[] };
+  reopened: { count: number; top: EventView[]; overdue: number };
+  /** Pending requests of fitters; null from an older backend. */
+  reopenRequests: { count: number; top: ReopenRequestRow[]; pending: boolean } | null;
   doplatek: { count: number; counts: Record<string, number>; top: DoplatekRow[] };
   claims: { count: number; counts: Record<string, number>; top: MontazClaimRow[] };
   /** `pending` = the fitters' app table is not in the database yet (so the count is not known). */

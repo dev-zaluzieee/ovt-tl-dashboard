@@ -127,6 +127,7 @@ export function MvtDayClient() {
                                 <td className={pad}>
                                   <StateChip ev={e} />
                                   {e.app && <p className="mt-0.5 text-xs text-gray-600">Aplikace: {e.app.statusLabel ?? e.app.status}{e.app.outcomeLabel ? ` · ${e.app.outcomeLabel}` : ''}</p>}
+                                  {e.reopenRequest && <p className="mt-0.5 text-xs text-sky-800">Montér žádá o otevření{e.reopenRequest.requestedByName ? ` (${e.reopenRequest.requestedByName})` : ''}: „{e.reopenRequest.reason}“ <Link href="/mvt/opravy" className="text-blue-600 hover:underline">Vyřídit</Link></p>}
                                   {e.reopen && <p className="mt-0.5 text-xs text-amber-800">{e.reopen.actorName ?? ''}: „{e.reopen.reason ?? ''}“</p>}
                                   <ResultLine ev={e} />
                                 </td>

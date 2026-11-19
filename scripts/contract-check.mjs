@@ -22,7 +22,7 @@ const load = async (rel) => {
   fs.writeFileSync(path.join(tmp, `${name}.mjs`), code);
   return name;
 };
-const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'escalations', 'cash', 'cash-routes', 'finance-url'];
+const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'escalations', 'cash', 'cash-routes', 'finance-url', 'reopen-request'];
 for (const n of names) await load(`lib/${n}.ts`);
 const imp = (n) => import(pathToFileURL(path.join(tmp, `${n}.mjs`)).href);
 const P = await imp('tl-parse');
@@ -38,6 +38,7 @@ const ES = await imp('escalations');
 const C = await imp('cash');
 const CR = await imp('cash-routes');
 const FU = await imp('finance-url');
+const RQ = await imp('reopen-request');
 process.env.NEXTAUTH_SECRET = 'contract-check-secret';
 const CG = await imp('call-grant');
 
@@ -109,6 +110,65 @@ check('doplatek', () => { const d = P.parseDoplatek(data('mvt-doplatek')); eq(d.
 check('rescues, montaz claims', () => { eq(P.parseRescues(data('mvt-rescues')).summary.claimed, 1, 'claimed'); const c = P.parseMontazClaims(data('mvt-montaz-claims')); eq(c.rows[0].followUp.id, 77, 'followUp'); eq(c.rows[1].claim, null, 'no claim'); });
 check('submissions list + detail (Czech labels of what the fitter entered)', () => { eq(P.parseSubmissionList(data('mvt-submissions')).total, 1, 'total'); const d = P.parseSubmissionDetail(data('mvt-submission-detail')); eq(d.steps[1].code, 'ORDER_LOCKED', 'step code'); eq(d.warnings.length, 1, 'warnings'); eq(d.warnings[0].includes('raynet'), false, 'no Raynet name'); eq(d.inputFields.find((f) => f.key === 'komentar').label, 'Komentář', 'input label'); });
 check('overview: a reopened visit is a plain event, the pending flag is a boolean', () => { const d = P.parseOverview(data('mvt-overview')); eq(d.missing.owing.length, 1, 'owing'); eq(d.missing.count, 2, 'missing counts recent and older'); eq(d.reopened.top[0].reopen.reason, 'znovu', 'reopen reason on the event'); eq(d.submissionProblems.pending, false, 'pending'); });
+check('fitters\' reopen requests: open list (a request on a visit outside the scope has event null), all list with decisions, pending answer', () => {
+  const o = P.parseReopenRequests(data('mvt-reopen-requests-open'));
+  eq(o.rows.length, 2, 'rows'); eq(o.openCount, 2, 'openCount'); eq(o.pending, false, 'pending'); eq(o.rows[0].request.status, 'requested', 'status'); eq(o.rows[0].request.requestedByName, 'Montér Petr', 'who'); eq(o.rows[0].event.id, 51, 'event'); eq(o.rows[1].event, null, 'event outside the scope is null');
+  const a = P.parseReopenRequests(data('mvt-reopen-requests-all'));
+  eq(a.rows[1].request.decidedViaLabel, 'V dashboardu team leadera', 'how decided'); eq(a.rows[1].request.decisionNote, 'Otevřeno, zapište znovu.', 'note'); eq(a.rows[1].request.erpReopenId, 41, 'reopen id'); eq(a.rows[2].request.statusLabel, 'Zamítnuto', 'label');
+  const p = P.parseReopenRequests(data('mvt-reopen-requests-pending'));
+  eq(p.pending, true, 'pending flag'); eq(p.rows.length, 0, 'no rows');
+  throws(() => P.parseReopenRequests({ rows: [{ request: { id: 'x' }, event: null }] }), 'bad request id'); throws(() => P.parseReopenRequests([]), 'not an object');
+});
+check('fitters\' reopen requests: approve answers as an ERP action (steps, request), decline answers {request}', () => {
+  const d = P.parseAction(data('mvt-reopen-request-approved'));
+  eq(d.outcome, 'done', 'outcome'); eq(d.steps.length, 2, 'steps'); eq(d.steps[0].label, 'Znovuotevření návštěvy v ERP', 'step label'); eq(d.reopenId, 42, 'reopen id'); eq(d.request.status, 'opened', 'request');
+  eq(P.parseReopenRequest(data('mvt-reopen-request-declined').request).decisionNote, 'Ne.', 'decline note');
+  eq(P.parseAction({ ...data('mvt-reopen-request-approved'), outcome: 'dry' }).outcome, 'dry', 'dry run');
+  eq(P.parseAction({ outcome: 'done', steps: [], ref: null, request: null }).steps.length, 0, 'already reopened in the ERP: no steps');
+});
+check('fitters\' reopen requests: after approve the notice follows request.status, not only the outcome; decidedActorEmail is parsed tolerantly', () => {
+  const base = data('mvt-reopen-request-approved');
+  const ok = P.parseAction(base); ok.request = P.parseReopenRequest(base.request);
+  eq(RQ.approveNotice(ok), null, 'opened + done: nothing special (the dialog closes itself)');
+  for (const outcome of ['partial', 'done']) {
+    const w = P.parseAction({ ...base, outcome }); w.request = P.parseReopenRequest(data('mvt-reopen-request-declined').request);
+    const n = RQ.approveNotice(w);
+    eq(n.kind, 'mismatch', `${outcome} + declined`); eq(n.text.includes('Zamítnuto'), true, 'status label'); eq(n.text.includes('Team Leader'), true, 'who'); eq(n.text.includes('otevřena'), true, 'says it was opened in the ERP');
+  }
+  const rq = P.parseAction({ ...base, outcome: 'partial' }); rq.request = P.parseReopenRequest({ ...base.request, status: 'requested', statusLabel: 'Čeká na vyřízení', decidedAt: null, decidedByName: null });
+  const rn = RQ.approveNotice(rq); eq(rn.text.includes('Čeká na vyřízení'), false, 'requested: no state label'); eq(rn.text.includes('označí jako otevřená sama'), true, 'requested: will be marked on the next load'); eq(rn.text.includes('nedozví'), false, 'requested: no fitter warning');
+  eq(E.errorText(new E.TlApiError(409, '', 'EVENT_CANCELLED', {})), 'Událost je zrušená.', 'EVENT_CANCELLED keeps its global text');
+  const wd = P.parseAction(base); wd.request = P.parseReopenRequest({ ...data('mvt-reopen-request-declined').request, status: 'withdrawn', statusLabel: 'Montér žádost stáhl', decidedByName: 'Montér Petr' });
+  eq(RQ.approveNotice(wd).text.includes('Montér žádost stáhl'), true, 'withdrawn by the fitter');
+  const dry = P.parseAction({ ...base, outcome: 'dry' }); dry.request = P.parseReopenRequest(data('mvt-reopen-request-declined').request); eq(RQ.approveNotice(dry), null, 'dry run: nothing was opened');
+  const failed = P.parseAction({ ...base, outcome: 'failed' }); failed.request = P.parseReopenRequest(data('mvt-reopen-request-declined').request); eq(RQ.approveNotice(failed), null, 'failed: the ERP did not open it');
+  const already = P.parseAction({ ...base, steps: [] }); already.request = P.parseReopenRequest(base.request);
+  eq(RQ.approveNotice(already).kind, 'already_open', 'no steps: already open'); eq(RQ.approveNotice(already).text.includes('už byla v ERP otevřená'), true, 'sentence');
+  eq(P.parseReopenRequest(base.request).decidedActorEmail, null, 'absent = null');
+  eq(P.parseReopenRequest(data('mvt-reopen-requests-all').rows[2].request).decidedActorEmail, 'admin@example.cz', 'on behalf of');
+});
+check('fitters\' reopen requests: 409 REQUEST_DECIDED names who decided and how, the other new codes have Czech sentences', () => {
+  const b = fx('error-request-decided'); const t = E.errorText(new E.TlApiError(409, b.message, b.code, b));
+  eq(t.includes('Jiný Leader'), true, 'who'); eq(t.includes('Zamítnuto'), true, 'state'); eq(t.includes('V dashboardu team leadera'), true, 'how'); eq(t.includes('Opravu zapisuje kancelář.'), true, 'note');
+  eq(E.errorText(new E.TlApiError(409, 'x', 'REQUEST_DECIDED', {})).includes('mezitím'), true, 'without data.request');
+  for (const [status, code, part] of [[404, 'REQUEST_NOT_FOUND', 'Žádost'], [409, 'EVENT_CANCELLED', 'zrušená'], [409, 'NOT_CLOSED', 'uzavřená'], [400, 'NOTE_REQUIRED', '3 až 1000'], [400, 'INVALID_BODY', 'dlouhá'], [400, 'INVALID_ID', 'Neplatné'], [400, 'INVALID_QUERY', 'filtr'], [503, 'MIGRATION_PENDING', 'migraci']]) {
+    const s = E.errorText(new E.TlApiError(status, '', code, {})); eq(s.includes(part), true, `${code}: ${s}`);
+  }
+});
+check('fitters\' reopen requests: overview block, day view line, reopened list fields; an older backend (fields absent) parses to nulls', () => {
+  const o = P.parseOverview(data('mvt-overview-requests'));
+  eq(o.reopenRequests.count, 1, 'count'); eq(o.reopenRequests.top[0].request.reason.length > 0, true, 'reason'); eq(o.reopenRequests.pending, false, 'pending'); eq(o.reopened.overdue, 0, 'overdue');
+  const old = P.parseOverview(data('mvt-overview'));
+  eq(old.reopenRequests, null, 'old backend: no block'); eq(old.reopened.overdue, 0, 'old backend: overdue defaults to 0');
+  const d = P.parseMvtDay(data('mvt-day-request'));
+  eq(d.events[0].reopenRequest.reason, 'Zákazník doplatil jinak.', 'request on a day event'); eq(d.events[1].reopenRequest, null, 'no request'); eq(P.parseMvtDay(data('mvt-day')).events[0].reopenRequest, null, 'old backend: null');
+  const r = P.parseReopens(data('mvt-reopens-expiry'));
+  eq(r.rows[0].requestId, null, 'no request'); eq(r.rows[0].expiry, null, 'expiry is null for now'); eq(r.rows[1].requestId, 5, 'opened on a request'); eq(r.rows[1].expiry.state, 'running', 'expiry state'); eq(r.rows[1].expiry.expiresAt, '2026-11-21T08:00:00.000Z', 'expires at');
+  const o2 = P.parseReopens(data('mvt-reopens')); eq(o2.rows.every((x) => x.requestId === null && x.expiry === null), true, 'old backend: defaults');
+  const bad = fx('mvt-reopens-expiry').data; bad.rows[1].expiry = { state: 'whatever', expiresAt: null }; eq(P.parseReopens(bad).rows[1].expiry, null, 'unknown state shows nothing');
+  const page = fs.readFileSync(path.join(root, 'app/components/mvt/MvtReopensClient.tsx'), 'utf8');
+  eq(/if \(!expiry\) return null;/.test(page), true, 'the chip is drawn only when expiry is set');
+});
 check('readiness: recorded answer (rows, findings, hint, gate) and the unavailable answer parse; a bad level or a missing field is refused', () => {
   const d = P.parseReadiness(data('mvt-readiness'));
   eq(d.available, true, 'available'); eq(d.windowDays, 7, 'window'); eq(d.checked, 4, 'checked counts the visits without a finding'); eq(d.counts.chyba, 2, 'red rows'); eq(d.byDay.length, 8, 'days of the window');
@@ -339,7 +399,7 @@ check('error texts per code', () => {
 
 // ---- BFF allow-list: exactly the backend routes the screens use ------------------------------------------------------
 check('BFF allow-list: open routes', () => {
-  const allowed = [['GET', 'meta'], ['GET', 'people'], ['GET', 'search'], ['GET', 'ovt/day'], ['POST', 'ovt/orders/10000001/b2b'], ['GET', 'ovt/problems'], ['POST', 'ovt/problems/close'], ['POST', 'ovt/problems/nedopadlo'], ['GET', 'ovt/results'], ['GET', 'ovt/results/visits'], ['GET', 'mvt/day'], ['GET', 'mvt/overview'], ['GET', 'mvt/readiness'], ['GET', 'mvt/missing'], ['POST', 'mvt/missing/close'], ['GET', 'mvt/reopens'], ['POST', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations'], ['POST', 'mvt/escalations/5/resolve'], ['GET', 'mvt/doplatek'], ['POST', 'mvt/doplatek/resolve'], ['GET', 'mvt/rescues'], ['GET', 'mvt/montaz-claims'], ['GET', 'mvt/submissions'], ['GET', 'mvt/submissions/7'], ['POST', 'resolutions/3/undo'], ['GET', 'calls/search'], ['GET', 'review-qr'], ['PUT', 'review-qr/settings'], ['PUT', 'review-qr/defaults'], ['PUT', 'review-qr/regions'], ['POST', 'review-qr/targets'], ['PUT', 'review-qr/targets/4'], ['DELETE', 'review-qr/targets/4'], ['GET', 'review-qr/prompts']];
+  const allowed = [['GET', 'meta'], ['GET', 'people'], ['GET', 'search'], ['GET', 'ovt/day'], ['POST', 'ovt/orders/10000001/b2b'], ['GET', 'ovt/problems'], ['POST', 'ovt/problems/close'], ['POST', 'ovt/problems/nedopadlo'], ['GET', 'ovt/results'], ['GET', 'ovt/results/visits'], ['GET', 'mvt/day'], ['GET', 'mvt/overview'], ['GET', 'mvt/readiness'], ['GET', 'mvt/missing'], ['POST', 'mvt/missing/close'], ['GET', 'mvt/reopens'], ['POST', 'mvt/events/5/reopen'], ['GET', 'mvt/reopen-requests'], ['POST', 'mvt/reopen-requests/5/approve'], ['POST', 'mvt/reopen-requests/5/decline'], ['GET', 'mvt/escalations'], ['POST', 'mvt/escalations/5/resolve'], ['GET', 'mvt/doplatek'], ['POST', 'mvt/doplatek/resolve'], ['GET', 'mvt/rescues'], ['GET', 'mvt/montaz-claims'], ['GET', 'mvt/submissions'], ['GET', 'mvt/submissions/7'], ['POST', 'resolutions/3/undo'], ['GET', 'calls/search'], ['GET', 'review-qr'], ['PUT', 'review-qr/settings'], ['PUT', 'review-qr/defaults'], ['PUT', 'review-qr/regions'], ['POST', 'review-qr/targets'], ['PUT', 'review-qr/targets/4'], ['DELETE', 'review-qr/targets/4'], ['GET', 'review-qr/prompts']];
   for (const [m, p] of allowed) if (!R.matchRoute(m, p.split('/'))) throw new Error(`${m} ${p} should be open`);
 });
 check('readiness: urgent (today + tomorrow) and the light summary answer without rows', () => {
@@ -356,7 +416,7 @@ check('readiness route: only the days parameter is forwarded, its value is a sma
   eq(R.matchRoute('POST', ['mvt', 'readiness']), null, 'POST closed'); eq(R.matchRoute('GET', ['mvt', 'readiness', '1']), null, 'sub-path closed');
 });
 check('BFF allow-list: everything else is closed (no open relay, no recordings keys)', () => {
-  const denied = [['GET', 'orders'], ['POST', 'calls/lookup'], ['GET', 'calls/customer-phones'], ['GET', 'teams'], ['PUT', 'ovt/day'], ['GET', 'resolutions/3/undo'], ['GET', 'mvt/submissions/05'], ['GET', 'mvt/events/5/reopen'], ['GET', 'mvt/escalations/5/resolve'], ['POST', 'mvt/escalations'], ['DELETE', 'mvt/escalations/5'], ['POST', 'mvt/escalations/05/resolve'], ['DELETE', 'review-qr'], ['GET', 'meta/x'], ['GET', '..'], ['GET', 'ovt/results/%2e%2e']];
+  const denied = [['GET', 'orders'], ['POST', 'calls/lookup'], ['GET', 'calls/customer-phones'], ['GET', 'teams'], ['PUT', 'ovt/day'], ['GET', 'resolutions/3/undo'], ['GET', 'mvt/submissions/05'], ['GET', 'mvt/events/5/reopen'], ['GET', 'mvt/reopen-requests/5/approve'], ['POST', 'mvt/reopen-requests'], ['DELETE', 'mvt/reopen-requests'], ['PUT', 'mvt/reopen-requests/5/decline'], ['POST', 'mvt/reopen-requests/05/approve'], ['POST', 'mvt/reopen-requests/5/withdraw'], ['GET', 'mvt/escalations/5/resolve'], ['POST', 'mvt/escalations'], ['DELETE', 'mvt/escalations/5'], ['POST', 'mvt/escalations/05/resolve'], ['DELETE', 'review-qr'], ['GET', 'meta/x'], ['GET', '..'], ['GET', 'ovt/results/%2e%2e']];
   for (const [m, p] of denied) if (R.matchRoute(m, p.split('/'))) throw new Error(`${m} ${p} should be closed`);
 });
 check('BFF allow-list covers every path the source calls', () => {

@@ -22,7 +22,11 @@ import type {
   ReadinessFinding,
   ReadinessLevel,
   ReadinessRow,
+  MvtReopenRequests,
   MvtReopens,
+  ReopenExpiry,
+  ReopenRequest,
+  ReopenRequestRow,
   MvtRescues,
   OvtDay,
   OvtProblems,
@@ -100,6 +104,11 @@ export function parseEventView(v: unknown, where = 'event'): EventView {
   });
   if (o.claim !== null && o.claim !== undefined) { const c = obj(o.claim, `${where}.claim`); num(c, 'id', `${where}.claim`); }
   if (o.link !== null && o.link !== undefined) { const l = obj(o.link, `${where}.link`); str(l, 'code', `${where}.link`); str(l, 'label', `${where}.link`); }
+  let reopenRequest: EventView['reopenRequest'] = null;
+  if (o.reopenRequest !== null && o.reopenRequest !== undefined) {
+    const q = obj(o.reopenRequest, `${where}.reopenRequest`);
+    reopenRequest = { id: num(q, 'id', `${where}.reopenRequest`), reason: typeof q.reason === 'string' ? q.reason : '', requestedByName: typeof q.requestedByName === 'string' ? q.requestedByName : null, requestedAt: typeof q.requestedAt === 'string' ? q.requestedAt : '' };
+  }
   return {
     typeLabel: typeof o.typeLabel === 'string' ? o.typeLabel : String(o.type),
     title: null,
@@ -119,6 +128,7 @@ export function parseEventView(v: unknown, where = 'event'): EventView {
     amountDue: null,
     link: null,
     ...o,
+    reopenRequest,
     legacy: o.legacy === true,
     result: o.result && typeof o.result === 'object' ? { ...(o.result as Obj), source: (o.result as Obj).source === 'legacy' ? 'legacy' : 'native' } : null,
   } as unknown as EventView;
@@ -290,16 +300,61 @@ function parseChange(v: unknown, where: string) {
   return { field: str(o, 'field', where), label: str(o, 'label', where), before: val(o.before), after: val(o.after) };
 }
 
+const EXPIRY_STATES = ['running', 'due', 'blocked', 'auto_closed'];
+
+/** `expiry` is null on every row until the backend sets a deadline; an unknown state is treated as no deadline (nothing is shown). */
+function parseExpiry(v: unknown, where: string): ReopenExpiry | null {
+  if (v === null || v === undefined) return null;
+  const o = obj(v, where);
+  const state = typeof o.state === 'string' ? o.state : '';
+  if (!EXPIRY_STATES.includes(state)) return null;
+  return { expiresAt: typeof o.expiresAt === 'string' ? o.expiresAt : null, state: state as ReopenExpiry['state'], blockCode: typeof o.blockCode === 'string' ? o.blockCode : null };
+}
+
 function parseReopenRow(v: unknown, where: string) {
   const o = obj(v, where);
   num(o, 'id', where);
   str(o, 'at', where);
-  return { reason: null, reopenedBy: null, stillOpen: false, before: null, after: null, ...o, changes: list(o.changes ?? [], `${where}.changes`, parseChange), event: parseEventView(o.event, `${where}.event`) } as unknown as MvtReopens['rows'][number];
+  return { reason: null, reopenedBy: null, stillOpen: false, before: null, after: null, ...o, requestId: typeof o.requestId === 'number' ? o.requestId : null, expiry: parseExpiry(o.expiry, `${where}.expiry`), changes: list(o.changes ?? [], `${where}.changes`, parseChange), event: parseEventView(o.event, `${where}.event`) } as unknown as MvtReopens['rows'][number];
 }
 
 export function parseReopens(v: unknown): MvtReopens {
   const o = obj(v, 'reopens');
   return { rows: list(o.rows, 'reopens.rows', parseReopenRow), openCount: typeof o.openCount === 'number' ? o.openCount : 0, truncated: o.truncated === true };
+}
+
+const sOrNull = (x: unknown): string | null => (typeof x === 'string' ? x : null);
+
+export function parseReopenRequest(v: unknown, where = 'request'): ReopenRequest {
+  const o = obj(v, where);
+  const status = str(o, 'status', where);
+  return {
+    id: num(o, 'id', where),
+    eventId: num(o, 'eventId', where),
+    status,
+    statusLabel: sOrNull(o.statusLabel) ?? status,
+    reason: sOrNull(o.reason) ?? '',
+    requestedAt: str(o, 'requestedAt', where),
+    requestedByName: sOrNull(o.requestedByName),
+    requestedByEmail: sOrNull(o.requestedByEmail),
+    decidedAt: sOrNull(o.decidedAt),
+    decidedByName: sOrNull(o.decidedByName),
+    decisionNote: sOrNull(o.decisionNote),
+    decidedActorEmail: sOrNull(o.decidedActorEmail),
+    decidedVia: sOrNull(o.decidedVia),
+    decidedViaLabel: sOrNull(o.decidedViaLabel),
+    erpReopenId: typeof o.erpReopenId === 'number' ? o.erpReopenId : null,
+  };
+}
+
+function parseRequestRow(v: unknown, where: string): ReopenRequestRow {
+  const o = obj(v, where);
+  return { request: parseReopenRequest(o.request, `${where}.request`), event: o.event === null || o.event === undefined ? null : parseEventView(o.event, `${where}.event`) };
+}
+
+export function parseReopenRequests(v: unknown): MvtReopenRequests {
+  const o = obj(v, 'reopenRequests');
+  return { rows: list(o.rows ?? [], 'reopenRequests.rows', parseRequestRow), openCount: typeof o.openCount === 'number' ? o.openCount : 0, pending: o.pending === true };
 }
 
 function parseDoplatekRow(v: unknown, where: string) {
@@ -397,9 +452,11 @@ export function parseOverview(v: unknown): MvtOverview {
   const doplatek = block('doplatek');
   const claims = block('claims');
   const sp = block('submissionProblems');
+  const rr = o.reopenRequests === null || o.reopenRequests === undefined ? null : block('reopenRequests');
   return {
     missing: { count: num(missing, 'count', 'overview.missing'), recent: typeof missing.recent === 'number' ? missing.recent : 0, backlog: typeof missing.backlog === 'number' ? missing.backlog : 0, owing: owing(missing.owing, 'overview.missing.owing'), top: list(missing.top, 'overview.missing.top', parseMissingRow) },
-    reopened: { count: num(reopened, 'count', 'overview.reopened'), top: list(reopened.top, 'overview.reopened.top', parseEventView) },
+    reopened: { count: num(reopened, 'count', 'overview.reopened'), top: list(reopened.top, 'overview.reopened.top', parseEventView), overdue: typeof reopened.overdue === 'number' ? reopened.overdue : 0 },
+    reopenRequests: rr ? { count: num(rr, 'count', 'overview.reopenRequests'), top: list(rr.top ?? [], 'overview.reopenRequests.top', parseRequestRow), pending: rr.pending === true } : null,
     doplatek: { count: num(doplatek, 'count', 'overview.doplatek'), counts: counts(doplatek.counts), top: list(doplatek.top, 'overview.doplatek.top', parseDoplatekRow) },
     claims: {
       count: num(claims, 'count', 'overview.claims'),

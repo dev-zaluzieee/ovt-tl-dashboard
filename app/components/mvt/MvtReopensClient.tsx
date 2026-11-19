@@ -2,12 +2,13 @@
 
 import { tlGet } from '@/lib/tl-api';
 import { parseReopens } from '@/lib/tl-parse';
-import type { MvtReopens, ResultChange, ResultSnapshot } from '@/lib/types';
+import type { MvtReopens, ReopenExpiry, ResultChange, ResultSnapshot } from '@/lib/types';
 import { fmtDateTime, fmtKc, isYmd, shiftYmd } from '@/lib/format';
 import { useMeta } from '@/app/components/shell/MetaContext';
 import { DateRange, PersonSelect, useUrlParams } from '@/app/components/ui/filters';
 import { Alert, Chip, Empty, EventLinks, LoadError, PageHeader, Skeleton, btnSmall, inputCls } from '@/app/components/ui/kit';
 import { useLoad } from '@/app/components/ui/useLoad';
+import { ReopenRequestsTable } from './ReopenRequestsTable';
 
 function Snapshot({ s, label }: { s: ResultSnapshot | null; label: string }) {
   if (!s) return <p className="text-xs text-gray-400">{label}: zatím není</p>;
@@ -40,6 +41,23 @@ function Changes({ changes, fallback }: { changes: ResultChange[]; fallback: str
   );
 }
 
+/** Deadline chip of a reopened visit: drawn only when the backend sends one (`expiry` is null until then). */
+function ExpiryChip({ expiry }: { expiry: ReopenExpiry | null }) {
+  if (!expiry) return null;
+  switch (expiry.state) {
+    case 'running':
+      return expiry.expiresAt ? <Chip tone="sky" title="Do tohoto času je potřeba výsledek znovu zapsat.">Zapsat do {fmtDateTime(expiry.expiresAt)}</Chip> : null;
+    case 'due':
+      return <Chip tone="red" title="Lhůta uplynula, návštěva se má zavřít bez opravy.">Lhůta uplynula</Chip>;
+    case 'blocked':
+      return <Chip tone="red" title={expiry.blockCode ? `Automatické zavření se nepovedlo (${expiry.blockCode}).` : 'Automatické zavření se nepovedlo.'}>Lhůta uplynula, nezavřeno</Chip>;
+    case 'auto_closed':
+      return <Chip tone="gray">Zavřeno bez opravy (48 h)</Chip>;
+    default:
+      return null;
+  }
+}
+
 /** Opravy: visits reopened for correction, who and why, the result before and after. */
 export function MvtReopensClient() {
   const { meta } = useMeta();
@@ -58,6 +76,7 @@ export function MvtReopensClient() {
     <main className="container mx-auto px-4 py-8">
       <PageHeader title="Montéři (MVT): Opravy" subtitle="Návštěvy otevřené k opravě. Období = den, kdy se oprava otevřela. Otevřít k opravě jde z Přehledu dne a z Chybí výsledek." />
       <div className="space-y-4">
+        <ReopenRequestsTable person={person} onChanged={reload} />
         <div className="flex flex-wrap items-center gap-3">
           <DateRange from={from} to={to} onChange={(f, t) => set({ from: f, to: t })} />
           <PersonSelect side="mvt" value={person} onChange={(v) => set({ person: v })} />
@@ -100,6 +119,8 @@ export function MvtReopensClient() {
                       {fmtDateTime(r.at)}
                       <p className="text-xs text-gray-500">{r.reopenedBy ?? '—'}</p>
                       <Chip tone={r.stillOpen ? 'amber' : 'green'}>{r.stillOpen ? 'Otevřeno k opravě' : 'Znovu uzavřeno'}</Chip>
+                      {r.requestId !== null && <p className="mt-0.5 text-xs text-sky-800">Otevřeno na žádost montéra</p>}
+                      {r.expiry && <p className="mt-0.5"><ExpiryChip expiry={r.expiry} /></p>}
                     </td>
                     <td className="px-3 py-2">
                       <p className="font-medium text-gray-900">{r.event.customer?.name ?? r.event.title ?? '—'}</p>
