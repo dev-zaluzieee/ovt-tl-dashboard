@@ -176,6 +176,8 @@ check('readiness: recorded answer (rows, findings, hint, gate) and the unavailab
   const trigger = d.rows.find((r) => r.event.id === 2);
   eq(trigger.findings[0].code, 'bez_vlastniho_zamereni', 'first finding'); eq(trigger.level, 'chyba', 'level'); eq(trigger.hint.otherOrderIds[0], 1001, 'hint order'); eq(trigger.event.note, 'Výrobní list není, je to zaměřeno zvlášť.', 'note is plain text');
   eq(/#1001/.test(trigger.findings[0].fix), true, 'the fix names the order');
+  const noFiles = trigger.findings.find((f) => f.code === 'bez_priloh');
+  eq(noFiles.label, 'Montáž nemá žádné přílohy', 'no preparation files: label'); eq(noFiles.level, 'overit', 'no preparation files: amber, not a blocker');
   const u = P.parseReadiness(data('mvt-readiness-unavailable'));
   eq(u.available, false, 'unavailable'); eq(u.rows.length, 0, 'no rows'); eq(u.counts, null, 'no counts'); eq(u.badge, null, 'no badge');
   const bad = fx('mvt-readiness').data; bad.rows[0].level = 'zelena'; throws(() => P.parseReadiness(bad), 'unknown level');

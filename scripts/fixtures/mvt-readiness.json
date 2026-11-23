@@ -136,10 +136,10 @@
             "fix": "Formuláře jsou na zakázce #1001. Přeplánujte návštěvu na správnou zakázku, nebo dejte montérovi vědět."
           },
           {
-            "code": "bez_souboru",
+            "code": "bez_priloh",
             "level": "overit",
-            "label": "Bez souborů (fotky, výrobní dokumentace)",
-            "fix": "Montér nemá žádnou přílohu. Nahrajte fotky ze zaměření nebo výrobní dokumentaci."
+            "label": "Montáž nemá žádné přílohy",
+            "fix": "Montér nemá k zakázce žádnou přílohu. Nahrajte v ERP k zakázce výrobní dokumentaci nebo fotky."
           }
         ],
         "hint": {
