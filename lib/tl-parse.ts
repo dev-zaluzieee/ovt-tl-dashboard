@@ -146,6 +146,13 @@ export function parseMeta(v: unknown): Meta {
     ...(o as unknown as Meta),
     erpWebBaseUrl: typeof o.erpWebBaseUrl === 'string' ? o.erpWebBaseUrl : null,
     historyFrom: typeof o.historyFrom === 'string' ? o.historyFrom : null,
+    problemRules: o.problemRules && typeof o.problemRules === 'object'
+      ? {
+          bez_vysledku: typeof (o.problemRules as Obj).bez_vysledku === 'string' ? ((o.problemRules as Obj).bez_vysledku as string) : null,
+          vraceno_ovt: typeof (o.problemRules as Obj).vraceno_ovt === 'string' ? ((o.problemRules as Obj).vraceno_ovt as string) : null,
+        }
+      : null,
+    bezVysledkuFrom: typeof o.bezVysledkuFrom === 'string' ? o.bezVysledkuFrom : null,
     vocabulary: { ...(voc as unknown as Meta['vocabulary']), quietStates: strArr(voc.quietStates) },
   };
 }

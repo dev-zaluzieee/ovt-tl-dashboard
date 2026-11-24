@@ -80,6 +80,10 @@ export interface Meta {
   /** Start of the history scope (day views, Výsledky, Nedopadlo, Záchrany, Reklamace z montáží, search); null = same visits as the work lists. */
   historyFrom: string | null;
   testMode: boolean;
+  /** Per-kind rules of "Problematické zakázky" in words (slice T2); absent from an older backend (the parser makes it null). */
+  problemRules: { bez_vysledku: string | null; vraceno_ovt: string | null } | null;
+  /** Optional extra lower bound of "Zaměření bez výsledku" (ISO instant); null when the backend has none or is older. */
+  bezVysledkuFrom: string | null;
   erpWebBaseUrl: string | null;
   invoicingCheck: boolean;
   limits: { maxRangeDays: number; hardMaxRows: number; maxLookupKeys: number };

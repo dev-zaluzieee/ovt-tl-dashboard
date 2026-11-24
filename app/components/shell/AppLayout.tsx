@@ -3,26 +3,7 @@
 import type { ReactNode } from 'react';
 import { Navigation } from './Navigation';
 import { MetaProvider, useMeta } from './MetaContext';
-import { fmtDateTime } from '@/lib/format';
-import type { Meta } from '@/lib/types';
-
-/**
- * The banner says what each scope shows. Without a history scope the old wording stays (one rule for every page); with it, the work lists
- * and the history pages are named separately, so the text is true for both.
- */
-function startText(meta: Meta): string {
-  const start = fmtDateTime(meta.startAt);
-  const hist = meta.historyFrom ? fmtDateTime(meta.historyFrom) : null;
-  if (!hist) {
-    if (meta.testMode) return `zobrazují se jen události vytvořené ručně v ERP od ${start}.`;
-    return meta.startAt ? `Zobrazují se jen návštěvy od ${start}; starší nejsou součástí tohoto dashboardu.` : '';
-  }
-  const work = meta.testMode
-    ? `pracovní seznamy a počty (Zaměření bez výsledku, Vráceno OVT, Chybí výsledek, Nesedí doplatek, Opravy, úvodní stránka) zobrazují jen události vytvořené ručně v ERP od ${start}.`
-    : `Pracovní seznamy a počty (Zaměření bez výsledku, Vráceno OVT, Chybí výsledek, Nesedí doplatek, Opravy, úvodní stránka) zobrazují jen návštěvy od ${start}.`;
-  const history = `Přehledy dne, Výsledky, Nedopadlo, Záchrany, Reklamace z montáží, hledání a výběr osob sahají do ${hist}${meta.testMode ? ' (zkušební omezení se tam nepoužívá)' : ''}; výsledky starších návštěv jsou přenesené ze starých systémů.`;
-  return `${work} ${history}`;
-}
+import { startText } from '@/lib/startText';
 
 function StartNote() {
   const { meta } = useMeta();

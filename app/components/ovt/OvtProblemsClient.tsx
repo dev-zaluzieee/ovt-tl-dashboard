@@ -127,6 +127,12 @@ export function OvtProblemsClient() {
             </label>
           )}
         </div>
+        {(meta?.problemRules?.bez_vysledku || meta?.problemRules?.vraceno_ovt) && (
+          <ul className="space-y-0.5 text-xs text-gray-500">
+            {meta.problemRules.bez_vysledku && <li>{meta.problemRules.bez_vysledku}.</li>}
+            {meta.problemRules.vraceno_ovt && <li>{meta.problemRules.vraceno_ovt}.</li>}
+          </ul>
+        )}
 
         {notice && <Alert tone="green">{notice}</Alert>}
         {rowError && <Alert tone="red">{rowError}</Alert>}
