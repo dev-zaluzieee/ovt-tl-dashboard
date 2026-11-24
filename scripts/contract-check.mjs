@@ -22,7 +22,7 @@ const load = async (rel) => {
   fs.writeFileSync(path.join(tmp, `${name}.mjs`), code);
   return name;
 };
-const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'escalations', 'cash', 'cash-routes', 'finance-url', 'reopen-request'];
+const names = ['tl-parse', 'tl-errors', 'tl-routes', 'safe-callback', 'portal-access', 'csrf', 'links', 'format', 'dayGrid', 'call-grant', 'escalations', 'cash', 'cash-routes', 'finance-url', 'reopen-request', 'startText'];
 for (const n of names) await load(`lib/${n}.ts`);
 const imp = (n) => import(pathToFileURL(path.join(tmp, `${n}.mjs`)).href);
 const P = await imp('tl-parse');
@@ -33,6 +33,7 @@ const A = await imp('portal-access');
 const { checkCsrf } = await imp('csrf');
 const L = await imp('links');
 const F = await imp('format');
+const { startText } = await imp('startText');
 const G = await imp('dayGrid');
 const ES = await imp('escalations');
 const C = await imp('cash');
@@ -57,6 +58,25 @@ const data = (n) => { const j = fx(n); if (j.success !== true) throw new Error('
 const throws = (fn, what) => { let t = false; try { fn(); } catch { t = true; } if (!t) throw new Error(`${what}: accepted`); };
 
 // ---- recorded answers -----------------------------------------------------------------------------------------------
+check('banner text: Vraceno OVT is not limited to the start date, Zamereni bez vysledku follows the backend rule (T2/C205)', () => {
+  const base = P.parseMeta(data('meta'));
+  const old = startText(base);
+  eq(old.includes('Zaměření bez výsledku, Vráceno OVT, Chybí výsledek'), true, 'older backend: previous wording');
+  eq(old.includes('Problematické zakázky'), false, 'older backend: no problem rules');
+  const raw = { ...data('meta'), problemRules: { bez_vysledku: 'Zaměření bez výsledku: jen návštěvy pořízené v novém ERP', vraceno_ovt: 'Vráceno OVT k dořešení: všechny zakázky ve stavu' }, bezVysledkuFrom: null };
+  const m = P.parseMeta(raw);
+  eq(m.problemRules.bez_vysledku.startsWith('Zaměření bez výsledku:'), true, 'parsed rule');
+  const t = startText(m);
+  eq(t.includes('Zaměření bez výsledku, Vráceno OVT'), false, 'the two kinds no longer named as limited to the start date');
+  eq(t.includes('Pracovní seznamy a počty (Chybí výsledek,'), true, 'other work lists still limited');
+  eq(t.includes('Problematické zakázky: Zaměření bez výsledku: jen návštěvy pořízené v novém ERP. Vráceno OVT k dořešení: všechny zakázky ve stavu.'), true, 'rules from meta');
+  eq(t.includes('navíc'), false, 'no extra bound text when null');
+  eq(startText(P.parseMeta({ ...raw, bezVysledkuFrom: '2026-11-19T00:00:00.000Z' })).includes('se navíc hlídají jen od'), true, 'extra bound');
+  const noHist = startText(P.parseMeta({ ...raw, historyFrom: null }));
+  eq(noHist.startsWith('Zobrazují se jen návštěvy od'), true, 'no history scope: first sentence kept');
+  eq(noHist.includes('Problematické zakázky:'), true, 'no history scope: rules appended');
+  eq(startText(P.parseMeta({ ...raw, problemRules: 'x' })).includes('Problematické zakázky'), false, 'junk rules ignored');
+});
 check('meta', () => { const m = P.parseMeta(data('meta')); eq(m.today, '2026-11-16', 'today'); eq(m.erpWebBaseUrl, null, 'erp base (not configured in the fixture run)'); eq(m.vocabulary.ovtCloseReasons.jine.includes('Jiné'), true, 'reasons'); eq(m.vocabulary.quietStates.length, 4, 'quiet'); eq(m.vocabulary.quietStates.includes('legacy_no_result'), true, 'quiet state of migrated visits'); eq(m.historyFrom, '2025-01-01T00:00:00.000Z', 'history scope on in the recorded run'); });
 check('history scope: taken-over result is marked, a native one is not, the flag defaults to false', () => {
   const base = { id: 1, type: 'zamereni', startsAt: '2025-06-01T08:00:00.000Z', day: '2025-06-01', people: [], state: { code: 'closed', label: 'Uzavřeno', closed: true, open: false } };
