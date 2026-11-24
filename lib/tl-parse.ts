@@ -224,7 +224,7 @@ function parseProblemRow(v: unknown, where: string) {
   str(o, 'kind', where);
   str(o, 'kindLabel', where);
   return {
-    at: null, eventId: null, orderId: null, eventType: null, customer: null, owner: null, endsAt: null, reason: null, reasonLabel: null, note: null, subState: null,
+    at: null, lastSurveyAt: null, eventId: null, orderId: null, eventType: null, customer: null, owner: null, endsAt: null, reason: null, reasonLabel: null, note: null, subState: null,
     ageWorkingDays: null, valueSDph: null, b2b: null, orderStatus: null, orderStatusLabel: null, severity: 0,
     ...o,
     legacy: o.legacy === true,

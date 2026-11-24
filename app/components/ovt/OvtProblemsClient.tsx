@@ -57,7 +57,11 @@ export function OvtProblemsClient() {
   );
 
   const vocab = meta?.vocabulary;
-  const evUrl = (r: ProblemRow) => (r.eventId && r.at ? erpEventUrl(meta?.erpWebBaseUrl, r.eventId, pragueYmd(r.at)) : null);
+  // The day of the link is the visit's own day: the visit start for a visit row, the last survey's start for a Vráceno OVT row (its `at` is the order's last change); no day, no link.
+  const evUrl = (r: ProblemRow) => {
+    const day = r.kind === 'vraceno_ovt' ? r.lastSurveyAt : r.at;
+    return r.eventId && day ? erpEventUrl(meta?.erpWebBaseUrl, r.eventId, pragueYmd(day)) : null;
+  };
   const cell = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
   function toggleKind(k: string) {
@@ -129,7 +133,7 @@ export function OvtProblemsClient() {
         </div>
         {(meta?.problemRules?.bez_vysledku || meta?.problemRules?.vraceno_ovt) && (
           <ul className="space-y-0.5 text-xs text-gray-500">
-            {meta.problemRules.bez_vysledku && <li>{meta.problemRules.bez_vysledku}.</li>}
+            {meta.problemRules.bez_vysledku && <li>{meta.problemRules.bez_vysledku}{meta.bezVysledkuFrom ? `; navíc jen návštěvy od ${fmtDateTime(meta.bezVysledkuFrom)}` : ''}.</li>}
             {meta.problemRules.vraceno_ovt && <li>{meta.problemRules.vraceno_ovt}.</li>}
           </ul>
         )}

@@ -166,6 +166,8 @@ export interface ProblemRow {
   owner: PersonRef | null;
   /** The visit's start / the order's last change (null when the ERP has none). */
   at: string | null;
+  /** Vraceno OVT rows: start of the order's last non-cancelled survey (T2); null when none or from an older backend. */
+  lastSurveyAt: string | null;
   endsAt: string | null;
   reason: string | null;
   reasonLabel: string | null;
